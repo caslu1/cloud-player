@@ -24,6 +24,7 @@ object Lang {
         loaded = true
         I18nCore.load(DictA, DictB, DictC, DictD, DictE, DictF, DictG, DictH, DictI, DictJ)
         I18nCore.loadColumn(I18nCore.CODES.indexOf("nl"), DictNl1, DictNl2, DictNl3, DictNl4, DictNl5)
+        I18nCore.loadColumn(I18nCore.CODES.indexOf("pt"), DictPt1, DictPt2, DictPt3, DictPt4, DictPt5)
     }
 
     /** Index in I18nCore.CODES. Liest den Zustand, damit Texte beim Umstellen neu gezeichnet werden. */
@@ -40,13 +41,14 @@ object Lang {
         "bs" -> Locale.Builder().setLanguage("bs").setRegion("BA").build()
         "hr" -> Locale.Builder().setLanguage("hr").setRegion("HR").build()
         "sr" -> Locale.Builder().setLanguage("sr").setScript("Latn").setRegion("RS").build()
+        "pt" -> Locale.Builder().setLanguage("pt").setRegion("BR").build()
         else -> Locale.forLanguageTag(code())
     }
 
     /** Sprachcode für TMDB-Abfragen, z. B. "de-DE". */
     fun tmdb(): String = when (code()) {
         "en" -> "en-US"; "tr" -> "tr-TR"; "bs" -> "bs-BA"; "hr" -> "hr-HR"; "sr" -> "sr-RS"
-        "es" -> "es-ES"; "fr" -> "fr-FR"; "it" -> "it-IT"; "nl" -> "nl-NL"; else -> "de-DE"
+        "es" -> "es-ES"; "fr" -> "fr-FR"; "it" -> "it-IT"; "nl" -> "nl-NL"; "pt" -> "pt-BR"; else -> "de-DE"
     }
 
     fun tr(s: String): String {

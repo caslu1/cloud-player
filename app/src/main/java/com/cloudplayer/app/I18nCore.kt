@@ -2,12 +2,12 @@ package com.cloudplayer.app
 
 /**
  * Übersetzungskern (ohne Android, testbar). Quelltexte sind die deutschen Oberflächentexte.
- * Zeilenformat: de ¦ en ¦ tr ¦ bs ¦ hr ¦ sr ¦ es ¦ fr ¦ it ¦ nl   (hr/sr leer = wie bs; andere leer = wie en)
+ * Zeilenformat: de ¦ en ¦ tr ¦ bs ¦ hr ¦ sr ¦ es ¦ fr ¦ it ¦ nl ¦ pt   (hr/sr leer = wie bs; andere leer = wie en)
  * Platzhalter: {0} beliebiger Text, {#0} Zahl. Ein Zeilenumbruch wird als \n geschrieben.
  */
 object I18nCore {
-    val CODES = listOf("de", "en", "tr", "bs", "hr", "sr", "es", "fr", "it", "nl")
-    val NATIVE = listOf("Deutsch", "English", "Türkçe", "Bosanski", "Hrvatski", "Srpski", "Español", "Français", "Italiano", "Nederlands")
+    val CODES = listOf("de", "en", "tr", "bs", "hr", "sr", "es", "fr", "it", "nl", "pt")
+    val NATIVE = listOf("Deutsch", "English", "Türkçe", "Bosanski", "Hrvatski", "Srpski", "Español", "Français", "Italiano", "Nederlands", "Português (Brasil)")
 
     private class Pat(val src: String, val re: Regex, val tr: Array<String>, val numeric: BooleanArray)
 

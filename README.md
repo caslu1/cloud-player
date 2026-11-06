@@ -62,7 +62,7 @@ Allow "Install unknown apps" for Downloader (or your file manager) when asked, t
 - Cloud green on navy plus 12 colour themes, 5 backgrounds, custom colours
 - Fonts Outfit, Inter or system; adjustable text and display size; animations off/subtle/normal
 - Sidebar left, right or top, icons only or with text; phones: landscape, tap and double-tap controls
-- 10 languages: German, English, Turkish, Bosnian, Croatian, Serbian, Spanish, French, Italian, Dutch
+- 11 languages: German, English, Turkish, Bosnian, Croatian, Serbian, Spanish, French, Italian, Dutch, Portuguese (Brazil)
 
 ## Your own API keys (optional)
 
@@ -115,7 +115,7 @@ Unit tests for the pure logic: `./gradlew test`
 ```
 app/src/main/java/com/cloudplayer/app/   all Kotlin sources (one package)
   *Logic.kt                           pure, Android-free logic (covered by unit tests)
-  Dict*.kt                            translations (one row per text: de¦en¦tr¦bs¦hr¦sr¦es¦fr¦it)
+  Dict*.kt                            translations (one row per text: de¦en¦tr¦bs¦hr¦sr¦es¦fr¦it; DictNl*/DictPt*: de¦nl, de¦pt)
 app/src/test/java/com/cloudplayer/app/   JUnit tests
 app/src/main/res/font/                Outfit and Inter (SIL Open Font License)
 licenses/                             font licences

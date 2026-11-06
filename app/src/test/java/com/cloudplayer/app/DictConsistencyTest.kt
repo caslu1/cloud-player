@@ -10,7 +10,7 @@ class DictConsistencyTest {
 
     @Test fun placeholders_eindeutig_und_in_allen_sprachen() {
         val problems = ArrayList<String>()
-        for (block in listOf(DictA, DictB, DictC, DictD, DictE, DictF, DictG, DictH, DictI, DictJ, DictNl1, DictNl2, DictNl3, DictNl4, DictNl5)) {
+        for (block in listOf(DictA, DictB, DictC, DictD, DictE, DictF, DictG, DictH, DictI, DictJ, DictNl1, DictNl2, DictNl3, DictNl4, DictNl5, DictPt1, DictPt2, DictPt3, DictPt4, DictPt5)) {
             for (line in block.lineSequence()) {
                 if (line.isBlank() || line.startsWith("#") || !line.contains('¦')) continue
                 val cols = line.split('¦')
@@ -34,6 +34,25 @@ class DictConsistencyTest {
         assertEquals("Playlist toevoegen", I18nCore.translate("Playlist hinzufügen", nl))
         assertEquals("8 afleveringen", I18nCore.translate("8 Folgen", nl))
         assertEquals("Nederlands", I18nCore.NATIVE[nl])
+    }
+
+    @Test fun portugiesisch_deckt_alle_zeilen_ab() {
+        I18nCore.load(DictA, DictB, DictC, DictD, DictE, DictF, DictG, DictH, DictI, DictJ)
+        val pt = I18nCore.CODES.indexOf("pt")
+        assertEquals(10, pt)
+        I18nCore.loadColumn(pt, DictPt1, DictPt2, DictPt3, DictPt4, DictPt5)
+        val de = HashSet<String>()
+        for (block in listOf(DictA, DictB, DictC, DictD, DictE, DictF, DictG, DictH, DictI, DictJ))
+            for (line in block.lineSequence()) if (line.isNotBlank() && !line.startsWith("#") && line.contains('¦')) de.add(line.split('¦')[0].trim())
+        val ptKeys = HashSet<String>()
+        for (block in listOf(DictPt1, DictPt2, DictPt3, DictPt4, DictPt5))
+            for (line in block.lineSequence()) if (line.isNotBlank() && !line.startsWith("#") && line.contains('¦')) ptKeys.add(line.split('¦')[0].trim())
+        assertEquals(emptySet<String>(), de - ptKeys)
+        assertEquals("Português (Brasil)", I18nCore.NATIVE[pt])
+        assertEquals("Adicionar playlist", I18nCore.translate("Playlist hinzufügen", pt))
+        assertEquals("8 episódios", I18nCore.translate("8 Folgen", pt))
+        assertEquals("Configurações", I18nCore.translate("Einstellungen", pt))
+        assertEquals(I18nCore.CODES.size, I18nCore.NATIVE.size)
     }
 
     @Test fun zahlen_werden_richtig_eingesetzt() {
