@@ -16,6 +16,7 @@ local.properties
 secrets.properties
 *.jks
 *.keystore
+!app/cloudplayer-debug.keystore
 keystore.properties
 
 # Full-size screenshot originals (the repository uses the smaller .jpg copies)

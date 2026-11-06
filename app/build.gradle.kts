@@ -46,6 +46,14 @@ android {
     }
 
     signingConfigs {
+        // Fixed debug key (committed on purpose, like Android's standard debug key): every CI build is signed the same way,
+        // so a newer debug APK installs over the old one and keeps the user's data.
+        getByName("debug") {
+            storeFile = file("cloudplayer-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         if (hasKeystore) create("release") {
             storeFile = rootProject.file(keystore.getProperty("storeFile"))
             storePassword = keystore.getProperty("storePassword")
