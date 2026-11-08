@@ -13,6 +13,7 @@ Cloud Player itself is licensed under the GNU General Public License v3 (see `LI
 | Coil (`io.coil-kt:coil-compose`) | Apache License 2.0 |
 | Kotlin standard library and coroutines (JetBrains) | Apache License 2.0 |
 | JUnit 4 (tests only) | Eclipse Public License 1.0 |
+| TVX Plugin (Benjamin Zachey, `docs/msx/tvx-plugin.min.js`, from benzac-de/msx-interaction-plugin-examples) – only for the Media Station X version | GNU GPL v3 |
 
 The libraries are downloaded by Gradle at build time and are not stored in this repository. Their licence texts are available from the respective projects.
 

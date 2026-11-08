@@ -16,6 +16,8 @@ https://github.com/caslu1/cloud-player/releases/latest/download/Cloud-Player.apk
 ```
 Allow "Install unknown apps" for Downloader (or your file manager) when asked, then install. No account or registration needed.
 
+**TV Samsung ou LG?** Elas não instalam APK – use a versão para o Media Station X: [docs/MSX.md](docs/MSX.md).
+
 ## Features
 
 **Playlists**
