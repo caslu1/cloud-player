@@ -6,18 +6,29 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
+import android.graphics.drawable.StateListDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.view.Gravity;
-import android.widget.Button;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -30,316 +41,524 @@ import java.util.concurrent.Executors;
 /** MAC + device key -> add, list, edit and delete playlists on funplays.app. */
 public class MainActivity extends Activity {
 
-    private static final int BLUE = Color.parseColor("#1A3FE0");
-    private static final int RED = Color.parseColor("#C62828");
+    // Palette
+    private static final int PRIMARY = 0xFF2F54EB;
+    private static final int PRIMARY_DARK = 0xFF1A2FA8;
+    private static final int PRIMARY_SOFT = 0xFFE8EDFF;
+    private static final int BG = 0xFFF4F6FB;
+    private static final int SURFACE = 0xFFFFFFFF;
+    private static final int TEXT = 0xFF141A2E;
+    private static final int TEXT_2 = 0xFF5B6478;
+    private static final int BORDER = 0xFFD9DEEA;
+    private static final int SUCCESS = 0xFF1E8E5A;
+    private static final int SUCCESS_SOFT = 0xFFE3F6EC;
+    private static final int DANGER = 0xFFD32F2F;
+    private static final int DANGER_SOFT = 0xFFFDECEC;
 
-    private EditText macField, keyField, nameField, urlField, epgField;
-    private TextView output;
+    private EditText macField, keyField;
+    private TextView banner, deviceStatus, listTitle, headerDevice;
     private LinearLayout listBox;
-    private Button addButton, listButton;
+    private ProgressBar progress;
+    private TextView connectButton, addButton;
+    private boolean busy;
+
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private final Handler ui = new Handler(Looper.getMainLooper());
     private SharedPreferences prefs;
 
-    /** Something that talks to the server with a fresh login token. */
+    /** Something that talks to the server with a fresh login token; returns a success message or null. */
     private interface Job { String run(String token) throws Exception; }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = getSharedPreferences("funplays", MODE_PRIVATE);
+        setupWindow();
 
-        int pad = dp(16);
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(pad, pad, pad, pad);
-        root.setBackgroundColor(Color.WHITE);
+        LinearLayout screen = new LinearLayout(this);
+        screen.setOrientation(LinearLayout.VERTICAL);
+        screen.setBackgroundColor(BG);
 
-        TextView title = new TextView(this);
-        title.setText("Funplays - Playlists");
-        title.setTextSize(22);
-        title.setTypeface(Typeface.DEFAULT_BOLD);
-        title.setTextColor(BLUE);
-        title.setPadding(0, 0, 0, dp(8));
-        root.addView(title);
+        // ---- Header ----
+        final LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.VERTICAL);
+        GradientDrawable hbg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{PRIMARY, PRIMARY_DARK});
+        header.setBackground(hbg);
+        TextView title = text("Funplays Playlists", 24, Color.WHITE, true);
+        header.addView(title);
+        headerDevice = text("Adicione e gerencie as listas da sua TV", 14, 0xD9FFFFFF, false);
+        headerDevice.setPadding(0, dp(4), 0, 0);
+        header.addView(headerDevice);
+        screen.addView(header, matchWrap());
 
-        root.addView(section("Aparelho"));
-        macField = field(root, "MAC (ex: aa:bb:cc:dd:ee:ff)", InputType.TYPE_CLASS_TEXT, "mac");
-        keyField = field(root, "Device Key", InputType.TYPE_CLASS_TEXT, "key");
+        progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progress.setIndeterminate(true);
+        progress.setIndeterminateTintList(ColorStateList.valueOf(PRIMARY));
+        progress.setVisibility(View.INVISIBLE);
+        LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(4));
+        screen.addView(progress, plp);
 
-        listButton = new Button(this);
-        listButton.setText("VER / GERENCIAR PLAYLISTS");
-        listButton.setOnClickListener(v -> refreshList(null));
-        root.addView(listButton);
+        // ---- Scrollable content ----
+        final ScrollView scroll = new ScrollView(this);
+        scroll.setClipToPadding(false);
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(16), dp(12), dp(16), dp(24));
+        scroll.addView(content);
+        screen.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        output = new TextView(this);
-        output.setTextSize(15);
-        output.setTextColor(Color.DKGRAY);
-        output.setPadding(0, dp(8), 0, 0);
-        output.setTextIsSelectable(true);
-        root.addView(output);
+        banner = text("", 14, TEXT, false);
+        banner.setPadding(dp(14), dp(12), dp(14), dp(12));
+        banner.setVisibility(View.GONE);
+        banner.setOnClickListener(v -> banner.setVisibility(View.GONE));
+        LinearLayout.LayoutParams blp = matchWrap();
+        blp.bottomMargin = dp(12);
+        content.addView(banner, blp);
 
+        // Device card
+        LinearLayout device = card(content);
+        device.addView(cardTitle("📺  Aparelho", null));
+        deviceStatus = text("Use os dados que aparecem na tela do app na TV.", 13, TEXT_2, false);
+        deviceStatus.setPadding(0, dp(2), 0, dp(4));
+        device.addView(deviceStatus);
+        macField = input(device, "MAC", "aa:bb:cc:dd:ee:ff",
+                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+        macField.setText(prefs.getString("mac", ""));
+        keyField = input(device, "Device Key", "ex: 123456",
+                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+        keyField.setText(prefs.getString("key", ""));
+        connectButton = primaryButton("Conectar");
+        connectButton.setOnClickListener(v -> { hideKeyboard(); run("Conectando...", t -> null); });
+        LinearLayout.LayoutParams clp = matchWrap();
+        clp.topMargin = dp(16);
+        device.addView(connectButton, clp);
+
+        // Playlists card
+        LinearLayout lists = card(content);
+        addButton = tonalButton("＋  Nova");
+        addButton.setOnClickListener(v -> playlistDialog(null));
+        listTitle = cardTitleText("🎬  Playlists");
+        lists.addView(cardTitle(null, addButton));
+        ((LinearLayout) lists.getChildAt(0)).addView(listTitle, 0,
+                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         listBox = new LinearLayout(this);
         listBox.setOrientation(LinearLayout.VERTICAL);
-        root.addView(listBox);
+        lists.addView(listBox, matchWrap());
+        showEmpty("Conecte um aparelho para ver as playlists.");
 
-        root.addView(section("Adicionar nova playlist"));
-        nameField = field(root, "Nome da playlist", InputType.TYPE_CLASS_TEXT, "name");
-        if (nameField.getText().length() == 0) nameField.setText("Playlist");
-        urlField = field(root, "Link M3U", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI
-                | InputType.TYPE_TEXT_FLAG_MULTI_LINE, null);
-        urlField.setMinLines(2);
+        TextView foot = text("As alterações aparecem na TV depois de reabrir o app.", 12, TEXT_2, false);
+        foot.setGravity(Gravity.CENTER);
+        foot.setPadding(0, dp(4), 0, 0);
+        content.addView(foot, matchWrap());
 
-        Button paste = new Button(this);
-        paste.setText("Colar link M3U");
-        paste.setOnClickListener(v -> {
-            String t = clipboard();
-            if (t != null) urlField.setText(t);
+        // Edge-to-edge: header under the status bar, content above navigation bar and keyboard.
+        screen.setOnApplyWindowInsetsListener((v, insets) -> {
+            int top, bottom;
+            if (Build.VERSION.SDK_INT >= 30) {
+                android.graphics.Insets bars = insets.getInsets(WindowInsets.Type.systemBars());
+                android.graphics.Insets ime = insets.getInsets(WindowInsets.Type.ime());
+                top = bars.top;
+                bottom = Math.max(bars.bottom, ime.bottom);
+                v.setPadding(bars.left, 0, bars.right, 0);
+            } else {
+                // Before Android 11 the window is not edge-to-edge; adjustResize handles the keyboard.
+                top = 0;
+                bottom = 0;
+            }
+            header.setPadding(dp(20), top + dp(20), dp(20), dp(24));
+            scroll.setPadding(0, 0, 0, bottom);
+            return insets;
         });
-        root.addView(paste);
 
-        epgField = field(root, "Link EPG (opcional)", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI, null);
+        setContentView(screen);
 
-        addButton = new Button(this);
-        addButton.setText("ADICIONAR PLAYLIST");
-        addButton.setTextColor(Color.WHITE);
-        addButton.setBackgroundColor(BLUE);
-        addButton.setOnClickListener(v -> addPlaylist());
-        LinearLayout.LayoutParams lp = matchWidth();
-        lp.topMargin = dp(12);
-        root.addView(addButton, lp);
-
-        ScrollView scroll = new ScrollView(this);
-        scroll.setFillViewport(true);
-        scroll.addView(root);
-        setContentView(scroll);
+        // Saved device: load its playlists straight away.
+        if (!macField.getText().toString().trim().isEmpty() && !keyField.getText().toString().trim().isEmpty()) {
+            run("Carregando playlists...", t -> null);
+        }
     }
 
-    // ---- actions ----
+    // ---------------------------------------------------------------- actions
 
-    private void addPlaylist() {
-        final String name = nameField.getText().toString().trim().isEmpty()
-                ? "Playlist" : nameField.getText().toString().trim();
-        final String url = urlField.getText().toString().trim();
-        final String epg = epgField.getText().toString().trim();
-        if (url.isEmpty()) { show("Cole o link M3U."); return; }
-        if (!validUrl(url)) { show("O link M3U precisa começar com http:// ou https://"); return; }
-        prefs.edit().putString("name", name).apply();
-        final String mac = currentMac();
-        withLogin("Enviando...", token -> {
-            JSONObject pl = FunplaysApi.addPlaylist(token, mac, url, name, epg);
-            return "✅ Playlist \"" + pl.optString("name", name) + "\" adicionada! Reinicie o app na TV.";
-        }, true);
-    }
-
-    private void refreshList(String message) {
-        withLogin("Consultando...", token -> message, false);
-    }
-
-    private void editDialog(final JSONObject pl) {
+    /** Add (pl == null) or edit a playlist in a dialog. */
+    private void playlistDialog(final JSONObject pl) {
+        if (!hasDevice()) { showBanner("Preencha o MAC e a Device Key primeiro.", false); return; }
+        final boolean editing = pl != null;
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(dp(20), dp(8), dp(20), 0);
-        final EditText n = field(box, "Nome", InputType.TYPE_CLASS_TEXT, null);
-        n.setText(pl.optString("name"));
-        final EditText u = field(box, "Link M3U", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI
-                | InputType.TYPE_TEXT_FLAG_MULTI_LINE, null);
-        u.setText(pl.optString("url"));
-        final EditText e = field(box, "Link EPG (opcional)", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI, null);
-        String epg = pl.optString("epg_url");
-        e.setText("null".equals(epg) ? "" : epg);
-        Button paste = new Button(this);
-        paste.setText("Colar link M3U");
-        paste.setOnClickListener(v -> {
-            String t = clipboard();
-            if (t != null) u.setText(t);
-        });
-        box.addView(paste);
+        box.setPadding(dp(20), dp(4), dp(20), dp(8));
+
+        final EditText name = input(box, "Nome", "ex: Minha lista", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        final EditText url = input(box, "Link M3U", "http://...", InputType.TYPE_CLASS_TEXT
+                | InputType.TYPE_TEXT_VARIATION_URI | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        url.setMinLines(2);
+        url.setMaxLines(4);
+        TextView paste = textButton("📋  Colar link", PRIMARY);
+        paste.setOnClickListener(v -> { String t = clipboard(); if (t != null) url.setText(t); });
+        box.addView(paste, wrapRight());
+        final EditText epg = input(box, "Link EPG (opcional)", "http://...", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
+
+        if (editing) {
+            name.setText(pl.optString("name"));
+            url.setText(pl.optString("url"));
+            String e = pl.optString("epg_url");
+            epg.setText("null".equals(e) ? "" : e);
+        } else {
+            name.setText(prefs.getString("name", "Playlist"));
+            String clip = clipboard();
+            if (clip != null && validUrl(clip)) url.setText(clip);
+        }
+
         ScrollView sv = new ScrollView(this);
         sv.addView(box);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Editar playlist")
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(editing ? "Editar playlist" : "Nova playlist")
                 .setView(sv)
                 .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Salvar", (d, w) -> {
-                    final String name = n.getText().toString().trim();
-                    final String url = u.getText().toString().trim();
-                    final String epgUrl = e.getText().toString().trim();
-                    if (name.isEmpty() || !validUrl(url)) {
-                        show("Nome vazio ou link inválido. Nada foi alterado.");
-                        return;
-                    }
+                .setPositiveButton(editing ? "Salvar" : "Adicionar", null)
+                .create();
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(PRIMARY);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(TEXT_2);
+            // Validate before closing, so typed data is not lost.
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                final String n = name.getText().toString().trim().isEmpty() ? "Playlist" : name.getText().toString().trim();
+                final String u = url.getText().toString().trim();
+                final String e = epg.getText().toString().trim();
+                if (!validUrl(u)) { url.setError("O link precisa começar com http:// ou https://"); return; }
+                if (!e.isEmpty() && !validUrl(e)) { epg.setError("Link EPG inválido"); return; }
+                dialog.dismiss();
+                if (editing) {
                     final long id = pl.optLong("id");
-                    withLogin("Salvando...", token -> {
-                        FunplaysApi.editPlaylist(token, id, name, url, epgUrl);
-                        return "✅ Playlist \"" + name + "\" atualizada.";
-                    }, true);
-                })
-                .show();
+                    run("Salvando...", t -> {
+                        FunplaysApi.editPlaylist(t, id, n, u, e);
+                        return "Playlist \"" + n + "\" atualizada.";
+                    });
+                } else {
+                    prefs.edit().putString("name", n).apply();
+                    final String mac = currentMac();
+                    run("Adicionando...", t -> {
+                        FunplaysApi.addPlaylist(t, mac, u, n, e);
+                        return "Playlist \"" + n + "\" adicionada! Reabra o app na TV.";
+                    });
+                }
+            });
+        });
+        dialog.show();
     }
 
     private void deleteDialog(final JSONObject pl) {
         final String name = pl.optString("name");
-        new AlertDialog.Builder(this)
-                .setTitle("Apagar playlist")
-                .setMessage("Apagar \"" + name + "\" deste aparelho?")
-                .setNegativeButton("Não", null)
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Apagar playlist?")
+                .setMessage("\"" + name + "\" será removida deste aparelho.")
+                .setNegativeButton("Cancelar", null)
                 .setPositiveButton("Apagar", (d, w) -> {
                     final long id = pl.optLong("id");
-                    withLogin("Apagando...", token -> {
-                        FunplaysApi.deletePlaylist(token, id);
-                        return "🗑️ Playlist \"" + name + "\" apagada.";
-                    }, true);
+                    run("Apagando...", t -> {
+                        FunplaysApi.deletePlaylist(t, id);
+                        return "Playlist \"" + name + "\" apagada.";
+                    });
                 })
-                .show();
+                .create();
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(DANGER);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(TEXT_2);
+        });
+        dialog.show();
     }
 
-    /**
-     * Logs in, runs the job, then reloads the playlist list.
-     * @param clearUrl clear the "new playlist" link field after success (only relevant after adding)
-     */
-    private void withLogin(String busyText, Job job, boolean clearUrl) {
+    /** Validates the MAC, logs in, runs the job and reloads the playlist list. */
+    private void run(String busyText, Job job) {
+        if (busy) return;
+        if (!hasDevice()) { showBanner("Preencha o MAC e a Device Key.", false); return; }
         final String mac = currentMac();
         final String key = keyField.getText().toString().trim();
-        if (mac.isEmpty() || key.isEmpty()) { show("Preencha o MAC e a Device Key."); return; }
         prefs.edit().putString("mac", mac).putString("key", key).apply();
         macField.setText(mac);
-        setBusy(true);
-        show(busyText);
+        setBusy(true, busyText);
 
         worker.execute(() -> {
-            String msg;
+            String message = null, error = null, model = null;
             JSONArray list = null;
-            boolean ok = false;
             try {
                 JSONObject info = FunplaysApi.validateMac(mac);
+                model = info.optString("model", "aparelho");
                 String token = FunplaysApi.login(mac, key);
-                String result = job.run(token);
+                message = job.run(token);
                 list = FunplaysApi.listPlaylists(token);
-                msg = "Aparelho: " + info.optString("model") + " (id " + info.optInt("id") + ")"
-                        + (result != null ? "\n" + result : "");
-                ok = true;
             } catch (Exception e) {
-                msg = "❌ Erro: " + e.getMessage();
+                error = friendlyError(e.getMessage());
             }
-            final String text = msg;
+            final String msg = message, err = error, mdl = model;
             final JSONArray playlists = list;
-            final boolean success = ok;
             ui.post(() -> {
-                setBusy(false);
-                show(text);
+                if (isFinishing()) return;
+                setBusy(false, null);
+                if (err != null) {
+                    showBanner(err, false);
+                    if (mdl == null) {
+                        deviceStatus.setText("Não conectado");
+                        deviceStatus.setTextColor(DANGER);
+                    }
+                    return;
+                }
+                deviceStatus.setText("✓  Conectado · " + mdl);
+                deviceStatus.setTextColor(SUCCESS);
+                headerDevice.setText(mdl + " · " + mac);
+                if (msg != null) showBanner(msg, true); else banner.setVisibility(View.GONE);
                 if (playlists != null) renderList(playlists);
-                if (success && clearUrl && text.contains("adicionada")) urlField.setText("");
             });
         });
     }
 
-    // ---- list ----
+    // ---------------------------------------------------------------- list
 
     private void renderList(JSONArray list) {
         listBox.removeAllViews();
-        TextView head = new TextView(this);
-        head.setText("Playlists no aparelho (" + list.length() + ")");
-        head.setTypeface(Typeface.DEFAULT_BOLD);
-        head.setTextColor(Color.BLACK);
-        head.setPadding(0, dp(8), 0, dp(4));
-        listBox.addView(head);
-        if (list.length() == 0) {
-            TextView none = new TextView(this);
-            none.setText("Nenhuma playlist.");
-            none.setTextColor(Color.GRAY);
-            listBox.addView(none);
-            return;
-        }
+        listTitle.setText("🎬  Playlists (" + list.length() + ")");
+        if (list.length() == 0) { showEmpty("Nenhuma playlist ainda. Toque em ＋ Nova."); return; }
         for (int i = 0; i < list.length(); i++) {
-            final JSONObject pl = list.optJSONObject(i);
-            if (pl == null) continue;
-            listBox.addView(row(pl));
+            JSONObject pl = list.optJSONObject(i);
+            if (pl != null) listBox.addView(row(pl, i > 0));
         }
     }
 
-    private LinearLayout row(final JSONObject pl) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(12), dp(10), dp(12), dp(6));
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(Color.parseColor("#F1F4FF"));
-        bg.setCornerRadius(dp(8));
-        card.setBackground(bg);
-        LinearLayout.LayoutParams clp = matchWidth();
-        clp.bottomMargin = dp(8);
-        card.setLayoutParams(clp);
+    private void showEmpty(String msg) {
+        listBox.removeAllViews();
+        TextView empty = text(msg, 14, TEXT_2, false);
+        empty.setGravity(Gravity.CENTER);
+        empty.setPadding(dp(8), dp(24), dp(8), dp(24));
+        listBox.addView(empty, matchWrap());
+    }
 
-        TextView name = new TextView(this);
-        name.setText(pl.optString("name"));
-        name.setTextSize(17);
-        name.setTypeface(Typeface.DEFAULT_BOLD);
-        name.setTextColor(Color.BLACK);
-        card.addView(name);
+    private View row(final JSONObject pl, boolean divider) {
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.setOrientation(LinearLayout.VERTICAL);
+        if (divider) {
+            View line = new View(this);
+            line.setBackgroundColor(0xFFEDF0F6);
+            wrap.addView(line, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
+        }
 
-        TextView url = new TextView(this);
-        url.setText(pl.optString("url"));
-        url.setTextSize(12);
-        url.setTextColor(Color.GRAY);
-        url.setSingleLine(true);
-        url.setEllipsize(TextUtils.TruncateAt.MIDDLE);
-        card.addView(url);
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(0, dp(12), 0, dp(12));
 
-        boolean locked = pl.optBoolean("is_protected", false);
-        LinearLayout buttons = new LinearLayout(this);
-        buttons.setOrientation(LinearLayout.HORIZONTAL);
-        buttons.setGravity(Gravity.END);
-        if (locked) {
-            TextView t = new TextView(this);
-            t.setText("🔒 Protegida por PIN: gerencie pelo site");
-            t.setTextColor(Color.GRAY);
-            buttons.addView(t);
+        String name = pl.optString("name", "Playlist");
+        TextView avatar = text(name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase(), 18, PRIMARY, true);
+        avatar.setGravity(Gravity.CENTER);
+        avatar.setBackground(rounded(PRIMARY_SOFT, dp(22), 0));
+        row.addView(avatar, new LinearLayout.LayoutParams(dp(44), dp(44)));
+
+        LinearLayout info = new LinearLayout(this);
+        info.setOrientation(LinearLayout.VERTICAL);
+        info.setPadding(dp(12), 0, dp(8), 0);
+        TextView n = text(name, 16, TEXT, true);
+        n.setSingleLine(true);
+        n.setEllipsize(TextUtils.TruncateAt.END);
+        info.addView(n);
+        TextView u = text(shortHost(pl.optString("url")), 13, TEXT_2, false);
+        u.setSingleLine(true);
+        u.setEllipsize(TextUtils.TruncateAt.END);
+        info.addView(u);
+        row.addView(info, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        if (pl.optBoolean("is_protected", false)) {
+            row.addView(text("🔒 PIN", 13, TEXT_2, false));
         } else {
-            Button edit = new Button(this);
-            edit.setText("Editar");
-            edit.setOnClickListener(v -> editDialog(pl));
-            buttons.addView(edit);
-            Button del = new Button(this);
-            del.setText("Apagar");
-            del.setTextColor(RED);
+            TextView edit = iconButton("✏️", PRIMARY_SOFT);
+            edit.setContentDescription("Editar");
+            edit.setOnClickListener(v -> playlistDialog(pl));
+            row.addView(edit, new LinearLayout.LayoutParams(dp(44), dp(44)));
+            TextView del = iconButton("🗑️", DANGER_SOFT);
+            del.setContentDescription("Apagar");
             del.setOnClickListener(v -> deleteDialog(pl));
-            buttons.addView(del);
+            LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(dp(44), dp(44));
+            dlp.leftMargin = dp(8);
+            row.addView(del, dlp);
         }
-        card.addView(buttons);
-        return card;
+        wrap.addView(row, matchWrap());
+        return wrap;
     }
 
-    // ---- helpers ----
+    // ---------------------------------------------------------------- UI building blocks
 
-    private TextView section(String text) {
-        TextView t = new TextView(this);
-        t.setText(text);
-        t.setTextSize(16);
-        t.setTypeface(Typeface.DEFAULT_BOLD);
-        t.setTextColor(BLUE);
-        t.setPadding(0, dp(16), 0, 0);
-        return t;
+    private void setupWindow() {
+        Window w = getWindow();
+        if (Build.VERSION.SDK_INT >= 30) {
+            w.setDecorFitsSystemWindows(false);
+            w.setStatusBarColor(Color.TRANSPARENT);
+            w.setNavigationBarColor(Color.TRANSPARENT);
+            WindowInsetsController c = w.getInsetsController();
+            if (c != null) {
+                // Light icons on the blue header, dark icons on the light navigation bar.
+                c.setSystemBarsAppearance(WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+            }
+        } else {
+            w.setStatusBarColor(PRIMARY_DARK);
+            w.setNavigationBarColor(Color.BLACK);
+        }
     }
 
-    private EditText field(LinearLayout parent, String hint, int type, String prefKey) {
-        TextView label = new TextView(this);
-        label.setText(hint);
-        label.setTextColor(Color.GRAY);
-        label.setPadding(0, dp(8), 0, 0);
-        parent.addView(label);
+    private LinearLayout card(LinearLayout parent) {
+        LinearLayout c = new LinearLayout(this);
+        c.setOrientation(LinearLayout.VERTICAL);
+        c.setPadding(dp(18), dp(16), dp(18), dp(18));
+        c.setBackground(rounded(SURFACE, dp(16), 0));
+        c.setElevation(dp(2));
+        LinearLayout.LayoutParams lp = matchWrap();
+        lp.bottomMargin = dp(14);
+        parent.addView(c, lp);
+        return c;
+    }
+
+    private TextView cardTitleText(String title) {
+        return text(title, 18, TEXT, true);
+    }
+
+    private LinearLayout cardTitle(String title, View action) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        if (title != null) row.addView(cardTitleText(title),
+                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        if (action != null) row.addView(action);
+        return row;
+    }
+
+    private EditText input(LinearLayout parent, String label, String hint, int type) {
+        TextView l = text(label, 13, TEXT_2, true);
+        l.setPadding(dp(2), dp(14), 0, dp(6));
+        parent.addView(l);
         EditText e = new EditText(this);
         e.setInputType(type);
         e.setSingleLine((type & InputType.TYPE_TEXT_FLAG_MULTI_LINE) == 0);
-        e.setTextColor(Color.BLACK);
-        if (prefKey != null) e.setText(prefs.getString(prefKey, ""));
-        parent.addView(e);
+        e.setHint(hint);
+        e.setHintTextColor(0xFFA3AABB);
+        e.setTextColor(TEXT);
+        e.setTextSize(16);
+        e.setMinHeight(dp(52));
+        e.setPadding(dp(14), dp(12), dp(14), dp(12));
+        StateListDrawable bg = new StateListDrawable();
+        bg.addState(new int[]{android.R.attr.state_focused}, rounded(SURFACE, dp(12), PRIMARY, dp(2)));
+        bg.addState(new int[]{}, rounded(0xFFF8F9FC, dp(12), BORDER, dp(1)));
+        e.setBackground(bg);
+        parent.addView(e, matchWrap());
         return e;
+    }
+
+    private TextView primaryButton(String label) {
+        TextView b = text(label, 16, Color.WHITE, true);
+        b.setGravity(Gravity.CENTER);
+        b.setMinHeight(dp(52));
+        b.setBackground(ripple(rounded(PRIMARY, dp(14), 0), 0x33FFFFFF));
+        b.setClickable(true);
+        b.setFocusable(true);
+        return b;
+    }
+
+    private TextView tonalButton(String label) {
+        TextView b = text(label, 15, PRIMARY, true);
+        b.setGravity(Gravity.CENTER);
+        b.setPadding(dp(16), dp(10), dp(16), dp(10));
+        b.setMinHeight(dp(40));
+        b.setBackground(ripple(rounded(PRIMARY_SOFT, dp(20), 0), 0x332F54EB));
+        b.setClickable(true);
+        b.setFocusable(true);
+        return b;
+    }
+
+    private TextView textButton(String label, int color) {
+        TextView b = text(label, 14, color, true);
+        b.setPadding(dp(12), dp(10), dp(12), dp(10));
+        b.setBackground(ripple(rounded(Color.TRANSPARENT, dp(10), 0), 0x22000000));
+        b.setClickable(true);
+        b.setFocusable(true);
+        return b;
+    }
+
+    private TextView iconButton(String icon, int bg) {
+        TextView b = text(icon, 17, TEXT, false);
+        b.setGravity(Gravity.CENTER);
+        b.setBackground(ripple(rounded(bg, dp(22), 0), 0x22000000));
+        b.setClickable(true);
+        b.setFocusable(true);
+        return b;
+    }
+
+    private TextView text(String s, int sp, int color, boolean bold) {
+        TextView t = new TextView(this);
+        t.setText(s);
+        t.setTextSize(sp);
+        t.setTextColor(color);
+        if (bold) t.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        return t;
+    }
+
+    private void showBanner(String msg, boolean ok) {
+        banner.setText((ok ? "✅  " : "⚠️  ") + msg);
+        banner.setTextColor(ok ? SUCCESS : DANGER);
+        banner.setBackground(rounded(ok ? SUCCESS_SOFT : DANGER_SOFT, dp(12), 0));
+        banner.setVisibility(View.VISIBLE);
+    }
+
+    private void setBusy(boolean b, String label) {
+        busy = b;
+        progress.setVisibility(b ? View.VISIBLE : View.INVISIBLE);
+        connectButton.setText(b ? label : "Conectar");
+        connectButton.setAlpha(b ? 0.7f : 1f);
+        connectButton.setEnabled(!b);
+        addButton.setEnabled(!b);
+        addButton.setAlpha(b ? 0.5f : 1f);
+        listBox.setAlpha(b ? 0.5f : 1f);
+    }
+
+    private GradientDrawable rounded(int color, int radius, int stroke) {
+        return rounded(color, radius, stroke, stroke == 0 ? 0 : dp(1));
+    }
+
+    private GradientDrawable rounded(int color, int radius, int stroke, int strokeWidth) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(color);
+        d.setCornerRadius(radius);
+        if (strokeWidth > 0) d.setStroke(strokeWidth, stroke);
+        return d;
+    }
+
+    private Drawable ripple(GradientDrawable content, int rippleColor) {
+        return new RippleDrawable(ColorStateList.valueOf(rippleColor), content, null);
+    }
+
+    // ---------------------------------------------------------------- helpers
+
+    private boolean hasDevice() {
+        return !macField.getText().toString().trim().isEmpty() && !keyField.getText().toString().trim().isEmpty();
     }
 
     private String currentMac() { return FunplaysApi.normalizeMac(macField.getText().toString()); }
 
     private static boolean validUrl(String u) { return u.startsWith("http://") || u.startsWith("https://"); }
+
+    private static String shortHost(String url) {
+        try {
+            String host = new java.net.URL(url).getHost();
+            return host == null || host.isEmpty() ? url : host;
+        } catch (Exception e) {
+            return url;
+        }
+    }
+
+    private static String friendlyError(String raw) {
+        if (raw == null) return "Erro desconhecido.";
+        String r = raw.toLowerCase();
+        if (r.contains("unable to resolve host") || r.contains("failed to connect") || r.contains("timeout"))
+            return "Sem conexão com a internet ou servidor fora do ar.";
+        return raw;
+    }
 
     private String clipboard() {
         ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
@@ -349,18 +568,25 @@ public class MainActivity extends Activity {
         return t == null ? null : t.toString().trim();
     }
 
-    private LinearLayout.LayoutParams matchWidth() {
-        return new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
+    private void hideKeyboard() {
+        View f = getCurrentFocus();
+        if (f == null) return;
+        android.view.inputmethod.InputMethodManager imm =
+                (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        if (imm != null) imm.hideSoftInputFromWindow(f.getWindowToken(), 0);
+        f.clearFocus();
     }
 
-    private void setBusy(boolean busy) {
-        addButton.setEnabled(!busy);
-        listButton.setEnabled(!busy);
-        for (int i = 0; i < listBox.getChildCount(); i++) listBox.getChildAt(i).setEnabled(!busy);
+    private LinearLayout.LayoutParams matchWrap() {
+        return new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
-    private void show(String s) { output.setText(s); }
+    private LinearLayout.LayoutParams wrapRight() {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.gravity = Gravity.END;
+        return lp;
+    }
 
     private int dp(int v) { return (int) (v * getResources().getDisplayMetrics().density + 0.5f); }
 
