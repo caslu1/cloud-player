@@ -25,6 +25,10 @@ final class FunplaysApi {
 
     private FunplaysApi() {}
 
+    /** Test hook: replaces the network (method, path, body) -> raw JSON response. */
+    interface Transport { String send(String method, String path, String body) throws Exception; }
+    static volatile Transport testTransport;
+
     static String normalizeMac(String raw) {
         String mac = raw.trim().toLowerCase(Locale.ROOT).replace('-', ':').replace(" ", "");
         if (!mac.contains(":") && mac.length() == 12) {
@@ -86,6 +90,10 @@ final class FunplaysApi {
     /** Returns the "message" field of the response, or throws with the server's error message. */
     private static Object call(String method, String path, String token, String json,
                                Map<String, String> form) throws Exception {
+        if (testTransport != null) {
+            String fake = testTransport.send(method, path, json != null ? json : String.valueOf(form));
+            return parse(fake, 200);
+        }
         HttpURLConnection c = (HttpURLConnection) new URL(API + path).openConnection();
         c.setRequestMethod(method);
         c.setConnectTimeout(20000);
@@ -119,7 +127,10 @@ final class FunplaysApi {
         InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
         String body = in == null ? "" : readAll(in);
         c.disconnect();
+        return parse(body, code);
+    }
 
+    private static Object parse(String body, int code) throws Exception {
         JSONObject r;
         try {
             r = new JSONObject(body);
