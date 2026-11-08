@@ -73,7 +73,12 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = getSharedPreferences("funplays", MODE_PRIVATE);
-        setupWindow();
+        installCrashReporter();
+        try {
+            setupWindow();
+        } catch (Throwable t) {
+            // Cosmetic only (status bar colours); never let it stop the app from opening.
+        }
 
         LinearLayout screen = new LinearLayout(this);
         screen.setOrientation(LinearLayout.VERTICAL);
@@ -172,6 +177,7 @@ public class MainActivity extends Activity {
         });
 
         setContentView(screen);
+        showLastCrash();
 
         // Saved device: load its playlists straight away.
         if (!macField.getText().toString().trim().isEmpty() && !keyField.getText().toString().trim().isEmpty()) {
@@ -531,6 +537,44 @@ public class MainActivity extends Activity {
 
     private Drawable ripple(GradientDrawable content, int rippleColor) {
         return new RippleDrawable(ColorStateList.valueOf(rippleColor), content, null);
+    }
+
+    // ---------------------------------------------------------------- crash report
+
+    /** Saves the error of a crash, so the next start can show it instead of silently closing. */
+    private void installCrashReporter() {
+        final Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((thread, error) -> {
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                error.printStackTrace(new java.io.PrintWriter(sw));
+                String report = "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + "), "
+                        + Build.MANUFACTURER + " " + Build.MODEL + ", app " + BuildInfo.VERSION + "\n\n" + sw;
+                prefs.edit().putString("crash", report).commit();
+            } catch (Throwable ignored) {
+            }
+            if (previous != null) previous.uncaughtException(thread, error);
+        });
+    }
+
+    private void showLastCrash() {
+        final String report = prefs.getString("crash", null);
+        if (report == null) return;
+        prefs.edit().remove("crash").apply();
+        TextView t = text(report, 11, TEXT, false);
+        t.setTextIsSelectable(true);
+        t.setPadding(dp(20), dp(8), dp(20), dp(8));
+        ScrollView sv = new ScrollView(this);
+        sv.addView(t);
+        new AlertDialog.Builder(this)
+                .setTitle("O app fechou com um erro")
+                .setView(sv)
+                .setPositiveButton("Copiar erro", (d, w) -> {
+                    ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("erro", report));
+                })
+                .setNegativeButton("Fechar", null)
+                .show();
     }
 
     // ---------------------------------------------------------------- helpers

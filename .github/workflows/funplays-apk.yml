@@ -25,7 +25,7 @@ jobs:
       - name: Build APK
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon :funplays:assembleDebug
+          ./gradlew --no-daemon :funplays:testDebugUnitTest :funplays:assembleDebug
           cp funplays/build/outputs/apk/debug/*.apk Funplays-Add.apk
       - uses: actions/upload-artifact@v4
         with:
