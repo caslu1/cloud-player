@@ -45,6 +45,8 @@ dependencies {
 
 // Show the full error of a failing test in the CI log.
 tasks.withType<Test>().configureEach {
+    // Robolectric cannot read Java 25 class files yet; run the simulated Android on Java 21.
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(21)) })
     testLogging {
         events("passed", "failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
