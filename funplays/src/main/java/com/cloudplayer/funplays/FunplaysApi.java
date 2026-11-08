@@ -63,6 +63,17 @@ final class FunplaysApi {
         return m instanceof JSONObject ? (JSONObject) m : new JSONObject().put("name", name);
     }
 
+    static void editPlaylist(String token, long id, String name, String url, String epg) throws Exception {
+        JSONObject body = new JSONObject().put("id", id).put("name", name).put("url", url)
+                .put("epg_url", epg == null ? "" : epg);
+        call("PUT", "playlist", token, body.toString(), null);
+    }
+
+    static void deletePlaylist(String token, long id) throws Exception {
+        // Endpoint name is misspelled on the server ("palylist"), exactly as the website uses it.
+        call("DELETE", "palylist_from_web", token, new JSONObject().put("id", id).toString(), null);
+    }
+
     static JSONArray listPlaylists(String token) throws Exception {
         Object m = call("GET", "device", token, null, null);
         if (m instanceof JSONObject) {
