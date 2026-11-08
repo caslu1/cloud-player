@@ -1,0 +1,46 @@
+name: Funplays Add APK
+
+# Builds the small "Funplays Add" app (module :funplays) and publishes it as a pre-release.
+# Download: https://github.com/<owner>/<repo>/releases/download/funplays-app/Funplays-Add.apk
+on:
+  push:
+    paths:
+      - 'funplays/**'
+      - '.github/workflows/funplays-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build APK
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :funplays:assembleDebug
+          cp funplays/build/outputs/apk/debug/*.apk Funplays-Add.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: funplays-add
+          path: Funplays-Add.apk
+      - name: Publish pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: funplays-app
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" Funplays-Add.apk --clobber
+          else
+            gh release create "$TAG" Funplays-Add.apk --prerelease --latest=false \
+              --title "Funplays Add" \
+              --notes "App para adicionar playlist M3U no funplays.app (MAC + Device Key)." \
+              --target "${{ github.sha }}"
+          fi
