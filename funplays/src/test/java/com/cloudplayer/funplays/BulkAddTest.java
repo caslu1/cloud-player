@@ -15,7 +15,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
@@ -34,10 +34,10 @@ public class BulkAddTest {
 
     @Test
     public void addsManyWithoutKeyAndDedups() {
-        List<String[]> macs = Arrays.asList(
-                new String[]{"aa:bb:cc:dd:ee:01", "Sala"},
-                new String[]{"aa:bb:cc:dd:ee:02", ""},
-                new String[]{"aa:bb:cc:dd:ee:01", "Dup"}); // duplicate MAC skipped
+        List<String[]> macs = new ArrayList<>();
+        macs.add(new String[]{"aa:bb:cc:dd:ee:01", "Sala"});
+        macs.add(new String[]{"aa:bb:cc:dd:ee:02", ""});
+        macs.add(new String[]{"aa:bb:cc:dd:ee:01", "Dup"}); // duplicate MAC skipped
         int added = devices.addMany(macs);
         assertEquals(2, added);
         assertEquals(2, devices.count());
@@ -49,7 +49,9 @@ public class BulkAddTest {
 
     @Test
     public void keyCanBeAddedLater() {
-        devices.addMany(Arrays.asList(new String[]{"aa:bb:cc:dd:ee:09", "Quarto"}));
+        List<String[]> one = new ArrayList<>();
+        one.add(new String[]{"aa:bb:cc:dd:ee:09", "Quarto"});
+        devices.addMany(one);
         String id = Devices.id(devices.first());
         assertFalse(Devices.hasKey(devices.get(id)));
         devices.save(id, "Quarto", "aa:bb:cc:dd:ee:09", "123456");
