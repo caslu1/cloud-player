@@ -55,6 +55,8 @@ public class MainActivity extends Activity {
     private static final int DANGER_SOFT = 0xFFFDECEC;
 
     private TextView banner, headerSubtitle, deviceStatus, listTitle, drawerSubtitle;
+    private TextView tabValid, tabPending;
+    private EditText searchField;
     private LinearLayout deviceChips, listBox, drawer;
     private View scrim;
     private ProgressBar progress;
@@ -62,6 +64,8 @@ public class MainActivity extends Activity {
     private boolean busy;
     private int drawerWidthPx;
     private boolean drawerOpen;
+    private int currentTab;       // 0 = válidos, 1 = pendentes
+    private String searchQuery = "";
 
     private Devices devices;
     private SharedPreferences prefs;
@@ -138,23 +142,65 @@ public class MainActivity extends Activity {
         blp.bottomMargin = dp(12);
         content.addView(banner, blp);
 
-        // Selected-device status strip
-        LinearLayout statusCard = new LinearLayout(this);
-        statusCard.setOrientation(LinearLayout.HORIZONTAL);
-        statusCard.setGravity(Gravity.CENTER_VERTICAL);
-        statusCard.setPadding(dp(14), dp(12), dp(14), dp(12));
-        statusCard.setBackground(rounded(SURFACE, dp(14), 0));
-        statusCard.setElevation(dp(1));
-        TextView changeDevice = tonalButton("Trocar");
-        changeDevice.setOnClickListener(v -> openDrawer());
-        deviceStatus = text("Nenhum aparelho selecionado", 14, TEXT, true);
-        deviceStatus.setSingleLine(true);
-        deviceStatus.setEllipsize(TextUtils.TruncateAt.END);
-        statusCard.addView(deviceStatus, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        statusCard.addView(changeDevice);
-        LinearLayout.LayoutParams scLp = matchWrap();
-        scLp.bottomMargin = dp(14);
-        content.addView(statusCard, scLp);
+        // ---- Devices card (MACs on the main screen) ----
+        LinearLayout deviceCard = card(content);
+        TextView addDevice = tonalButton("＋  Novo");
+        addDevice.setOnClickListener(v -> deviceDialog(null));
+        LinearLayout dHead = new LinearLayout(this);
+        dHead.setOrientation(LinearLayout.HORIZONTAL);
+        dHead.setGravity(Gravity.CENTER_VERTICAL);
+        dHead.addView(text("📺  Meus aparelhos", 18, TEXT, true),
+                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        dHead.addView(addDevice);
+        deviceCard.addView(dHead);
+
+        // Search box with magnifier
+        LinearLayout searchRow = new LinearLayout(this);
+        searchRow.setOrientation(LinearLayout.HORIZONTAL);
+        searchRow.setGravity(Gravity.CENTER_VERTICAL);
+        searchRow.setBackground(rounded(0xFFF2F4F9, dp(12), BORDER, dp(1)));
+        searchRow.setPadding(dp(12), dp(2), dp(10), dp(2));
+        searchRow.addView(text("🔍", 16, TEXT_2, false));
+        searchField = new EditText(this);
+        searchField.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        searchField.setSingleLine(true);
+        searchField.setHint("Buscar por apelido ou MAC");
+        searchField.setHintTextColor(0xFFA3AABB);
+        searchField.setTextColor(TEXT);
+        searchField.setTextSize(15);
+        searchField.setBackground(null);
+        searchField.setPadding(dp(8), dp(10), dp(4), dp(10));
+        searchField.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+            public void onTextChanged(CharSequence s, int a, int b, int c) { searchQuery = s.toString().trim(); renderDevices(); }
+            public void afterTextChanged(android.text.Editable s) { }
+        });
+        searchRow.addView(searchField, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        TextView clearSearch = text("✕", 16, TEXT_2, true);
+        clearSearch.setPadding(dp(8), dp(8), dp(4), dp(8));
+        clearSearch.setOnClickListener(v -> searchField.setText(""));
+        searchRow.addView(clearSearch);
+        LinearLayout.LayoutParams srLp = matchWrap();
+        srLp.topMargin = dp(12);
+        deviceCard.addView(searchRow, srLp);
+
+        // Tabs: Válidos / Pendentes
+        LinearLayout tabs = new LinearLayout(this);
+        tabs.setOrientation(LinearLayout.HORIZONTAL);
+        tabs.setBackground(rounded(0xFFEFF1F7, dp(12), 0));
+        tabs.setPadding(dp(4), dp(4), dp(4), dp(4));
+        tabValid = segTab("✓  Válidos", 0);
+        tabPending = segTab("🔑  Pendentes", 1);
+        tabs.addView(tabValid, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        tabs.addView(tabPending, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        LinearLayout.LayoutParams tabsLp = matchWrap();
+        tabsLp.topMargin = dp(10);
+        deviceCard.addView(tabs, tabsLp);
+
+        deviceChips = new LinearLayout(this);
+        deviceChips.setOrientation(LinearLayout.VERTICAL);
+        deviceChips.setPadding(0, dp(12), 0, 0);
+        deviceCard.addView(deviceChips, matchWrap());
 
         // ---- Playlists card ----
         LinearLayout listCard = card(content);
@@ -167,6 +213,9 @@ public class MainActivity extends Activity {
         lHead.addView(listTitle, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         lHead.addView(addPlaylistButton);
         listCard.addView(lHead);
+        deviceStatus = text("Selecione um aparelho acima", 13, TEXT_2, false);
+        deviceStatus.setPadding(dp(2), dp(4), 0, dp(4));
+        listCard.addView(deviceStatus);
         listBox = new LinearLayout(this);
         listBox.setOrientation(LinearLayout.VERTICAL);
         listCard.addView(listBox, matchWrap());
@@ -198,7 +247,7 @@ public class MainActivity extends Activity {
         drawerHeader.setOrientation(LinearLayout.VERTICAL);
         drawerHeader.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 new int[]{PRIMARY, PRIMARY_DARK}));
-        drawerHeader.addView(text("📺  Meus aparelhos", 20, Color.WHITE, true));
+        drawerHeader.addView(text("⚙️  Ações", 20, Color.WHITE, true));
         drawerSubtitle = text("", 13, 0xD9FFFFFF, false);
         drawerSubtitle.setPadding(0, dp(2), 0, 0);
         drawerHeader.addView(drawerSubtitle);
@@ -208,20 +257,9 @@ public class MainActivity extends Activity {
         drawerScroll.setClipToPadding(false);
         LinearLayout drawerBody = new LinearLayout(this);
         drawerBody.setOrientation(LinearLayout.VERTICAL);
-        drawerBody.setPadding(dp(14), dp(14), dp(14), dp(16));
+        drawerBody.setPadding(dp(14), dp(16), dp(14), dp(16));
         drawerScroll.addView(drawerBody);
         drawer.addView(drawerScroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-
-        deviceChips = new LinearLayout(this);
-        deviceChips.setOrientation(LinearLayout.VERTICAL);
-        drawerBody.addView(deviceChips, matchWrap());
-
-        View divider = new View(this);
-        divider.setBackgroundColor(0xFFEDF0F6);
-        LinearLayout.LayoutParams divLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
-        divLp.topMargin = dp(10);
-        divLp.bottomMargin = dp(10);
-        drawerBody.addView(divider, divLp);
 
         drawerBody.addView(drawerAction("＋  Adicionar aparelho", () -> deviceDialog(null)));
         drawerBody.addView(drawerAction("📋  Adicionar vários MACs", this::bulkAddDialog));
@@ -266,9 +304,8 @@ public class MainActivity extends Activity {
             devices.select(Devices.id(sel));
             loadPlaylists(sel);
         } else {
-            showEmpty("Nenhum aparelho ainda.\nAbra o menu e toque em ＋ Adicionar.");
-            deviceStatus.setText("Nenhum aparelho");
-            openDrawer();
+            showEmpty("Nenhum aparelho ainda.\nToque em ＋ Novo para começar.");
+            deviceStatus.setText("Nenhum aparelho selecionado");
         }
     }
 
@@ -312,20 +349,62 @@ public class MainActivity extends Activity {
         deviceChips.removeAllViews();
         JSONArray list = devices.all();
         String selId = devices.selectedId();
-        if (drawerSubtitle != null)
-            drawerSubtitle.setText(list.length() == 0 ? "Nenhum aparelho" : list.length() + " aparelho(s) salvos");
-        if (list.length() == 0) {
-            TextView empty = text("Nenhum aparelho salvo.\nToque em ＋ Adicionar abaixo.", 14, TEXT_2, false);
-            empty.setPadding(dp(2), dp(8), 0, dp(8));
-            deviceChips.addView(empty);
-            return;
+
+        int valid = 0, pending = 0;
+        for (int i = 0; i < list.length(); i++) {
+            JSONObject d = list.optJSONObject(i);
+            if (d == null) continue;
+            if (Devices.hasKey(d)) valid++; else pending++;
         }
+        if (drawerSubtitle != null)
+            drawerSubtitle.setText(list.length() + " aparelho(s) salvos");
+        if (tabValid != null) styleTab(tabValid, "✓  Válidos (" + valid + ")", currentTab == 0);
+        if (tabPending != null) styleTab(tabPending, "🔑  Pendentes (" + pending + ")", currentTab == 1);
+
+        String q = searchQuery == null ? "" : searchQuery.toLowerCase(java.util.Locale.ROOT);
+        int shown = 0;
         for (int i = 0; i < list.length(); i++) {
             final JSONObject d = list.optJSONObject(i);
             if (d == null) continue;
-            boolean active = Devices.id(d).equals(selId) || (selId == null && i == 0);
-            deviceChips.addView(deviceRow(d, active, i > 0));
+            boolean wantValid = currentTab == 0;
+            if (Devices.hasKey(d) != wantValid) continue;
+            if (!q.isEmpty()) {
+                String hay = (Devices.name(d) + " " + Devices.mac(d)).toLowerCase(java.util.Locale.ROOT);
+                if (!hay.contains(q)) continue;
+            }
+            boolean active = Devices.id(d).equals(selId);
+            deviceChips.addView(deviceRow(d, active, shown > 0));
+            shown++;
         }
+        if (shown == 0) {
+            String msg;
+            if (list.length() == 0) msg = "Nenhum aparelho ainda.\nToque em ＋ Novo.";
+            else if (!q.isEmpty()) msg = "Nenhum aparelho encontrado para \"" + searchQuery + "\".";
+            else if (currentTab == 0) msg = "Nenhum aparelho com Device Key ainda.\nVeja a aba Pendentes.";
+            else msg = "Nenhum aparelho pendente. Todos têm a Device Key. 🎉";
+            TextView empty = text(msg, 14, TEXT_2, false);
+            empty.setPadding(dp(2), dp(10), 0, dp(10));
+            deviceChips.addView(empty);
+        }
+    }
+
+    private TextView segTab(String label, final int index) {
+        TextView t = text(label, 14, TEXT_2, true);
+        t.setGravity(Gravity.CENTER);
+        t.setPadding(dp(8), dp(10), dp(8), dp(10));
+        t.setClickable(true);
+        t.setFocusable(true);
+        t.setOnClickListener(v -> {
+            if (currentTab != index) { currentTab = index; renderDevices(); }
+        });
+        return t;
+    }
+
+    private void styleTab(TextView tab, String label, boolean active) {
+        tab.setText(label);
+        tab.setTextColor(active ? PRIMARY : TEXT_2);
+        tab.setBackground(active ? rounded(SURFACE, dp(9), 0) : null);
+        if (active) tab.setElevation(dp(1)); else tab.setElevation(0);
     }
 
     private View deviceRow(final JSONObject d, boolean active, boolean divider) {
@@ -366,14 +445,13 @@ public class MainActivity extends Activity {
         rowL.addView(info, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView edit = iconButton("✏️", active ? SURFACE : PRIMARY_SOFT);
-        edit.setOnClickListener(v -> { closeDrawer(); edit.postDelayed(() -> deviceDialog(d), 180); });
+        edit.setOnClickListener(v -> deviceDialog(d));
         rowL.addView(edit, new LinearLayout.LayoutParams(dp(42), dp(42)));
 
         rowL.setOnClickListener(v -> {
             if (busy) return;
             devices.select(Devices.id(d));
             renderDevices();
-            closeDrawer();
             loadPlaylists(d);
         });
         wrap.addView(rowL, matchWrap());
@@ -422,6 +500,7 @@ public class MainActivity extends Activity {
                 dialog.dismiss();
                 String id = devices.save(editing ? Devices.id(d) : null, n, m, k);
                 devices.select(id);
+                currentTab = k.isEmpty() ? 1 : 0;   // show the tab the device now belongs to
                 renderDevices();
                 loadPlaylists(devices.get(id));
             });
@@ -486,16 +565,12 @@ public class MainActivity extends Activity {
                 dialog.dismiss();
                 int added = devices.addMany(parsed);
                 int dup = parsed.size() - added;
+                if (added > 0) currentTab = 1;   // new MACs have no key yet -> Pendentes
                 renderDevices();
-                if (devices.selected() == null && devices.count() > 0) {
-                    JSONObject first = devices.first();
-                    devices.select(Devices.id(first));
-                    renderDevices();
-                }
-                StringBuilder m = new StringBuilder(added + " aparelho(s) adicionado(s).");
+                StringBuilder m = new StringBuilder(added + " aparelho(s) adicionado(s) em Pendentes.");
                 if (dup > 0) m.append(" ").append(dup).append(" já existiam.");
                 if (invalid > 0) m.append(" ").append(invalid).append(" linha(s) sem MAC válido.");
-                m.append(" Agora toque no lápis de cada um para pôr a Device Key.");
+                m.append(" Toque no lápis de cada um para pôr a Device Key.");
                 showBanner(m.toString(), added > 0);
             });
         });
