@@ -24,4 +24,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Cloud Player"
 include(":app")
-include(":funplays")
