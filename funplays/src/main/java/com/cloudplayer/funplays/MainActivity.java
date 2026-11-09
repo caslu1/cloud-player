@@ -362,15 +362,22 @@ public class MainActivity extends Activity {
         if (tabPending != null) styleTab(tabPending, "🔑  Pendentes (" + pending + ")", currentTab == 1);
 
         String q = searchQuery == null ? "" : searchQuery.toLowerCase(java.util.Locale.ROOT);
+        boolean searching = !q.isEmpty();
+        // Dim the tabs while searching, since the search spans both.
+        if (tabValid != null) tabValid.setAlpha(searching ? 0.5f : 1f);
+        if (tabPending != null) tabPending.setAlpha(searching ? 0.5f : 1f);
+
         int shown = 0;
         for (int i = 0; i < list.length(); i++) {
             final JSONObject d = list.optJSONObject(i);
             if (d == null) continue;
-            boolean wantValid = currentTab == 0;
-            if (Devices.hasKey(d) != wantValid) continue;
-            if (!q.isEmpty()) {
+            if (searching) {
+                // Search spans Válidos + Pendentes.
                 String hay = (Devices.name(d) + " " + Devices.mac(d)).toLowerCase(java.util.Locale.ROOT);
                 if (!hay.contains(q)) continue;
+            } else {
+                // No search: filter by the selected tab.
+                if (Devices.hasKey(d) != (currentTab == 0)) continue;
             }
             boolean active = Devices.id(d).equals(selId);
             deviceChips.addView(deviceRow(d, active, shown > 0));
@@ -379,7 +386,7 @@ public class MainActivity extends Activity {
         if (shown == 0) {
             String msg;
             if (list.length() == 0) msg = "Nenhum aparelho ainda.\nToque em ＋ Novo.";
-            else if (!q.isEmpty()) msg = "Nenhum aparelho encontrado para \"" + searchQuery + "\".";
+            else if (searching) msg = "Nenhum aparelho encontrado para \"" + searchQuery + "\".";
             else if (currentTab == 0) msg = "Nenhum aparelho com Device Key ainda.\nVeja a aba Pendentes.";
             else msg = "Nenhum aparelho pendente. Todos têm a Device Key. 🎉";
             TextView empty = text(msg, 14, TEXT_2, false);
@@ -445,7 +452,13 @@ public class MainActivity extends Activity {
         rowL.addView(info, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView edit = iconButton("✏️", active ? SURFACE : PRIMARY_SOFT);
-        edit.setOnClickListener(v -> deviceDialog(d));
+        edit.setOnClickListener(v -> {
+            // Select the device (loads its playlists below) and open the editor.
+            devices.select(Devices.id(d));
+            renderDevices();
+            loadPlaylists(d);
+            deviceDialog(d);
+        });
         rowL.addView(edit, new LinearLayout.LayoutParams(dp(42), dp(42)));
 
         rowL.setOnClickListener(v -> {
