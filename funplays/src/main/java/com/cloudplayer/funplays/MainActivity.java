@@ -127,6 +127,11 @@ public class MainActivity extends Activity {
         deviceStatus = text("", 13, TEXT_2, false);
         deviceStatus.setPadding(dp(2), dp(6), 0, 0);
         deviceCard.addView(deviceStatus);
+        TextView dnsButton = textButton("🔧  Trocar DNS em massa", PRIMARY);
+        dnsButton.setOnClickListener(v -> dnsDialog());
+        LinearLayout.LayoutParams dnsLp = matchWrap();
+        dnsLp.topMargin = dp(6);
+        deviceCard.addView(dnsButton, dnsLp);
 
         // ---- Playlists card ----
         LinearLayout listCard = card(content);
@@ -303,6 +308,105 @@ public class MainActivity extends Activity {
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(TEXT_2);
         });
         dialog.show();
+    }
+
+    // ---------------------------------------------------------------- bulk DNS change
+
+    private void dnsDialog() {
+        if (devices.count() == 0) { showBanner("Adicione um aparelho primeiro.", false); return; }
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(20), dp(4), dp(20), dp(8));
+        TextView help = text("Troca o servidor (DNS) no começo do link em TODAS as playlists de TODOS os aparelhos. O usuário e a senha são mantidos.",
+                13, TEXT_2, false);
+        help.setPadding(0, 0, 0, dp(4));
+        box.addView(help);
+
+        final EditText oldDns = input(box, "DNS atual (que caiu)", "http://servidor-antigo.com:8080",
+                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        TextView p1 = textButton("📋  Colar", PRIMARY);
+        p1.setOnClickListener(v -> { String t = clipboard(); if (t != null) oldDns.setText(t); });
+        box.addView(p1, wrapRight());
+        final EditText newDns = input(box, "DNS novo", "http://servidor-novo.com:8080",
+                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        TextView p2 = textButton("📋  Colar", PRIMARY);
+        p2.setOnClickListener(v -> { String t = clipboard(); if (t != null) newDns.setText(t); });
+        box.addView(p2, wrapRight());
+
+        ScrollView sv = new ScrollView(this);
+        sv.addView(box);
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Trocar DNS em massa")
+                .setView(sv)
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Salvar", null)
+                .create();
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(PRIMARY);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(TEXT_2);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                String oldD = oldDns.getText().toString().trim();
+                String newD = newDns.getText().toString().trim();
+                if (Dns.hostPort(oldD).isEmpty()) { oldDns.setError("Informe o DNS atual"); return; }
+                if (Dns.hostPort(newD).isEmpty()) { newDns.setError("Informe o DNS novo"); return; }
+                if (Dns.hostPort(oldD).equals(Dns.hostPort(newD))) { newDns.setError("O DNS novo é igual ao atual"); return; }
+                dialog.dismiss();
+                bulkDnsChange(oldD, newD);
+            });
+        });
+        dialog.show();
+    }
+
+    private void bulkDnsChange(final String oldDns, final String newDns) {
+        if (busy) return;
+        setBusy(true, "Trocando DNS...");
+        banner.setVisibility(View.GONE);
+        final JSONArray allDevices = devices.all();
+
+        worker.execute(() -> {
+            int changed = 0, skippedProtected = 0, deviceCount = allDevices.length(), deviceErrors = 0;
+            StringBuilder errors = new StringBuilder();
+            for (int i = 0; i < allDevices.length(); i++) {
+                JSONObject device = allDevices.optJSONObject(i);
+                if (device == null) continue;
+                final String label = Devices.name(device);
+                final int step = i + 1;
+                ui.post(() -> setBusy(true, "Trocando DNS... (" + step + "/" + deviceCount + ") " + label));
+                try {
+                    String token = FunplaysApi.login(Devices.mac(device), Devices.key(device));
+                    JSONArray playlists = FunplaysApi.listPlaylists(token);
+                    for (int j = 0; j < playlists.length(); j++) {
+                        JSONObject pl = playlists.optJSONObject(j);
+                        if (pl == null) continue;
+                        String newUrl = Dns.replace(pl.optString("url"), oldDns, newDns);
+                        if (newUrl == null) continue;
+                        if (pl.optBoolean("is_protected", false)) { skippedProtected++; continue; }
+                        String epg = pl.optString("epg_url");
+                        if ("null".equals(epg)) epg = "";
+                        FunplaysApi.editPlaylist(token, pl.optLong("id"), pl.optString("name"), newUrl, epg);
+                        changed++;
+                    }
+                } catch (Exception e) {
+                    deviceErrors++;
+                    errors.append("\n• ").append(label).append(": ").append(friendlyError(e.getMessage()));
+                }
+            }
+            final int totalChanged = changed, totalSkipped = skippedProtected, totalErrors = deviceErrors;
+            final String errText = errors.toString();
+            ui.post(() -> {
+                if (isFinishing()) return;
+                setBusy(false, null);
+                StringBuilder msg = new StringBuilder();
+                msg.append(totalChanged).append(" playlist(s) atualizada(s) em ").append(deviceCount).append(" aparelho(s).");
+                if (totalSkipped > 0) msg.append(" ").append(totalSkipped).append(" com PIN foram ignoradas.");
+                boolean ok = totalErrors == 0;
+                if (!ok) msg.append(" Falha em ").append(totalErrors).append(" aparelho(s):").append(errText);
+                showBanner(msg.toString(), ok && totalChanged > 0);
+                if (totalChanged == 0 && ok) showBanner("Nenhuma playlist usava esse DNS. Nada foi alterado.", false);
+                JSONObject sel = devices.selected();
+                if (sel != null) loadPlaylists(sel);
+            });
+        });
     }
 
     // ---------------------------------------------------------------- playlists
