@@ -123,11 +123,14 @@ public class MainActivity extends Activity {
         deviceStatus = text("", 13, TEXT_2, false);
         deviceStatus.setPadding(dp(2), dp(6), 0, 0);
         deviceCard.addView(deviceStatus);
+        TextView bulkMacButton = textButton("📋  Adicionar vários MACs", PRIMARY);
+        bulkMacButton.setOnClickListener(v -> bulkAddDialog());
+        LinearLayout.LayoutParams bmLp = matchWrap();
+        bmLp.topMargin = dp(6);
+        deviceCard.addView(bulkMacButton, bmLp);
         TextView dnsButton = textButton("🔧  Trocar DNS em massa", PRIMARY);
         dnsButton.setOnClickListener(v -> dnsDialog());
-        LinearLayout.LayoutParams dnsLp = matchWrap();
-        dnsLp.topMargin = dp(6);
-        deviceCard.addView(dnsButton, dnsLp);
+        deviceCard.addView(dnsButton, matchWrap());
 
         // ---- Playlists card ----
         LinearLayout listCard = card(content);
@@ -231,6 +234,10 @@ public class MainActivity extends Activity {
         mac.setTypeface(Typeface.MONOSPACE);
         mac.setSingleLine(true);
         info.addView(mac);
+        if (!Devices.hasKey(d)) {
+            TextView warn = text("🔑 falta a Device Key", 12, 0xFFB26A00, true);
+            info.addView(warn);
+        }
         rowL.addView(info, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView edit = iconButton("✏️", active ? SURFACE : PRIMARY_SOFT);
@@ -258,7 +265,7 @@ public class MainActivity extends Activity {
         final EditText name = input(box, "Apelido do aparelho", "ex: Sala, Quarto", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         final EditText mac = input(box, "MAC", "aa:bb:cc:dd:ee:ff",
                 InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
-        final EditText key = input(box, "Device Key", "ex: 123456",
+        final EditText key = input(box, "Device Key (pode preencher depois)", "ex: 123456",
                 InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
         if (editing) {
             name.setText(Devices.name(d));
@@ -285,9 +292,9 @@ public class MainActivity extends Activity {
                 String n = name.getText().toString().trim();
                 String m = FunplaysApi.normalizeMac(mac.getText().toString());
                 String k = key.getText().toString().trim();
-                if (m.isEmpty()) { mac.setError("Informe o MAC"); return; }
-                if (k.isEmpty()) { key.setError("Informe a Device Key"); return; }
-                if (n.isEmpty()) n = "Aparelho";
+                if (!isValidMac(m)) { mac.setError("MAC inválido (ex: aa:bb:cc:dd:ee:ff)"); return; }
+                // Device Key is optional: can be filled in later.
+                if (n.isEmpty()) n = Devices.macTail(m);
                 dialog.dismiss();
                 String id = devices.save(editing ? Devices.id(d) : null, n, m, k);
                 devices.select(id);
@@ -297,6 +304,75 @@ public class MainActivity extends Activity {
             if (editing) dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
                 dialog.dismiss();
                 confirmDeleteDevice(d);
+            });
+        });
+        dialog.show();
+    }
+
+    /** Paste many MACs at once; the device key is filled in later per device. */
+    private void bulkAddDialog() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(20), dp(4), dp(20), dp(8));
+        TextView help = text("Cole um MAC por linha. Pode ser só o MAC, ou \"MAC, Apelido\". A Device Key você coloca depois, tocando no lápis de cada aparelho.",
+                13, TEXT_2, false);
+        help.setPadding(0, 0, 0, dp(4));
+        box.addView(help);
+        final EditText macs = input(box, "MACs", "aa:bb:cc:dd:ee:01\naa:bb:cc:dd:ee:02, Sala",
+                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        macs.setMinLines(5);
+        macs.setMaxLines(12);
+        macs.setGravity(Gravity.TOP | Gravity.START);
+        TextView paste = textButton("📋  Colar", PRIMARY);
+        paste.setOnClickListener(v -> {
+            String t = clipboard();
+            if (t != null) {
+                String cur = macs.getText().toString();
+                macs.setText(cur.isEmpty() ? t : cur + "\n" + t);
+            }
+        });
+        box.addView(paste, wrapRight());
+
+        ScrollView sv = new ScrollView(this);
+        sv.addView(box);
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Adicionar vários MACs")
+                .setView(sv)
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Adicionar", null)
+                .create();
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(PRIMARY);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(TEXT_2);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                java.util.List<String[]> parsed = new java.util.ArrayList<>();
+                int invalid = 0;
+                for (String line : macs.getText().toString().split("\n")) {
+                    String t = line.trim();
+                    if (t.isEmpty()) continue;
+                    String name = "";
+                    String macPart = t;
+                    int sep = indexOfAny(t, ",;\t");
+                    if (sep >= 0) { macPart = t.substring(0, sep).trim(); name = t.substring(sep + 1).trim(); }
+                    String mac = FunplaysApi.normalizeMac(macPart);
+                    if (isValidMac(mac)) parsed.add(new String[]{mac, name});
+                    else invalid++;
+                }
+                if (parsed.isEmpty()) { macs.setError("Nenhum MAC válido encontrado"); return; }
+                dialog.dismiss();
+                int added = devices.addMany(parsed);
+                int dup = parsed.size() - added;
+                renderDevices();
+                if (devices.selected() == null && devices.count() > 0) {
+                    JSONObject first = devices.first();
+                    devices.select(Devices.id(first));
+                    renderDevices();
+                }
+                StringBuilder m = new StringBuilder(added + " aparelho(s) adicionado(s).");
+                if (dup > 0) m.append(" ").append(dup).append(" já existiam.");
+                if (invalid > 0) m.append(" ").append(invalid).append(" linha(s) sem MAC válido.");
+                m.append(" Agora toque no lápis de cada um para pôr a Device Key.");
+                showBanner(m.toString(), added > 0);
             });
         });
         dialog.show();
@@ -389,6 +465,11 @@ public class MainActivity extends Activity {
                 final String label = Devices.name(device);
                 final int step = i + 1;
                 ui.post(() -> setBusy(true, "Trocando DNS... (" + step + "/" + deviceCount + ") " + label));
+                if (!Devices.hasKey(device)) {
+                    deviceErrors++;
+                    errors.append("\n• ").append(label).append(": sem Device Key (pulado)");
+                    continue;
+                }
                 try {
                     String token = FunplaysApi.login(Devices.mac(device), Devices.key(device));
                     JSONArray playlists = FunplaysApi.listPlaylists(token);
@@ -431,12 +512,25 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------- playlists
 
     private void loadPlaylists(JSONObject device) {
+        if (device == null) return;
+        if (!Devices.hasKey(device)) {
+            // No key yet: do not hit the server. Prompt to add it.
+            listBox.removeAllViews();
+            listTitle.setText("🎬  Playlists");
+            showEmpty("Este aparelho ainda não tem a Device Key.\nToque no lápis para adicioná-la.");
+            deviceStatus.setText("🔑 " + Devices.name(device) + ": falta a Device Key");
+            deviceStatus.setTextColor(0xFFB26A00);
+            headerSubtitle.setText(devices.count() + " aparelho(s) · " + Devices.name(device));
+            banner.setVisibility(View.GONE);
+            return;
+        }
         run(device, "Carregando...", t -> null, false);
     }
 
     private void playlistDialog(final JSONObject pl) {
         final JSONObject device = devices.selected();
         if (device == null) { showBanner("Adicione um aparelho primeiro.", false); return; }
+        if (!Devices.hasKey(device)) { showBanner("Adicione a Device Key deste aparelho (lápis) antes de mexer nas playlists.", false); return; }
         final boolean editing = pl != null;
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -794,6 +888,15 @@ public class MainActivity extends Activity {
     }
 
     private static boolean validUrl(String u) { return u.startsWith("http://") || u.startsWith("https://"); }
+
+    private static boolean isValidMac(String mac) {
+        return mac != null && mac.matches("^([0-9a-f]{2}:){5}[0-9a-f]{2}$");
+    }
+
+    private static int indexOfAny(String s, String chars) {
+        for (int i = 0; i < s.length(); i++) if (chars.indexOf(s.charAt(i)) >= 0) return i;
+        return -1;
+    }
 
     private static String shortHost(String url) {
         try {

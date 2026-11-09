@@ -96,9 +96,9 @@ final class FunplaysApi {
             return parse(fake, 200);
         }
         Exception last = null;
-        for (int attempt = 0; attempt < 4; attempt++) {
+        for (int attempt = 0; attempt < 5; attempt++) {
             if (attempt > 0) {
-                try { Thread.sleep(1200L * attempt); } catch (InterruptedException ie) { throw ie; }
+                try { Thread.sleep(1500L * attempt); } catch (InterruptedException ie) { throw ie; }
             }
             try {
                 return callOnce(method, path, token, json, form);

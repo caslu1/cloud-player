@@ -23,6 +23,56 @@ final class Devices {
 
     int count() { return all().length(); }
 
+    boolean hasMac(String mac) {
+        if (mac == null) return false;
+        JSONArray list = all();
+        for (int i = 0; i < list.length(); i++) {
+            JSONObject d = list.optJSONObject(i);
+            if (d != null && mac.equalsIgnoreCase(d.optString("mac"))) return true;
+        }
+        return false;
+    }
+
+    /** Adds several devices (key may be empty, to fill in later). Returns how many were added. */
+    int addMany(java.util.List<String[]> macsAndNames) {
+        JSONArray list = all();
+        int added = 0;
+        try {
+            for (String[] pair : macsAndNames) {
+                String mac = pair[0];
+                String name = pair.length > 1 ? pair[1] : "";
+                if (mac == null || mac.isEmpty() || hasMacIn(list, mac)) continue;
+                JSONObject d = new JSONObject()
+                        .put("id", Long.toString(System.currentTimeMillis()) + "-" + added)
+                        .put("name", name == null || name.isEmpty() ? macTail(mac) : name)
+                        .put("mac", mac).put("key", "");
+                list.put(d);
+                added++;
+            }
+            prefs.edit().putString("devices", list.toString()).apply();
+        } catch (Exception ignored) {
+        }
+        return added;
+    }
+
+    private static boolean hasMacIn(JSONArray list, String mac) {
+        for (int i = 0; i < list.length(); i++) {
+            JSONObject d = list.optJSONObject(i);
+            if (d != null && mac.equalsIgnoreCase(d.optString("mac"))) return true;
+        }
+        return false;
+    }
+
+    /** Last two groups of a MAC, e.g. "CC:7D", for a short default name. */
+    static String macTail(String mac) {
+        if (mac == null) return "Aparelho";
+        String[] parts = mac.split(":");
+        if (parts.length >= 2) return (parts[parts.length - 2] + ":" + parts[parts.length - 1]).toUpperCase(java.util.Locale.ROOT);
+        return mac.toUpperCase(java.util.Locale.ROOT);
+    }
+
+    static boolean hasKey(JSONObject d) { return d != null && !d.optString("key", "").trim().isEmpty(); }
+
     JSONObject get(String id) {
         JSONArray list = all();
         for (int i = 0; i < list.length(); i++) {
