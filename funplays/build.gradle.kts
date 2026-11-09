@@ -13,8 +13,8 @@ android {
         applicationId = "com.cloudplayer.funplays"
         minSdk = 21
         targetSdk = 37
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 5
+        versionName = "1.4"
     }
 
     signingConfigs {

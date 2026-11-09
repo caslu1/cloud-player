@@ -26,7 +26,7 @@ import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.widget.EditText;
-import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -38,10 +38,9 @@ import org.json.JSONObject;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** MAC + device key -> add, list, edit and delete playlists on funplays.app. */
+/** Manage several funplays devices (MAC + key) and their M3U playlists. */
 public class MainActivity extends Activity {
 
-    // Palette
     private static final int PRIMARY = 0xFF2F54EB;
     private static final int PRIMARY_DARK = 0xFF1A2FA8;
     private static final int PRIMARY_SOFT = 0xFFE8EDFF;
@@ -55,56 +54,48 @@ public class MainActivity extends Activity {
     private static final int DANGER = 0xFFD32F2F;
     private static final int DANGER_SOFT = 0xFFFDECEC;
 
-    private EditText macField, keyField;
-    private TextView banner, deviceStatus, listTitle, headerDevice;
-    private LinearLayout listBox;
+    private TextView banner, headerSubtitle, deviceStatus, listTitle;
+    private LinearLayout deviceChips, listBox;
     private ProgressBar progress;
-    private TextView connectButton, addButton;
+    private TextView addPlaylistButton;
     private boolean busy;
 
+    private Devices devices;
+    private SharedPreferences prefs;
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private final Handler ui = new Handler(Looper.getMainLooper());
-    private SharedPreferences prefs;
 
-    /** Something that talks to the server with a fresh login token; returns a success message or null. */
     private interface Job { String run(String token) throws Exception; }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = getSharedPreferences("funplays", MODE_PRIVATE);
+        devices = new Devices(prefs);
+        devices.migrateLegacy();
         installCrashReporter();
-        try {
-            setupWindow();
-        } catch (Throwable t) {
-            // Cosmetic only (status bar colours); never let it stop the app from opening.
-        }
+        try { setupWindow(); } catch (Throwable ignored) { }
 
         LinearLayout screen = new LinearLayout(this);
         screen.setOrientation(LinearLayout.VERTICAL);
         screen.setBackgroundColor(BG);
 
-        // ---- Header ----
         final LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.VERTICAL);
-        GradientDrawable hbg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{PRIMARY, PRIMARY_DARK});
-        header.setBackground(hbg);
-        TextView title = text("Funplays Playlists", 24, Color.WHITE, true);
-        header.addView(title);
-        headerDevice = text("Adicione e gerencie as listas da sua TV", 14, 0xD9FFFFFF, false);
-        headerDevice.setPadding(0, dp(4), 0, 0);
-        header.addView(headerDevice);
+        header.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{PRIMARY, PRIMARY_DARK}));
+        header.addView(text("Funplays Playlists", 24, Color.WHITE, true));
+        headerSubtitle = text("Gerencie os aparelhos e as listas da sua TV", 14, 0xD9FFFFFF, false);
+        headerSubtitle.setPadding(0, dp(4), 0, 0);
+        header.addView(headerSubtitle);
         screen.addView(header, matchWrap());
 
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progress.setIndeterminate(true);
         progress.setIndeterminateTintList(ColorStateList.valueOf(PRIMARY));
         progress.setVisibility(View.INVISIBLE);
-        LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(4));
-        screen.addView(progress, plp);
+        screen.addView(progress, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(4)));
 
-        // ---- Scrollable content ----
         final ScrollView scroll = new ScrollView(this);
         scroll.setClipToPadding(false);
         LinearLayout content = new LinearLayout(this);
@@ -121,43 +112,42 @@ public class MainActivity extends Activity {
         blp.bottomMargin = dp(12);
         content.addView(banner, blp);
 
-        // Device card
-        LinearLayout device = card(content);
-        device.addView(cardTitle("📺  Aparelho", null));
-        deviceStatus = text("Use os dados que aparecem na tela do app na TV.", 13, TEXT_2, false);
-        deviceStatus.setPadding(0, dp(2), 0, dp(4));
-        device.addView(deviceStatus);
-        macField = input(device, "MAC", "aa:bb:cc:dd:ee:ff",
-                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
-        macField.setText(prefs.getString("mac", ""));
-        keyField = input(device, "Device Key", "ex: 123456",
-                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
-        keyField.setText(prefs.getString("key", ""));
-        connectButton = primaryButton("Conectar");
-        connectButton.setOnClickListener(v -> { hideKeyboard(); run("Conectando...", t -> null); });
-        LinearLayout.LayoutParams clp = matchWrap();
-        clp.topMargin = dp(16);
-        device.addView(connectButton, clp);
+        // ---- Devices card ----
+        LinearLayout deviceCard = card(content);
+        TextView addDevice = tonalButton("＋  Adicionar");
+        addDevice.setOnClickListener(v -> deviceDialog(null));
+        deviceCard.addView(cardTitleRow("📺  Meus aparelhos", addDevice));
+        HorizontalScrollView chipScroll = new HorizontalScrollView(this);
+        chipScroll.setHorizontalScrollBarEnabled(false);
+        deviceChips = new LinearLayout(this);
+        deviceChips.setOrientation(LinearLayout.HORIZONTAL);
+        deviceChips.setPadding(0, dp(12), 0, dp(4));
+        chipScroll.addView(deviceChips);
+        deviceCard.addView(chipScroll, matchWrap());
+        deviceStatus = text("", 13, TEXT_2, false);
+        deviceStatus.setPadding(dp(2), dp(6), 0, 0);
+        deviceCard.addView(deviceStatus);
 
-        // Playlists card
-        LinearLayout lists = card(content);
-        addButton = tonalButton("＋  Nova");
-        addButton.setOnClickListener(v -> playlistDialog(null));
-        listTitle = cardTitleText("🎬  Playlists");
-        lists.addView(cardTitle(null, addButton));
-        ((LinearLayout) lists.getChildAt(0)).addView(listTitle, 0,
-                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        // ---- Playlists card ----
+        LinearLayout listCard = card(content);
+        addPlaylistButton = tonalButton("＋  Nova");
+        addPlaylistButton.setOnClickListener(v -> playlistDialog(null));
+        listTitle = text("🎬  Playlists", 18, TEXT, true);
+        LinearLayout lHead = new LinearLayout(this);
+        lHead.setOrientation(LinearLayout.HORIZONTAL);
+        lHead.setGravity(Gravity.CENTER_VERTICAL);
+        lHead.addView(listTitle, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        lHead.addView(addPlaylistButton);
+        listCard.addView(lHead);
         listBox = new LinearLayout(this);
         listBox.setOrientation(LinearLayout.VERTICAL);
-        lists.addView(listBox, matchWrap());
-        showEmpty("Conecte um aparelho para ver as playlists.");
+        listCard.addView(listBox, matchWrap());
 
         TextView foot = text("As alterações aparecem na TV depois de reabrir o app.", 12, TEXT_2, false);
         foot.setGravity(Gravity.CENTER);
         foot.setPadding(0, dp(4), 0, 0);
         content.addView(foot, matchWrap());
 
-        // Edge-to-edge: header under the status bar, content above navigation bar and keyboard.
         screen.setOnApplyWindowInsetsListener((v, insets) -> {
             int top, bottom;
             if (Build.VERSION.SDK_INT >= 30) {
@@ -167,7 +157,6 @@ public class MainActivity extends Activity {
                 bottom = Math.max(bars.bottom, ime.bottom);
                 v.setPadding(bars.left, 0, bars.right, 0);
             } else {
-                // Before Android 11 the window is not edge-to-edge; adjustResize handles the keyboard.
                 top = 0;
                 bottom = 0;
             }
@@ -178,23 +167,157 @@ public class MainActivity extends Activity {
 
         setContentView(screen);
         showLastCrash();
+        renderDevices();
 
-        // Saved device: load its playlists straight away.
-        if (!macField.getText().toString().trim().isEmpty() && !keyField.getText().toString().trim().isEmpty()) {
-            run("Carregando playlists...", t -> null);
+        JSONObject sel = devices.selected();
+        if (sel != null) {
+            devices.select(Devices.id(sel));
+            loadPlaylists(sel);
+        } else {
+            showEmpty("Nenhum aparelho. Toque em ＋ Adicionar.");
+            deviceStatus.setText("Adicione o MAC e a Device Key que aparecem na TV.");
         }
     }
 
-    // ---------------------------------------------------------------- actions
+    // ---------------------------------------------------------------- devices UI
 
-    /** Add (pl == null) or edit a playlist in a dialog. */
+    private void renderDevices() {
+        deviceChips.removeAllViews();
+        JSONArray list = devices.all();
+        String selId = devices.selectedId();
+        if (list.length() == 0) {
+            TextView empty = text("Nenhum aparelho salvo", 14, TEXT_2, false);
+            empty.setPadding(dp(2), dp(4), 0, dp(4));
+            deviceChips.addView(empty);
+            return;
+        }
+        for (int i = 0; i < list.length(); i++) {
+            final JSONObject d = list.optJSONObject(i);
+            if (d == null) continue;
+            boolean active = Devices.id(d).equals(selId) || (selId == null && i == 0);
+            deviceChips.addView(deviceChip(d, active));
+        }
+    }
+
+    private View deviceChip(final JSONObject d, boolean active) {
+        LinearLayout chip = new LinearLayout(this);
+        chip.setOrientation(LinearLayout.HORIZONTAL);
+        chip.setGravity(Gravity.CENTER_VERTICAL);
+        chip.setPadding(dp(14), dp(10), dp(8), dp(10));
+        chip.setBackground(ripple(rounded(active ? PRIMARY : PRIMARY_SOFT, dp(22), 0), 0x33000000));
+        chip.setClickable(true);
+        chip.setFocusable(true);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.rightMargin = dp(8);
+        chip.setLayoutParams(lp);
+
+        chip.addView(text(Devices.name(d), 15, active ? Color.WHITE : PRIMARY, true));
+        TextView edit = text("  ✎", 15, active ? 0xDDFFFFFF : PRIMARY, true);
+        edit.setPadding(dp(6), 0, dp(6), 0);
+        chip.addView(edit);
+
+        chip.setOnClickListener(v -> {
+            if (busy) return;
+            devices.select(Devices.id(d));
+            renderDevices();
+            loadPlaylists(d);
+        });
+        edit.setOnClickListener(v -> deviceDialog(d));
+        return chip;
+    }
+
+    /** Add (d == null) or edit a saved device. */
+    private void deviceDialog(final JSONObject d) {
+        final boolean editing = d != null;
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(20), dp(4), dp(20), dp(8));
+        final EditText name = input(box, "Apelido do aparelho", "ex: Sala, Quarto", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        final EditText mac = input(box, "MAC", "aa:bb:cc:dd:ee:ff",
+                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+        final EditText key = input(box, "Device Key", "ex: 123456",
+                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+        if (editing) {
+            name.setText(Devices.name(d));
+            mac.setText(Devices.mac(d));
+            key.setText(Devices.key(d));
+        } else {
+            name.setText("Aparelho " + (devices.count() + 1));
+        }
+
+        ScrollView sv = new ScrollView(this);
+        sv.addView(box);
+        AlertDialog.Builder b = new AlertDialog.Builder(this)
+                .setTitle(editing ? "Editar aparelho" : "Novo aparelho")
+                .setView(sv)
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton(editing ? "Salvar" : "Adicionar", null);
+        if (editing) b.setNeutralButton("Apagar", null);
+        final AlertDialog dialog = b.create();
+        dialog.setOnShowListener(x -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(PRIMARY);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(TEXT_2);
+            if (editing) dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(DANGER);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                String n = name.getText().toString().trim();
+                String m = FunplaysApi.normalizeMac(mac.getText().toString());
+                String k = key.getText().toString().trim();
+                if (m.isEmpty()) { mac.setError("Informe o MAC"); return; }
+                if (k.isEmpty()) { key.setError("Informe a Device Key"); return; }
+                if (n.isEmpty()) n = "Aparelho";
+                dialog.dismiss();
+                String id = devices.save(editing ? Devices.id(d) : null, n, m, k);
+                devices.select(id);
+                renderDevices();
+                loadPlaylists(devices.get(id));
+            });
+            if (editing) dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
+                dialog.dismiss();
+                confirmDeleteDevice(d);
+            });
+        });
+        dialog.show();
+    }
+
+    private void confirmDeleteDevice(final JSONObject d) {
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Apagar aparelho?")
+                .setMessage("Remover \"" + Devices.name(d) + "\" da lista deste app. As playlists na TV não são apagadas.")
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Apagar", (x, w) -> {
+                    devices.delete(Devices.id(d));
+                    renderDevices();
+                    JSONObject next = devices.selected();
+                    if (next != null) loadPlaylists(next);
+                    else {
+                        listBox.removeAllViews();
+                        showEmpty("Nenhum aparelho. Toque em ＋ Adicionar.");
+                        listTitle.setText("🎬  Playlists");
+                        deviceStatus.setText("");
+                    }
+                })
+                .create();
+        dialog.setOnShowListener(x -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(DANGER);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(TEXT_2);
+        });
+        dialog.show();
+    }
+
+    // ---------------------------------------------------------------- playlists
+
+    private void loadPlaylists(JSONObject device) {
+        run(device, "Carregando...", t -> null, false);
+    }
+
     private void playlistDialog(final JSONObject pl) {
-        if (!hasDevice()) { showBanner("Preencha o MAC e a Device Key primeiro.", false); return; }
+        final JSONObject device = devices.selected();
+        if (device == null) { showBanner("Adicione um aparelho primeiro.", false); return; }
         final boolean editing = pl != null;
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(20), dp(4), dp(20), dp(8));
-
         final EditText name = input(box, "Nome", "ex: Minha lista", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         final EditText url = input(box, "Link M3U", "http://...", InputType.TYPE_CLASS_TEXT
                 | InputType.TYPE_TEXT_VARIATION_URI | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
@@ -211,7 +334,7 @@ public class MainActivity extends Activity {
             String e = pl.optString("epg_url");
             epg.setText("null".equals(e) ? "" : e);
         } else {
-            name.setText(prefs.getString("name", "Playlist"));
+            name.setText(prefs.getString("lastName", "Playlist"));
             String clip = clipboard();
             if (clip != null && validUrl(clip)) url.setText(clip);
         }
@@ -227,7 +350,6 @@ public class MainActivity extends Activity {
         dialog.setOnShowListener(d -> {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(PRIMARY);
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(TEXT_2);
-            // Validate before closing, so typed data is not lost.
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 final String n = name.getText().toString().trim().isEmpty() ? "Playlist" : name.getText().toString().trim();
                 final String u = url.getText().toString().trim();
@@ -237,24 +359,25 @@ public class MainActivity extends Activity {
                 dialog.dismiss();
                 if (editing) {
                     final long id = pl.optLong("id");
-                    run("Salvando...", t -> {
+                    run(device, "Salvando...", t -> {
                         FunplaysApi.editPlaylist(t, id, n, u, e);
                         return "Playlist \"" + n + "\" atualizada.";
-                    });
+                    }, true);
                 } else {
-                    prefs.edit().putString("name", n).apply();
-                    final String mac = currentMac();
-                    run("Adicionando...", t -> {
+                    prefs.edit().putString("lastName", n).apply();
+                    final String mac = Devices.mac(device);
+                    run(device, "Adicionando...", t -> {
                         FunplaysApi.addPlaylist(t, mac, u, n, e);
                         return "Playlist \"" + n + "\" adicionada! Reabra o app na TV.";
-                    });
+                    }, true);
                 }
             });
         });
         dialog.show();
     }
 
-    private void deleteDialog(final JSONObject pl) {
+    private void deletePlaylistDialog(final JSONObject pl) {
+        final JSONObject device = devices.selected();
         final String name = pl.optString("name");
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Apagar playlist?")
@@ -262,10 +385,10 @@ public class MainActivity extends Activity {
                 .setNegativeButton("Cancelar", null)
                 .setPositiveButton("Apagar", (d, w) -> {
                     final long id = pl.optLong("id");
-                    run("Apagando...", t -> {
+                    run(device, "Apagando...", t -> {
                         FunplaysApi.deletePlaylist(t, id);
                         return "Playlist \"" + name + "\" apagada.";
-                    });
+                    }, true);
                 })
                 .create();
         dialog.setOnShowListener(d -> {
@@ -275,14 +398,12 @@ public class MainActivity extends Activity {
         dialog.show();
     }
 
-    /** Validates the MAC, logs in, runs the job and reloads the playlist list. */
-    private void run(String busyText, Job job) {
-        if (busy) return;
-        if (!hasDevice()) { showBanner("Preencha o MAC e a Device Key.", false); return; }
-        final String mac = currentMac();
-        final String key = keyField.getText().toString().trim();
-        prefs.edit().putString("mac", mac).putString("key", key).apply();
-        macField.setText(mac);
+    /** Logs into the given device, runs the job and reloads its playlists. */
+    private void run(final JSONObject device, String busyText, final Job job, final boolean showMsg) {
+        if (busy || device == null) return;
+        final String mac = Devices.mac(device);
+        final String key = Devices.key(device);
+        final String label = Devices.name(device);
         setBusy(true, busyText);
 
         worker.execute(() -> {
@@ -304,22 +425,18 @@ public class MainActivity extends Activity {
                 setBusy(false, null);
                 if (err != null) {
                     showBanner(err, false);
-                    if (mdl == null) {
-                        deviceStatus.setText("Não conectado");
-                        deviceStatus.setTextColor(DANGER);
-                    }
+                    deviceStatus.setText("⚠ " + label + ": não conectado");
+                    deviceStatus.setTextColor(DANGER);
                     return;
                 }
-                deviceStatus.setText("✓  Conectado · " + mdl);
+                deviceStatus.setText("✓  " + label + " · " + mac + " · " + mdl);
                 deviceStatus.setTextColor(SUCCESS);
-                headerDevice.setText(mdl + " · " + mac);
-                if (msg != null) showBanner(msg, true); else banner.setVisibility(View.GONE);
+                headerSubtitle.setText(devices.count() + " aparelho(s) · " + label);
+                if (showMsg && msg != null) showBanner(msg, true); else banner.setVisibility(View.GONE);
                 if (playlists != null) renderList(playlists);
             });
         });
     }
-
-    // ---------------------------------------------------------------- list
 
     private void renderList(JSONArray list) {
         listBox.removeAllViews();
@@ -347,7 +464,6 @@ public class MainActivity extends Activity {
             line.setBackgroundColor(0xFFEDF0F6);
             wrap.addView(line, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
         }
-
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
@@ -376,12 +492,10 @@ public class MainActivity extends Activity {
             row.addView(text("🔒 PIN", 13, TEXT_2, false));
         } else {
             TextView edit = iconButton("✏️", PRIMARY_SOFT);
-            edit.setContentDescription("Editar");
             edit.setOnClickListener(v -> playlistDialog(pl));
             row.addView(edit, new LinearLayout.LayoutParams(dp(44), dp(44)));
             TextView del = iconButton("🗑️", DANGER_SOFT);
-            del.setContentDescription("Apagar");
-            del.setOnClickListener(v -> deleteDialog(pl));
+            del.setOnClickListener(v -> deletePlaylistDialog(pl));
             LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(dp(44), dp(44));
             dlp.leftMargin = dp(8);
             row.addView(del, dlp);
@@ -390,7 +504,44 @@ public class MainActivity extends Activity {
         return wrap;
     }
 
-    // ---------------------------------------------------------------- UI building blocks
+    // ---------------------------------------------------------------- crash report
+
+    private void installCrashReporter() {
+        final Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((thread, error) -> {
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                error.printStackTrace(new java.io.PrintWriter(sw));
+                String report = "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + "), "
+                        + Build.MANUFACTURER + " " + Build.MODEL + ", app " + BuildInfo.VERSION + "\n\n" + sw;
+                prefs.edit().putString("crash", report).commit();
+            } catch (Throwable ignored) {
+            }
+            if (previous != null) previous.uncaughtException(thread, error);
+        });
+    }
+
+    private void showLastCrash() {
+        final String report = prefs.getString("crash", null);
+        if (report == null) return;
+        prefs.edit().remove("crash").apply();
+        TextView t = text(report, 11, TEXT, false);
+        t.setTextIsSelectable(true);
+        t.setPadding(dp(20), dp(8), dp(20), dp(8));
+        ScrollView sv = new ScrollView(this);
+        sv.addView(t);
+        new AlertDialog.Builder(this)
+                .setTitle("O app fechou com um erro")
+                .setView(sv)
+                .setPositiveButton("Copiar erro", (d, w) -> {
+                    ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("erro", report));
+                })
+                .setNegativeButton("Fechar", null)
+                .show();
+    }
+
+    // ---------------------------------------------------------------- UI helpers
 
     private void setupWindow() {
         Window w = getWindow();
@@ -399,11 +550,8 @@ public class MainActivity extends Activity {
             w.setStatusBarColor(Color.TRANSPARENT);
             w.setNavigationBarColor(Color.TRANSPARENT);
             WindowInsetsController c = w.getInsetsController();
-            if (c != null) {
-                // Light icons on the blue header, dark icons on the light navigation bar.
-                c.setSystemBarsAppearance(WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
-                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
-            }
+            if (c != null) c.setSystemBarsAppearance(WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
         } else {
             w.setStatusBarColor(PRIMARY_DARK);
             w.setNavigationBarColor(Color.BLACK);
@@ -422,16 +570,11 @@ public class MainActivity extends Activity {
         return c;
     }
 
-    private TextView cardTitleText(String title) {
-        return text(title, 18, TEXT, true);
-    }
-
-    private LinearLayout cardTitle(String title, View action) {
+    private LinearLayout cardTitleRow(String title, View action) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        if (title != null) row.addView(cardTitleText(title),
-                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        row.addView(text(title, 18, TEXT, true), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         if (action != null) row.addView(action);
         return row;
     }
@@ -455,16 +598,6 @@ public class MainActivity extends Activity {
         e.setBackground(bg);
         parent.addView(e, matchWrap());
         return e;
-    }
-
-    private TextView primaryButton(String label) {
-        TextView b = text(label, 16, Color.WHITE, true);
-        b.setGravity(Gravity.CENTER);
-        b.setMinHeight(dp(52));
-        b.setBackground(ripple(rounded(PRIMARY, dp(14), 0), 0x33FFFFFF));
-        b.setClickable(true);
-        b.setFocusable(true);
-        return b;
     }
 
     private TextView tonalButton(String label) {
@@ -515,12 +648,11 @@ public class MainActivity extends Activity {
     private void setBusy(boolean b, String label) {
         busy = b;
         progress.setVisibility(b ? View.VISIBLE : View.INVISIBLE);
-        connectButton.setText(b ? label : "Conectar");
-        connectButton.setAlpha(b ? 0.7f : 1f);
-        connectButton.setEnabled(!b);
-        addButton.setEnabled(!b);
-        addButton.setAlpha(b ? 0.5f : 1f);
+        addPlaylistButton.setEnabled(!b);
+        addPlaylistButton.setAlpha(b ? 0.5f : 1f);
         listBox.setAlpha(b ? 0.5f : 1f);
+        deviceChips.setAlpha(b ? 0.6f : 1f);
+        if (b && label != null) { deviceStatus.setText(label); deviceStatus.setTextColor(TEXT_2); }
     }
 
     private GradientDrawable rounded(int color, int radius, int stroke) {
@@ -538,52 +670,6 @@ public class MainActivity extends Activity {
     private Drawable ripple(GradientDrawable content, int rippleColor) {
         return new RippleDrawable(ColorStateList.valueOf(rippleColor), content, null);
     }
-
-    // ---------------------------------------------------------------- crash report
-
-    /** Saves the error of a crash, so the next start can show it instead of silently closing. */
-    private void installCrashReporter() {
-        final Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
-        Thread.setDefaultUncaughtExceptionHandler((thread, error) -> {
-            try {
-                java.io.StringWriter sw = new java.io.StringWriter();
-                error.printStackTrace(new java.io.PrintWriter(sw));
-                String report = "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + "), "
-                        + Build.MANUFACTURER + " " + Build.MODEL + ", app " + BuildInfo.VERSION + "\n\n" + sw;
-                prefs.edit().putString("crash", report).commit();
-            } catch (Throwable ignored) {
-            }
-            if (previous != null) previous.uncaughtException(thread, error);
-        });
-    }
-
-    private void showLastCrash() {
-        final String report = prefs.getString("crash", null);
-        if (report == null) return;
-        prefs.edit().remove("crash").apply();
-        TextView t = text(report, 11, TEXT, false);
-        t.setTextIsSelectable(true);
-        t.setPadding(dp(20), dp(8), dp(20), dp(8));
-        ScrollView sv = new ScrollView(this);
-        sv.addView(t);
-        new AlertDialog.Builder(this)
-                .setTitle("O app fechou com um erro")
-                .setView(sv)
-                .setPositiveButton("Copiar erro", (d, w) -> {
-                    ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                    if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("erro", report));
-                })
-                .setNegativeButton("Fechar", null)
-                .show();
-    }
-
-    // ---------------------------------------------------------------- helpers
-
-    private boolean hasDevice() {
-        return !macField.getText().toString().trim().isEmpty() && !keyField.getText().toString().trim().isEmpty();
-    }
-
-    private String currentMac() { return FunplaysApi.normalizeMac(macField.getText().toString()); }
 
     private static boolean validUrl(String u) { return u.startsWith("http://") || u.startsWith("https://"); }
 
@@ -610,15 +696,6 @@ public class MainActivity extends Activity {
         if (clip == null || clip.getItemCount() == 0) return null;
         CharSequence t = clip.getItemAt(0).coerceToText(this);
         return t == null ? null : t.toString().trim();
-    }
-
-    private void hideKeyboard() {
-        View f = getCurrentFocus();
-        if (f == null) return;
-        android.view.inputmethod.InputMethodManager imm =
-                (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-        if (imm != null) imm.hideSoftInputFromWindow(f.getWindowToken(), 0);
-        f.clearFocus();
     }
 
     private LinearLayout.LayoutParams matchWrap() {

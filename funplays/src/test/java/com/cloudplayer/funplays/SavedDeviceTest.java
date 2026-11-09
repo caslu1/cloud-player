@@ -45,8 +45,9 @@ public class SavedDeviceTest {
             return "{\"error\":false,\"message\":{},\"status\":200}";
         };
         Context ctx = ApplicationProvider.getApplicationContext();
+        String dev = "[{\"id\":\"1\",\"name\":\"Sala\",\"mac\":\"aa:bb:cc:dd:ee:ff\",\"key\":\"123456\"}]";
         ctx.getSharedPreferences("funplays", Context.MODE_PRIVATE).edit()
-                .putString("mac", "aa:bb:cc:dd:ee:ff").putString("key", "123456").commit();
+                .putString("devices", dev).putString("selected", "1").commit();
 
         MainActivity a = Robolectric.buildActivity(MainActivity.class).setup().get();
         // Let the background login finish, then run what it posted to the screen.
