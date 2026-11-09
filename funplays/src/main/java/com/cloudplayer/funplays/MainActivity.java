@@ -26,6 +26,7 @@ import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -53,11 +54,14 @@ public class MainActivity extends Activity {
     private static final int DANGER = 0xFFD32F2F;
     private static final int DANGER_SOFT = 0xFFFDECEC;
 
-    private TextView banner, headerSubtitle, deviceStatus, listTitle;
-    private LinearLayout deviceChips, listBox;
+    private TextView banner, headerSubtitle, deviceStatus, listTitle, drawerSubtitle;
+    private LinearLayout deviceChips, listBox, drawer;
+    private View scrim;
     private ProgressBar progress;
     private TextView addPlaylistButton;
     private boolean busy;
+    private int drawerWidthPx;
+    private boolean drawerOpen;
 
     private Devices devices;
     private SharedPreferences prefs;
@@ -75,18 +79,41 @@ public class MainActivity extends Activity {
         installCrashReporter();
         try { setupWindow(); } catch (Throwable ignored) { }
 
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        drawerWidthPx = Math.min(dp(310), (int) (screenW * 0.86f));
+
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(BG);
+
+        // ========================= MAIN COLUMN =========================
         LinearLayout screen = new LinearLayout(this);
         screen.setOrientation(LinearLayout.VERTICAL);
-        screen.setBackgroundColor(BG);
 
         final LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.VERTICAL);
         header.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 new int[]{PRIMARY, PRIMARY_DARK}));
-        header.addView(text("Funplays Playlists", 24, Color.WHITE, true));
-        headerSubtitle = text("Gerencie os aparelhos e as listas da sua TV", 14, 0xD9FFFFFF, false);
-        headerSubtitle.setPadding(0, dp(4), 0, 0);
-        header.addView(headerSubtitle);
+        LinearLayout headerRow = new LinearLayout(this);
+        headerRow.setOrientation(LinearLayout.HORIZONTAL);
+        headerRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView menuBtn = text("☰", 24, Color.WHITE, true);
+        menuBtn.setGravity(Gravity.CENTER);
+        menuBtn.setBackground(ripple(rounded(0x22FFFFFF, dp(12), 0), 0x44FFFFFF));
+        menuBtn.setClickable(true);
+        menuBtn.setFocusable(true);
+        menuBtn.setContentDescription("Abrir menu");
+        menuBtn.setOnClickListener(v -> openDrawer());
+        LinearLayout.LayoutParams mbLp = new LinearLayout.LayoutParams(dp(44), dp(44));
+        mbLp.rightMargin = dp(12);
+        headerRow.addView(menuBtn, mbLp);
+        LinearLayout titleCol = new LinearLayout(this);
+        titleCol.setOrientation(LinearLayout.VERTICAL);
+        titleCol.addView(text("Funplays Playlists", 22, Color.WHITE, true));
+        headerSubtitle = text("Toque no menu para ver os aparelhos", 13, 0xD9FFFFFF, false);
+        headerSubtitle.setPadding(0, dp(2), 0, 0);
+        titleCol.addView(headerSubtitle);
+        headerRow.addView(titleCol, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        header.addView(headerRow, matchWrap());
         screen.addView(header, matchWrap());
 
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
@@ -99,7 +126,7 @@ public class MainActivity extends Activity {
         scroll.setClipToPadding(false);
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(16), dp(12), dp(16), dp(24));
+        content.setPadding(dp(16), dp(14), dp(16), dp(24));
         scroll.addView(content);
         screen.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
@@ -111,26 +138,23 @@ public class MainActivity extends Activity {
         blp.bottomMargin = dp(12);
         content.addView(banner, blp);
 
-        // ---- Devices card ----
-        LinearLayout deviceCard = card(content);
-        TextView addDevice = tonalButton("＋  Adicionar");
-        addDevice.setOnClickListener(v -> deviceDialog(null));
-        deviceCard.addView(cardTitleRow("📺  Meus aparelhos", addDevice));
-        deviceChips = new LinearLayout(this);
-        deviceChips.setOrientation(LinearLayout.VERTICAL);
-        deviceChips.setPadding(0, dp(10), 0, dp(2));
-        deviceCard.addView(deviceChips, matchWrap());
-        deviceStatus = text("", 13, TEXT_2, false);
-        deviceStatus.setPadding(dp(2), dp(6), 0, 0);
-        deviceCard.addView(deviceStatus);
-        TextView bulkMacButton = textButton("📋  Adicionar vários MACs", PRIMARY);
-        bulkMacButton.setOnClickListener(v -> bulkAddDialog());
-        LinearLayout.LayoutParams bmLp = matchWrap();
-        bmLp.topMargin = dp(6);
-        deviceCard.addView(bulkMacButton, bmLp);
-        TextView dnsButton = textButton("🔧  Trocar DNS em massa", PRIMARY);
-        dnsButton.setOnClickListener(v -> dnsDialog());
-        deviceCard.addView(dnsButton, matchWrap());
+        // Selected-device status strip
+        LinearLayout statusCard = new LinearLayout(this);
+        statusCard.setOrientation(LinearLayout.HORIZONTAL);
+        statusCard.setGravity(Gravity.CENTER_VERTICAL);
+        statusCard.setPadding(dp(14), dp(12), dp(14), dp(12));
+        statusCard.setBackground(rounded(SURFACE, dp(14), 0));
+        statusCard.setElevation(dp(1));
+        TextView changeDevice = tonalButton("Trocar");
+        changeDevice.setOnClickListener(v -> openDrawer());
+        deviceStatus = text("Nenhum aparelho selecionado", 14, TEXT, true);
+        deviceStatus.setSingleLine(true);
+        deviceStatus.setEllipsize(TextUtils.TruncateAt.END);
+        statusCard.addView(deviceStatus, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        statusCard.addView(changeDevice);
+        LinearLayout.LayoutParams scLp = matchWrap();
+        scLp.bottomMargin = dp(14);
+        content.addView(statusCard, scLp);
 
         // ---- Playlists card ----
         LinearLayout listCard = card(content);
@@ -152,24 +176,88 @@ public class MainActivity extends Activity {
         foot.setPadding(0, dp(4), 0, 0);
         content.addView(foot, matchWrap());
 
-        screen.setOnApplyWindowInsetsListener((v, insets) -> {
-            int top, bottom;
+        root.addView(screen, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        // ========================= SCRIM =========================
+        scrim = new View(this);
+        scrim.setBackgroundColor(0x88000000);
+        scrim.setAlpha(0f);
+        scrim.setVisibility(View.GONE);
+        scrim.setOnClickListener(v -> closeDrawer());
+        root.addView(scrim, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        // ========================= SIDEBAR =========================
+        drawer = new LinearLayout(this);
+        drawer.setOrientation(LinearLayout.VERTICAL);
+        drawer.setBackgroundColor(SURFACE);
+        drawer.setElevation(dp(12));
+
+        final LinearLayout drawerHeader = new LinearLayout(this);
+        drawerHeader.setOrientation(LinearLayout.VERTICAL);
+        drawerHeader.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{PRIMARY, PRIMARY_DARK}));
+        drawerHeader.addView(text("📺  Meus aparelhos", 20, Color.WHITE, true));
+        drawerSubtitle = text("", 13, 0xD9FFFFFF, false);
+        drawerSubtitle.setPadding(0, dp(2), 0, 0);
+        drawerHeader.addView(drawerSubtitle);
+        drawer.addView(drawerHeader, matchWrap());
+
+        final ScrollView drawerScroll = new ScrollView(this);
+        drawerScroll.setClipToPadding(false);
+        LinearLayout drawerBody = new LinearLayout(this);
+        drawerBody.setOrientation(LinearLayout.VERTICAL);
+        drawerBody.setPadding(dp(14), dp(14), dp(14), dp(16));
+        drawerScroll.addView(drawerBody);
+        drawer.addView(drawerScroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+
+        deviceChips = new LinearLayout(this);
+        deviceChips.setOrientation(LinearLayout.VERTICAL);
+        drawerBody.addView(deviceChips, matchWrap());
+
+        View divider = new View(this);
+        divider.setBackgroundColor(0xFFEDF0F6);
+        LinearLayout.LayoutParams divLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
+        divLp.topMargin = dp(10);
+        divLp.bottomMargin = dp(10);
+        drawerBody.addView(divider, divLp);
+
+        drawerBody.addView(drawerAction("＋  Adicionar aparelho", () -> deviceDialog(null)));
+        drawerBody.addView(drawerAction("📋  Adicionar vários MACs", this::bulkAddDialog));
+        drawerBody.addView(drawerAction("🔧  Trocar DNS em massa", this::dnsDialog));
+
+        TextView ver = text("Funplays Add v" + BuildInfo.VERSION, 12, TEXT_2, false);
+        ver.setGravity(Gravity.CENTER);
+        ver.setPadding(0, dp(10), 0, 0);
+        drawer.addView(ver, matchWrap());
+
+        FrameLayout.LayoutParams drawerLp = new FrameLayout.LayoutParams(
+                drawerWidthPx, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.START);
+        drawer.setTranslationX(-drawerWidthPx);
+        root.addView(drawer, drawerLp);
+
+        // Edge-to-edge insets.
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
+            int top, bottom, left, right;
             if (Build.VERSION.SDK_INT >= 30) {
                 android.graphics.Insets bars = insets.getInsets(WindowInsets.Type.systemBars());
                 android.graphics.Insets ime = insets.getInsets(WindowInsets.Type.ime());
                 top = bars.top;
                 bottom = Math.max(bars.bottom, ime.bottom);
-                v.setPadding(bars.left, 0, bars.right, 0);
+                left = bars.left;
+                right = bars.right;
             } else {
-                top = 0;
-                bottom = 0;
+                top = bottom = left = right = 0;
             }
-            header.setPadding(dp(20), top + dp(20), dp(20), dp(24));
-            scroll.setPadding(0, 0, 0, bottom);
+            header.setPadding(dp(16) + left, top + dp(18), dp(16) + right, dp(20));
+            scroll.setPadding(left, 0, right, bottom);
+            drawerHeader.setPadding(dp(20) + left, top + dp(22), dp(20), dp(20));
+            drawerScroll.setPadding(0, 0, 0, bottom);
             return insets;
         });
 
-        setContentView(screen);
+        setContentView(root);
         showLastCrash();
         renderDevices();
 
@@ -178,9 +266,44 @@ public class MainActivity extends Activity {
             devices.select(Devices.id(sel));
             loadPlaylists(sel);
         } else {
-            showEmpty("Nenhum aparelho. Toque em ＋ Adicionar.");
-            deviceStatus.setText("Adicione o MAC e a Device Key que aparecem na TV.");
+            showEmpty("Nenhum aparelho ainda.\nAbra o menu e toque em ＋ Adicionar.");
+            deviceStatus.setText("Nenhum aparelho");
+            openDrawer();
         }
+    }
+
+    // ---------------------------------------------------------------- sidebar
+
+    private void openDrawer() {
+        scrim.setVisibility(View.VISIBLE);
+        scrim.animate().alpha(1f).setDuration(220).start();
+        drawer.animate().translationX(0).setDuration(260).start();
+        drawerOpen = true;
+    }
+
+    private void closeDrawer() {
+        scrim.animate().alpha(0f).setDuration(200).withEndAction(() -> scrim.setVisibility(View.GONE)).start();
+        drawer.animate().translationX(-drawerWidthPx).setDuration(240).start();
+        drawerOpen = false;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (drawerOpen) closeDrawer();
+        else super.onBackPressed();
+    }
+
+    private View drawerAction(String label, Runnable action) {
+        TextView b = text(label, 15, PRIMARY, true);
+        b.setPadding(dp(14), dp(14), dp(14), dp(14));
+        b.setBackground(ripple(rounded(PRIMARY_SOFT, dp(12), 0), 0x332F54EB));
+        b.setClickable(true);
+        b.setFocusable(true);
+        LinearLayout.LayoutParams lp = matchWrap();
+        lp.bottomMargin = dp(8);
+        b.setLayoutParams(lp);
+        b.setOnClickListener(v -> { closeDrawer(); b.postDelayed(action, 180); });
+        return b;
     }
 
     // ---------------------------------------------------------------- devices UI
@@ -189,9 +312,11 @@ public class MainActivity extends Activity {
         deviceChips.removeAllViews();
         JSONArray list = devices.all();
         String selId = devices.selectedId();
+        if (drawerSubtitle != null)
+            drawerSubtitle.setText(list.length() == 0 ? "Nenhum aparelho" : list.length() + " aparelho(s) salvos");
         if (list.length() == 0) {
-            TextView empty = text("Nenhum aparelho salvo", 14, TEXT_2, false);
-            empty.setPadding(dp(2), dp(4), 0, dp(4));
+            TextView empty = text("Nenhum aparelho salvo.\nToque em ＋ Adicionar abaixo.", 14, TEXT_2, false);
+            empty.setPadding(dp(2), dp(8), 0, dp(8));
             deviceChips.addView(empty);
             return;
         }
@@ -241,16 +366,15 @@ public class MainActivity extends Activity {
         rowL.addView(info, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView edit = iconButton("✏️", active ? SURFACE : PRIMARY_SOFT);
-        edit.setOnClickListener(v -> deviceDialog(d));
+        edit.setOnClickListener(v -> { closeDrawer(); edit.postDelayed(() -> deviceDialog(d), 180); });
         rowL.addView(edit, new LinearLayout.LayoutParams(dp(42), dp(42)));
 
         rowL.setOnClickListener(v -> {
             if (busy) return;
-            if (!Devices.id(d).equals(devices.selectedId())) {
-                devices.select(Devices.id(d));
-                renderDevices();
-                loadPlaylists(d);
-            }
+            devices.select(Devices.id(d));
+            renderDevices();
+            closeDrawer();
+            loadPlaylists(d);
         });
         wrap.addView(rowL, matchWrap());
         return wrap;
