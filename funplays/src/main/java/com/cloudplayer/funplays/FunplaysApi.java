@@ -87,13 +87,35 @@ final class FunplaysApi {
         return m instanceof JSONArray ? (JSONArray) m : new JSONArray();
     }
 
-    /** Returns the "message" field of the response, or throws with the server's error message. */
+    /** Returns the "message" field of the response. Retries a few times when the server
+     *  answers 429 (too many requests), waiting longer each time. */
     private static Object call(String method, String path, String token, String json,
                                Map<String, String> form) throws Exception {
         if (testTransport != null) {
             String fake = testTransport.send(method, path, json != null ? json : String.valueOf(form));
             return parse(fake, 200);
         }
+        Exception last = null;
+        for (int attempt = 0; attempt < 4; attempt++) {
+            if (attempt > 0) {
+                try { Thread.sleep(1200L * attempt); } catch (InterruptedException ie) { throw ie; }
+            }
+            try {
+                return callOnce(method, path, token, json, form);
+            } catch (RateLimited e) {
+                last = e;
+            }
+        }
+        throw last != null ? last : new IOException("Muitas requisições. Tente de novo em instantes.");
+    }
+
+    /** Thrown internally for HTTP 429 so {@link #call} can retry. */
+    private static final class RateLimited extends IOException {
+        RateLimited(String m) { super(m); }
+    }
+
+    private static Object callOnce(String method, String path, String token, String json,
+                                   Map<String, String> form) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(API + path).openConnection();
         c.setRequestMethod(method);
         c.setConnectTimeout(20000);
@@ -127,6 +149,7 @@ final class FunplaysApi {
         InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
         String body = in == null ? "" : readAll(in);
         c.disconnect();
+        if (code == 429) throw new RateLimited("Muitas requisições (429).");
         return parse(body, code);
     }
 

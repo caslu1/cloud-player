@@ -26,7 +26,6 @@ import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.widget.EditText;
-import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -117,13 +116,10 @@ public class MainActivity extends Activity {
         TextView addDevice = tonalButton("＋  Adicionar");
         addDevice.setOnClickListener(v -> deviceDialog(null));
         deviceCard.addView(cardTitleRow("📺  Meus aparelhos", addDevice));
-        HorizontalScrollView chipScroll = new HorizontalScrollView(this);
-        chipScroll.setHorizontalScrollBarEnabled(false);
         deviceChips = new LinearLayout(this);
-        deviceChips.setOrientation(LinearLayout.HORIZONTAL);
-        deviceChips.setPadding(0, dp(12), 0, dp(4));
-        chipScroll.addView(deviceChips);
-        deviceCard.addView(chipScroll, matchWrap());
+        deviceChips.setOrientation(LinearLayout.VERTICAL);
+        deviceChips.setPadding(0, dp(10), 0, dp(2));
+        deviceCard.addView(deviceChips, matchWrap());
         deviceStatus = text("", 13, TEXT_2, false);
         deviceStatus.setPadding(dp(2), dp(6), 0, 0);
         deviceCard.addView(deviceStatus);
@@ -200,36 +196,57 @@ public class MainActivity extends Activity {
             final JSONObject d = list.optJSONObject(i);
             if (d == null) continue;
             boolean active = Devices.id(d).equals(selId) || (selId == null && i == 0);
-            deviceChips.addView(deviceChip(d, active));
+            deviceChips.addView(deviceRow(d, active, i > 0));
         }
     }
 
-    private View deviceChip(final JSONObject d, boolean active) {
-        LinearLayout chip = new LinearLayout(this);
-        chip.setOrientation(LinearLayout.HORIZONTAL);
-        chip.setGravity(Gravity.CENTER_VERTICAL);
-        chip.setPadding(dp(14), dp(10), dp(8), dp(10));
-        chip.setBackground(ripple(rounded(active ? PRIMARY : PRIMARY_SOFT, dp(22), 0), 0x33000000));
-        chip.setClickable(true);
-        chip.setFocusable(true);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.rightMargin = dp(8);
-        chip.setLayoutParams(lp);
+    private View deviceRow(final JSONObject d, boolean active, boolean divider) {
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams wlp = matchWrap();
+        wlp.bottomMargin = dp(8);
+        wrap.setLayoutParams(wlp);
 
-        chip.addView(text(Devices.name(d), 15, active ? Color.WHITE : PRIMARY, true));
-        TextView edit = text("  ✎", 15, active ? 0xDDFFFFFF : PRIMARY, true);
-        edit.setPadding(dp(6), 0, dp(6), 0);
-        chip.addView(edit);
+        LinearLayout rowL = new LinearLayout(this);
+        rowL.setOrientation(LinearLayout.HORIZONTAL);
+        rowL.setGravity(Gravity.CENTER_VERTICAL);
+        rowL.setPadding(dp(12), dp(12), dp(8), dp(12));
+        rowL.setBackground(ripple(rounded(active ? PRIMARY_SOFT : 0xFFF8F9FC, dp(12),
+                active ? PRIMARY : BORDER, dp(active ? 2 : 1)), 0x22000000));
+        rowL.setClickable(true);
+        rowL.setFocusable(true);
 
-        chip.setOnClickListener(v -> {
-            if (busy) return;
-            devices.select(Devices.id(d));
-            renderDevices();
-            loadPlaylists(d);
-        });
+        // Selection dot
+        TextView dot = text(active ? "●" : "○", 16, active ? PRIMARY : 0xFFB8C0D0, true);
+        dot.setPadding(0, 0, dp(10), 0);
+        rowL.addView(dot);
+
+        LinearLayout info = new LinearLayout(this);
+        info.setOrientation(LinearLayout.VERTICAL);
+        TextView name = text(Devices.name(d), 16, TEXT, true);
+        name.setSingleLine(true);
+        name.setEllipsize(TextUtils.TruncateAt.END);
+        info.addView(name);
+        TextView mac = text(Devices.mac(d).toUpperCase(), 13, TEXT_2, false);
+        mac.setTypeface(Typeface.MONOSPACE);
+        mac.setSingleLine(true);
+        info.addView(mac);
+        rowL.addView(info, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView edit = iconButton("✏️", active ? SURFACE : PRIMARY_SOFT);
         edit.setOnClickListener(v -> deviceDialog(d));
-        return chip;
+        rowL.addView(edit, new LinearLayout.LayoutParams(dp(42), dp(42)));
+
+        rowL.setOnClickListener(v -> {
+            if (busy) return;
+            if (!Devices.id(d).equals(devices.selectedId())) {
+                devices.select(Devices.id(d));
+                renderDevices();
+                loadPlaylists(d);
+            }
+        });
+        wrap.addView(rowL, matchWrap());
+        return wrap;
     }
 
     /** Add (d == null) or edit a saved device. */
@@ -390,6 +407,8 @@ public class MainActivity extends Activity {
                     deviceErrors++;
                     errors.append("\n• ").append(label).append(": ").append(friendlyError(e.getMessage()));
                 }
+                // Small pause between devices to stay under the server's rate limit.
+                try { Thread.sleep(400); } catch (InterruptedException ignored) { }
             }
             final int totalChanged = changed, totalSkipped = skippedProtected, totalErrors = deviceErrors;
             final String errText = errors.toString();
@@ -511,18 +530,17 @@ public class MainActivity extends Activity {
         setBusy(true, busyText);
 
         worker.execute(() -> {
-            String message = null, error = null, model = null;
+            String message = null, error = null;
             JSONArray list = null;
             try {
-                JSONObject info = FunplaysApi.validateMac(mac);
-                model = info.optString("model", "aparelho");
+                // Only two requests (login + list) to stay under the server's rate limit.
                 String token = FunplaysApi.login(mac, key);
                 message = job.run(token);
                 list = FunplaysApi.listPlaylists(token);
             } catch (Exception e) {
                 error = friendlyError(e.getMessage());
             }
-            final String msg = message, err = error, mdl = model;
+            final String msg = message, err = error;
             final JSONArray playlists = list;
             ui.post(() -> {
                 if (isFinishing()) return;
@@ -533,7 +551,7 @@ public class MainActivity extends Activity {
                     deviceStatus.setTextColor(DANGER);
                     return;
                 }
-                deviceStatus.setText("✓  " + label + " · " + mac + " · " + mdl);
+                deviceStatus.setText("✓  Conectado · " + label);
                 deviceStatus.setTextColor(SUCCESS);
                 headerSubtitle.setText(devices.count() + " aparelho(s) · " + label);
                 if (showMsg && msg != null) showBanner(msg, true); else banner.setVisibility(View.GONE);
@@ -791,6 +809,8 @@ public class MainActivity extends Activity {
         String r = raw.toLowerCase();
         if (r.contains("unable to resolve host") || r.contains("failed to connect") || r.contains("timeout"))
             return "Sem conexão com a internet ou servidor fora do ar.";
+        if (r.contains("429") || r.contains("muitas requisi"))
+            return "O servidor pediu para esperar (muitas requisições). Tente de novo em alguns segundos.";
         return raw;
     }
 
