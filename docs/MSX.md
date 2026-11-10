@@ -10,13 +10,26 @@ TVs Samsung (Tizen) e LG (webOS) não instalam APK. Para elas existe uma versão
 3. Em **Branch** escolha o branch do projeto e a pasta **/docs**, depois **Save**.
 4. Espere 1–2 minutos. Teste: https://caslu1.github.io/cloud-player/msx/start.json deve mostrar um texto com "Cloud Player".
 
-## 2. Configurar a TV
+## 2. Criar o endereço curto `caslu1.github.io` (uma vez)
+O teclado do MSX não tem a barra `/`, então ele só aceita um endereço sem caminho. Para isso:
+1. Crie um repositório **público** chamado exatamente **`caslu1.github.io`**: https://github.com/new
+2. Nele, clique em **Add file › Create new file**, digite o nome **`msx/start.json`** e cole:
+```json
+{
+    "name": "Cloud Player",
+    "version": "1.0.1",
+    "parameter": "menu:request:interaction:init@https://caslu1.github.io/cloud-player/msx/plugin.html"
+}
+```
+3. Clique em **Commit changes**. Em 1–2 minutos, https://caslu1.github.io/msx/start.json deve mostrar esse texto.
+
+## 3. Configurar a TV
 1. Instale o **Media Station X** pela loja da TV (Samsung Apps / LG Content Store) e abra.
 2. Vá em **Settings › Start Parameter › Setup**.
-3. Digite: `caslu1.github.io/cloud-player` e confirme.
+3. Digite: `caslu1.github.io` e confirme no **✓**.
 4. O MSX reinicia e mostra o menu do **Cloud Player**.
 
-## 3. Adicionar a sua lista M3U
+## 4. Adicionar a sua lista M3U
 1. No menu, abra **TV ao vivo › Adicionar minha lista M3U**.
 2. Digite o link da sua lista no teclado da tela (os botões `get.php?username=`, `&password=` e `&type=m3u_plus` ajudam em links do tipo Xtream). O botão `abc/ABC` alterna maiúsculas.
 3. Escolha **Salvar** e depois **Abrir canais agora**.

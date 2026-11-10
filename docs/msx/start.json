@@ -1,5 +1,5 @@
 {
     "name": "Cloud Player",
-    "version": "1.0.0",
-    "parameter": "menu:request:interaction:init@{PREFIX}{SERVER}/msx/plugin.html"
+    "version": "1.0.1",
+    "parameter": "menu:request:interaction:init@https://caslu1.github.io/cloud-player/msx/plugin.html"
 }
