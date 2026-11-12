@@ -182,7 +182,7 @@ fun ActivationPanel(vm: Vm, modifier: Modifier) {
             QrCode(url, Modifier.size(150.dp))
             Spacer(Modifier.width(15.dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                InfoBox("MAC", mac, 13f, 0.5f)
+                InfoBox("MAC", mac, 11.5f, 0f)
                 InfoBox("CHAVE", key, 15f, 3f)
                 val (t, c) = statusLine(a)
                 Row(
@@ -202,7 +202,7 @@ fun ActivationPanel(vm: Vm, modifier: Modifier) {
 
 @Composable
 private fun InfoBox(label: String, value: String, size: Float, spacing: Float) {
-    Column(Modifier.width(142.dp).clip(RoundedCornerShape(8.dp)).background(C.field).border(1.dp, C.panelBorder, RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 7.dp)) {
+    Column(Modifier.width(150.dp).clip(RoundedCornerShape(8.dp)).background(C.field).border(1.dp, C.panelBorder, RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 7.dp)) {
         Txt(label, F.s(7.sp, C.faint, FontWeight.SemiBold, spacing = 0.8.sp))
         Spacer(Modifier.height(2.dp))
         Txt(value, F.s(size.sp, C.white, FontWeight.Bold, F.outfit, spacing.sp))
