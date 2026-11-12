@@ -156,7 +156,12 @@ class Playback(ctx: Context, private val vm: Vm) {
     fun neighbor(delta: Int): PlayItem? {
         val cur = current ?: return null
         if (list.isEmpty()) return null
-        val i = list.indexOfFirst { it.key == cur.key }
+        var i = list.indexOfFirst { it.key == cur.key }
+        // trocou de qualidade (canal fora da lista): usa a posição do canal "irmão"
+        if (i < 0 && cur.channel != null) {
+            val k = FootballApi.channelKey(cur.channel.name)
+            i = list.indexOfFirst { it.channel?.let { c -> FootballApi.channelKey(c.name) } == k }
+        }
         if (i < 0) return null
         val n = i + delta
         return if (cur.kind == Kind.LIVE) list[((n % list.size) + list.size) % list.size] else list.getOrNull(n)
@@ -257,6 +262,7 @@ fun FullPlayer(vm: Vm, pb: Playback) {
     var dur by remember { mutableLongStateOf(0L) }
     var seekTarget by remember { mutableLongStateOf(-1L) }
     val root = remember { FocusRequester() }
+    val qualityReq = remember { FocusRequester() }
 
     fun showOverlay() { overlay = true; overlayTick = System.currentTimeMillis() }
     fun close() {
@@ -268,6 +274,12 @@ fun FullPlayer(vm: Vm, pb: Playback) {
 
     LaunchedEffect(Unit) { runCatching { root.requestFocus() } }
     LaunchedEffect(panel) { if (panel == PPanel.NONE) { delay(50); runCatching { root.requestFocus() } } }
+    // ao vivo: com as informações abertas o foco vai para a qualidade; ao fechar, volta para o player
+    LaunchedEffect(overlay, panel) {
+        if (!live || panel != PPanel.NONE) return@LaunchedEffect
+        delay(30)
+        runCatching { if (overlay) qualityReq.requestFocus() else root.requestFocus() }
+    }
     LaunchedEffect(overlayTick, overlay) {
         if (overlay) { delay(if (live) 4_500 else 4_000); if (pb.isPlaying || live) overlay = false }
     }
@@ -295,7 +307,7 @@ fun FullPlayer(vm: Vm, pb: Playback) {
         when {
             panel != PPanel.NONE -> panel = PPanel.NONE
             digits.isNotEmpty() -> digits = ""
-            overlay && !live -> overlay = false
+            overlay -> overlay = false
             else -> close()
         }
     }
@@ -314,6 +326,11 @@ fun FullPlayer(vm: Vm, pb: Playback) {
             .focusRequester(root)
             .onPreviewKeyEvent { ev ->
                 if (panel != PPanel.NONE) return@onPreviewKeyEvent false
+                // ao vivo com informações abertas: ◀▶ e OK ficam com os botões de qualidade
+                if (live && overlay && (isSelectKey(ev.key) || ev.key == Key.DirectionLeft || ev.key == Key.DirectionRight)) {
+                    if (ev.type == KeyEventType.KeyDown) showOverlay()
+                    return@onPreviewKeyEvent false
+                }
                 if (ev.type != KeyEventType.KeyDown) return@onPreviewKeyEvent isSelectKey(ev.key)
                 val code = ev.nativeKeyEvent.keyCode
                 val rep = ev.nativeKeyEvent.repeatCount
@@ -335,7 +352,7 @@ fun FullPlayer(vm: Vm, pb: Playback) {
                     AKey.KEYCODE_DPAD_CENTER, AKey.KEYCODE_ENTER, AKey.KEYCODE_NUMPAD_ENTER -> {
                         if (rep > 0) return@onPreviewKeyEvent true
                         if (pb.error != null && !live) pb.retry()
-                        else if (live) panel = PPanel.CHANNELS
+                        else if (live) showOverlay()
                         else { if (pb.exo.isPlaying) pb.exo.pause() else pb.exo.play(); showOverlay() }
                         true
                     }
@@ -369,9 +386,11 @@ fun FullPlayer(vm: Vm, pb: Playback) {
         }
 
         if (overlay && panel == PPanel.NONE) {
-            if (live) LiveOverlay(vm, item, Modifier.align(Alignment.BottomCenter))
-            else VodOverlay(item, if (seekTarget >= 0) seekTarget else pos, dur, pb.isPlaying, Modifier.align(Alignment.BottomCenter))
-            Txt(hhmm(System.currentTimeMillis()), F.s(12.sp, C.white, FontWeight.Bold), Modifier.align(Alignment.TopEnd).padding(20.dp))
+            if (live) LiveOverlay(vm, pb, item, qualityReq, Modifier.fillMaxSize())
+            else {
+                VodOverlay(item, if (seekTarget >= 0) seekTarget else pos, dur, pb.isPlaying, Modifier.align(Alignment.BottomCenter))
+                Txt(hhmm(System.currentTimeMillis()), F.s(12.sp, C.white, FontWeight.Bold), Modifier.align(Alignment.TopEnd).padding(20.dp))
+            }
         }
 
         when (panel) {
@@ -387,32 +406,136 @@ fun Spinner(modifier: Modifier, size: androidx.compose.ui.unit.Dp) { Box(modifie
 
 fun liveItem(c: Channel) = PlayItem(Kind.LIVE, "live:${c.id}", c.name, "", c.url, c.logo, channel = c)
 
+/** Qualidade pelo nome do canal: "AgroMais FHD" → FHD. */
+object Quality {
+    val order = listOf("UHD", "FHD", "HD", "SD")
+    private val uhd = Regex("""(?i)\b(uhd|4k|2160p?)\b""")
+    private val fhd = Regex("""(?i)\b(fhd|full\s?hd|1080p?)\b""")
+    private val hd = Regex("""(?i)\b(hd|720p?)\b""")
+    private val sd = Regex("""(?i)\b(sd|480p?)\b""")
+    fun of(name: String): String? = when {
+        uhd.containsMatchIn(name) -> "UHD"
+        fhd.containsMatchIn(name) -> "FHD"
+        hd.containsMatchIn(name) -> "HD"
+        sd.containsMatchIn(name) -> "SD"
+        else -> null
+    }
+}
+
+private val liveBlue = Color(0xFF3D6BFF)
+
+/** Informações do canal ao vivo (layout da tela de referência): canal, programa, progresso, a seguir e qualidade. */
 @Composable
-private fun LiveOverlay(vm: Vm, item: PlayItem, modifier: Modifier) {
+private fun LiveOverlay(vm: Vm, pb: Playback, item: PlayItem, qualityReq: FocusRequester, modifier: Modifier) {
     val c = item.channel ?: return
     val progs = vm.epg[c.id].orEmpty()
-    val now = progs.firstOrNull { it.isNow() }
-    val next = progs.firstOrNull { it.start >= (now?.end ?: System.currentTimeMillis()) }
-    Box(modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xF00B0A1C)))).padding(horizontal = 28.dp, vertical = 22.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ChannelLogo(c, Modifier.size(54.dp, 40.dp))
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    LiveBadge()
-                    Spacer(Modifier.width(8.dp))
-                    Txt("${c.num} · ${c.name}", F.s(15.sp, C.white, FontWeight.Bold, F.outfit))
+    val nowMs = System.currentTimeMillis()
+    val now = progs.firstOrNull { it.isNow(nowMs) }
+    val next = progs.firstOrNull { it.start >= (now?.end ?: nowMs) }
+    val list = pb.list
+    val pos = list.indexOfFirst { it.key == item.key }.let { if (it < 0) list.indexOfFirst { p -> p.channel?.let { ch -> FootballApi.channelKey(ch.name) } == FootballApi.channelKey(c.name) } else it }
+    val variants = remember(c.id, vm.channels) {
+        vm.channelIndex()[FootballApi.channelKey(c.name)].orEmpty().mapNotNull { ch -> Quality.of(ch.name)?.let { it to ch } }.distinctBy { it.first }.toMap()
+    }
+    val q = Quality.of(c.name)
+
+    Box(modifier) {
+        // topo: posição na lista e relógio
+        Row(
+            Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color(0xCC000000), Color.Transparent))).padding(horizontal = 32.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(Modifier.weight(1f))
+            val where = listOfNotNull("Canais", vm.catName(c.catId).ifBlank { null }).joinToString(" • ") + if (pos >= 0 && list.size > 1) " · ${pos + 1} de ${list.size}" else ""
+            Txt(where, F.s(9.5.sp, C.white.copy(alpha = 0.9f), FontWeight.SemiBold))
+            Spacer(Modifier.width(12.dp))
+            Txt(hhmm(nowMs), F.s(19.sp, C.white, FontWeight.Bold, F.outfit))
+        }
+        Column(
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                .background(Brush.verticalGradient(0f to Color.Transparent, 0.35f to Color(0xB3080A16), 1f to Color(0xF2080A16)))
+                .padding(start = 32.dp, end = 32.dp, top = 40.dp, bottom = 26.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(52.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF1A1D33)), contentAlignment = Alignment.Center) {
+                    ChannelLogo(c, Modifier.size(46.dp))
                 }
-                Spacer(Modifier.height(4.dp))
-                if (now != null) {
-                    Txt("${now.title}  ·  ${hhmm(now.start)} – ${hhmm(now.end)}", F.s(9.5.sp, C.text))
-                    Spacer(Modifier.height(5.dp))
-                    ProgressBar(now.progress(), Modifier.fillMaxWidth(0.7f).height(3.dp).clip(RoundedCornerShape(2.dp)))
-                    if (next != null) { Spacer(Modifier.height(5.dp)); Txt("A seguir: ${hhmm(next.start)} ${next.title}", F.s(8.5.sp, C.dim)) }
-                } else Txt(vm.catName(c.catId), F.s(9.sp, C.dim))
-                Spacer(Modifier.height(7.dp))
-                Txt("OK lista de canais   ▲▼ trocar canal   0-9 número   MENU áudio/legenda", F.s(7.5.sp, C.faint))
+                Spacer(Modifier.width(14.dp))
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Txt(c.num.toString(), F.s(12.sp, C.white.copy(alpha = 0.9f), FontWeight.Medium))
+                        Spacer(Modifier.width(7.dp))
+                        LiveBadge()
+                        if (q != null) {
+                            Spacer(Modifier.width(5.dp))
+                            Box(Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0x33FFFFFF)).padding(horizontal = 5.dp, vertical = 2.dp)) {
+                                Txt(q, F.s(7.5.sp, C.white, FontWeight.Bold))
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(2.dp))
+                    Txt(c.name, F.s(22.sp, C.white, FontWeight.Bold, F.outfit))
+                }
             }
+            Spacer(Modifier.height(12.dp))
+            if (now != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Txt("${hhmm(now.start)} – ${hhmm(now.end)}", F.s(10.sp, liveBlue.copy(alpha = 0.95f), FontWeight.SemiBold))
+                    Spacer(Modifier.width(10.dp))
+                    Txt(now.title, F.s(13.sp, C.white, FontWeight.Bold))
+                }
+                Spacer(Modifier.height(9.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ProgressBar(now.progress(nowMs), Modifier.weight(1f).height(3.dp).clip(RoundedCornerShape(2.dp)), liveBlue, Color(0x55FFFFFF))
+                    Spacer(Modifier.width(14.dp))
+                    Txt("faltam ${((now.end - nowMs) / 60_000).coerceAtLeast(0)} min", F.s(9.5.sp, C.white, FontWeight.SemiBold))
+                }
+                if (next != null) {
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Txt("A seguir", F.s(9.5.sp, C.dim))
+                        Spacer(Modifier.width(10.dp))
+                        Txt(hhmm(next.start), F.s(9.5.sp, C.text, FontWeight.Medium))
+                        Spacer(Modifier.width(10.dp))
+                        Txt(next.title, F.s(9.5.sp, C.text, FontWeight.Medium))
+                    }
+                }
+            } else {
+                Txt(vm.catName(c.catId).ifBlank { "Ao vivo" }, F.s(10.sp, C.dim))
+            }
+            Spacer(Modifier.height(14.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Txt("Qualidade", F.s(8.5.sp, C.dim), Modifier.padding(end = 10.dp))
+                val focusTarget = q?.takeIf { variants.containsKey(it) } ?: Quality.order.firstOrNull { variants.containsKey(it) } ?: Quality.order[2]
+                Quality.order.forEach { label ->
+                    val target = variants[label]
+                    QualityPill(label, selected = label == q, available = target != null, requester = if (label == focusTarget) qualityReq else null) {
+                        if (target != null && target.id != c.id) pb.play(liveItem(target), pb.list)
+                    }
+                    Spacer(Modifier.width(7.dp))
+                }
+                Spacer(Modifier.width(6.dp))
+                Txt(if (q != null) "$q · Assistindo agora" else "Assistindo agora", F.s(9.5.sp, C.white, FontWeight.SemiBold))
+            }
+        }
+    }
+}
+
+@Composable
+private fun QualityPill(label: String, selected: Boolean, available: Boolean, requester: FocusRequester?, onClick: () -> Unit) {
+    Focus(onClick = onClick, requester = requester) { f ->
+        val shape = RoundedCornerShape(8.dp)
+        Column(
+            Modifier.width(52.dp).height(36.dp).clip(shape)
+                .background(if (selected) C.white else if (f) Color(0x55FFFFFF) else Color(0x22FFFFFF))
+                .border(if (f) 2.dp else 1.dp, if (f) C.white else Color(0x40FFFFFF), shape),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
+        ) {
+            Txt(label, F.s(10.sp, if (selected) Color(0xFF14172B) else if (available) C.white else C.white.copy(alpha = 0.4f), FontWeight.Bold))
+            Spacer(Modifier.height(2.dp))
+            Box(Modifier.size(3.5.dp).clip(androidx.compose.foundation.shape.CircleShape).background(
+                when { selected -> liveBlue; available -> C.white.copy(alpha = 0.6f); else -> Color.Transparent }
+            ))
         }
     }
 }
@@ -511,7 +634,6 @@ private fun OptionsPanel(pb: Playback, modifier: Modifier, onClose: () -> Unit) 
                 pb.select(if (next >= subs.size) null else subs[next], MC.TRACK_TYPE_TEXT); tick++
             }
         }
-        OptionRow("Tela", modes[mIdx].second) { pb.resize = modes[(mIdx + 1) % modes.size].first; tick++ }
         if (item?.kind == Kind.EPISODE) {
             pb.neighbor(1)?.let { n -> OptionRow("Próximo episódio", n.title) { pb.play(n, pb.list); onClose() } }
         }

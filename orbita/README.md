@@ -26,13 +26,13 @@ O app **não fornece conteúdo**: você entra com os dados do seu provedor (Xtre
 
 | Tecla | Listas | Player ao vivo | Player filme/série |
 |---|---|---|---|
-| OK | abrir / prévia → tela cheia | lista de canais | pausar / continuar |
+| OK | abrir / prévia → tela cheia | informações do canal e qualidade (UHD/FHD/HD/SD) | pausar / continuar |
 | Segurar OK | favoritar canal, adicionar à minha lista, seguir time | – | – |
 | ▲▼ | navegar | canal anterior / próximo | mostrar informações / opções |
-| ◀▶ | trocar coluna | lista de canais / informações | voltar / avançar 10 s (segure para acelerar) |
+| ◀▶ | trocar coluna | ◀ lista de canais · com informações abertas: escolher qualidade | voltar / avançar 10 s (segure para acelerar) |
 | 0–9 | – | digitar número do canal | – |
 | CH+ / CH− | – | trocar canal | – |
-| MENU | – | áudio, legenda, tela | áudio, legenda, tela, próximo episódio |
+| MENU | – | áudio, legenda | áudio, legenda, próximo episódio |
 | VOLTAR | voltar / ir para o menu do topo; 2× sai | sair da tela cheia | sair (o progresso fica salvo) |
 
 ## Compilar

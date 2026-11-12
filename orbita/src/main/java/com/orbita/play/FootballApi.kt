@@ -158,7 +158,7 @@ object FootballApi {
 
     // ---- canais: "Sportv 2" (API) ↔ "SPORTV 2 FHD" (lista do usuário)
 
-    private val quality = Regex("""(?i)\b(fhd|uhd|hd|sd|4k|h\.?265|hevc|br|brasil|brazil|\[.*?]|\(.*?\)|alt|backup|vip|24h)\b""")
+    private val quality = Regex("""(?i)\b(fhd|uhd|hd|sd|4k|fullhd|2160p|1080p|720p|480p|h\.?265|hevc|br|brasil|brazil|\[.*?]|\(.*?\)|alt|backup|vip|24h)\b""")
 
     fun channelKey(name: String): String {
         val n = MatchLogic.norm(name).lowercase()
