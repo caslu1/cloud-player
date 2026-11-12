@@ -219,8 +219,7 @@ class AppFlowTest {
         rule.onAllNodesWithText("Ribeirense", substring = true)[0].performClick() // segundo OK: tela cheia
         repeat(10) { pump() }
         shot("10-player")
-        back() // esconde as informações
-        settle(400)
+        settle(6000) // as informações somem sozinhas
         pressLeft() // abre a lista com categorias
         waitText("CATEGORIAS")
         shot("11-lista-player")
