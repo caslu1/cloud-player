@@ -23,7 +23,7 @@ object Tmdb {
         val runtimeMin: Int, val rating: Float, val backdrop: String?, val poster: String?, val logo: String?, val trailer: String?,
         val seasons: Int,
     ) {
-        fun backdropUrl(size: String = "w1280") = backdrop?.let { IMG + size + it }
+        fun backdropUrl(size: String = "w780") = backdrop?.let { IMG + size + it }
         fun posterUrl(size: String = "w342") = poster?.let { IMG + size + it }
         fun logoUrl(size: String = "w500") = logo?.let { IMG + size + it }
 

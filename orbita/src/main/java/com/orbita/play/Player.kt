@@ -70,6 +70,7 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 /** Um único ExoPlayer para a prévia e a tela cheia. */
+@androidx.compose.runtime.Stable
 class Playback(ctx: Context, private val vm: Vm) {
     val exo: ExoPlayer
     var current by mutableStateOf<PlayItem?>(null); private set

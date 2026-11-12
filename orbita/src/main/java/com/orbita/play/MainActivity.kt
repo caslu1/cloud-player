@@ -79,6 +79,7 @@ sealed class Route(val returnKey: String?) {
 }
 
 /** Estado de navegação/telas que sobrevive enquanto o app está aberto. */
+@androidx.compose.runtime.Stable
 class Ui {
     var tab by mutableStateOf(Tab.CANAIS)
     val stack = mutableStateListOf<Route>()

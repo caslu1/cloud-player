@@ -113,3 +113,19 @@ class PlayItem(
     val series: Series? = null,
     val episode: Episode? = null,
 )
+
+/**
+ * Mapa em que cada chave tem o próprio estado: quem lê o guia/capa de UM canal/filme só é redesenhado
+ * quando AQUELE item muda (com um mapa de estado comum, cada resposta redesenhava a lista inteira).
+ * Usado só na thread da tela.
+ */
+@androidx.compose.runtime.Stable
+class StateMap<V : Any> {
+    private val map = HashMap<String, androidx.compose.runtime.MutableState<V?>>()
+    private fun slot(k: String) = map.getOrPut(k) { androidx.compose.runtime.mutableStateOf(null) }
+    operator fun get(k: String): V? = slot(k).value
+    operator fun set(k: String, v: V) { slot(k).value = v }
+    fun containsKey(k: String): Boolean = map[k]?.value != null
+    fun remove(k: String) { map[k]?.value = null }
+    fun clear() { map.values.forEach { it.value = null } }
+}

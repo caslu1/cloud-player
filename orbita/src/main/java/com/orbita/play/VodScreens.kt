@@ -328,7 +328,6 @@ private fun MovieButtons(vm: Vm, pb: Playback, ctx: Context, m: Movie, req: Focu
         pb.openFull(movieItem(m, vm.metaOf(m)?.genres ?: vm.movieInfos[m.id]?.genre.orEmpty()), startMs = prog?.pos ?: 0L)
     }
     ActionButton(if (vm.store.inList("m:${m.id}")) "Na minha lista" else "Minha lista", icon = if (vm.store.inList("m:${m.id}")) Ic.Check else Ic.Add) { vm.store.toggleList("m:${m.id}") }
-    ActionButton("Trailer", icon = Ic.Trailer) { openTrailer(ctx, vm.metaOf(m)?.trailer ?: vm.movieInfos[m.id]?.trailer, m.name) }
 }
 
 @Composable
@@ -378,7 +377,6 @@ fun MovieDetail(vm: Vm, pb: Playback, ui: Ui, m: Movie) {
                     }
                     if (prog != null) ActionButton("Do início", icon = Ic.Rewind) { pb.openFull(movieItem(m, h.genre.orEmpty()), startMs = 1L); pb.exo.seekTo(0) }
                     ActionButton(if (vm.store.inList("m:${m.id}")) "Na minha lista" else "Minha lista", icon = if (vm.store.inList("m:${m.id}")) Ic.Check else Ic.Add) { vm.store.toggleList("m:${m.id}") }
-                    ActionButton("Trailer", icon = Ic.Trailer) { openTrailer(ctx, t?.trailer ?: info?.trailer, m.name) }
                 }
                 if (prog != null) {
                     Spacer(Modifier.height(14.dp))

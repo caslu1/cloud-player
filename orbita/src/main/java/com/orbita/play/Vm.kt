@@ -29,6 +29,7 @@ class Match(
 }
 
 /** Estado do app: conta, catálogo (canais, filmes, séries), guia e jogos. */
+@androidx.compose.runtime.Stable
 class Vm(ctx: Context) {
     val store = Store(ctx.applicationContext)
 
@@ -62,13 +63,13 @@ class Vm(ctx: Context) {
     var seriesByCat: Map<String, List<Series>> = emptyMap(); private set
 
     /** Guia por canal; o mapa é um estado, então os itens visíveis atualizam quando o guia chega. */
-    val epg = mutableStateMapOf<String, List<Prog>>()
+    val epg = StateMap<List<Prog>>()
     private val epgTime = ConcurrentHashMap<String, Long>()
     private val epgRunning = ConcurrentHashMap.newKeySet<String>()
     private val epgGate = Semaphore(4)
 
-    val movieInfos = mutableStateMapOf<String, MovieInfo>()
-    val seriesInfos = mutableStateMapOf<String, SeriesInfo>()
+    val movieInfos = StateMap<MovieInfo>()
+    val seriesInfos = StateMap<SeriesInfo>()
 
     var matchState by mutableStateOf(LoadState.IDLE); private set
     var matches by mutableStateOf<List<Match>>(emptyList()); private set
@@ -259,7 +260,7 @@ class Vm(ctx: Context) {
     }
 
     // ---- TMDB (logo, fundo, sinopse)
-    val meta = mutableStateMapOf<String, Tmdb.Meta>()
+    val meta = StateMap<Tmdb.Meta>()
     private val metaMiss = ConcurrentHashMap.newKeySet<String>()
     private val metaRunning = ConcurrentHashMap.newKeySet<String>()
     private val metaGate = Semaphore(4)
