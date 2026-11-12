@@ -172,7 +172,7 @@ class AppFlowTest {
         waitText("Atlético Serrano x Ribeirense")
         waitText("Gol TV")
         shot("02-canais")
-        click("Futebol 2 FHD") // toca na prévia
+        click("Gol TV FHD") // toca na prévia
         repeat(10) { pump() }
 
         // Filmes
