@@ -23,6 +23,8 @@ import org.robolectric.annotation.GraphicsMode
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.printToString
 import java.io.File
 import java.time.Duration
@@ -155,6 +157,12 @@ class AppFlowTest {
         repeat(5) { pump() }
     }
 
+    @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
+    private fun pressLeft() {
+        rule.onRoot().performKeyInput { pressKey(androidx.compose.ui.input.key.Key.DirectionLeft) }
+        repeat(5) { pump() }
+    }
+
     private fun back() {
         rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
         repeat(5) { pump() }
@@ -212,6 +220,11 @@ class AppFlowTest {
         repeat(10) { pump() }
         shot("10-player")
         back() // esconde as informações
+        settle(400)
+        pressLeft() // abre a lista com categorias
+        waitText("CATEGORIAS")
+        shot("11-lista-player")
+        back() // fecha a lista
         back() // sai da tela cheia
 
         // Buscar, Biblioteca, Configurações
