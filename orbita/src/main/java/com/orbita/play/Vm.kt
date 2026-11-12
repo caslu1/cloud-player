@@ -117,7 +117,8 @@ class Vm(ctx: Context) {
         val src = source ?: return@launch
         liveState = LoadState.LOADING; liveError = null
         runCatching { withContext(Dispatchers.IO) { src.loadLive() } }
-            .onSuccess { (cats, list) ->
+            .onSuccess { (rawCats, raw) ->
+                val cats = rawCats.distinctBy { it.id }; val list = raw.distinctBy { it.id }
                 channelById = list.associateBy { it.id }
                 channelsByCat = list.groupBy { it.catId }
                 liveCats = cats.filter { channelsByCat.containsKey(it.id) } +
@@ -136,7 +137,8 @@ class Vm(ctx: Context) {
         if (movieState == LoadState.LOADING) return@launch
         movieState = LoadState.LOADING
         runCatching { withContext(Dispatchers.IO) { src.loadMovies() } }
-            .onSuccess { (cats, list) ->
+            .onSuccess { (rawCats, raw) ->
+                val cats = rawCats.distinctBy { it.id }; val list = raw.distinctBy { it.id }
                 movieById = list.associateBy { it.id }
                 moviesByCat = list.groupBy { it.catId }
                 movieCats = cats.filter { moviesByCat.containsKey(it.id) }
@@ -151,7 +153,8 @@ class Vm(ctx: Context) {
         if (seriesState == LoadState.LOADING) return@launch
         seriesState = LoadState.LOADING
         runCatching { withContext(Dispatchers.IO) { src.loadSeries() } }
-            .onSuccess { (cats, list) ->
+            .onSuccess { (rawCats, raw) ->
+                val cats = rawCats.distinctBy { it.id }; val list = raw.distinctBy { it.id }
                 seriesById = list.associateBy { it.id }
                 seriesByCat = list.groupBy { it.catId }
                 seriesCats = cats.filter { seriesByCat.containsKey(it.id) }
@@ -197,7 +200,8 @@ class Vm(ctx: Context) {
     suspend fun seriesInfo(s: Series): SeriesInfo {
         seriesInfos[s.id]?.let { return it }
         val src = source ?: throw IllegalStateException("Sem conta")
-        val i = withContext(Dispatchers.IO) { src.seriesInfo(s) }
+        val raw = withContext(Dispatchers.IO) { src.seriesInfo(s) }
+        val i = SeriesInfo(raw.plot, raw.genre, raw.year, raw.rating, raw.backdrop, raw.cast, raw.seasons.mapValues { (_, l) -> l.distinctBy { it.id } })
         seriesInfos[s.id] = i
         return i
     }
@@ -212,7 +216,7 @@ class Vm(ctx: Context) {
         matchJob?.cancel()
         matchJob = scope.launch {
             matchState = LoadState.LOADING; matchProgress = 0f
-            val list = footballChannels.sortedBy { if (it.name.contains("futebol", true) || it.name.contains("premiere", true)) 0 else 1 }.take(90)
+            val list = footballChannels.distinctBy { it.id }.sortedBy { if (it.name.contains("futebol", true) || it.name.contains("premiere", true)) 0 else 1 }.take(90)
             val gate = Semaphore(6)
             var done = 0
             val found = HashMap<String, Match>()
