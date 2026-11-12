@@ -100,10 +100,10 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
                 TitleArt(s.name, tm?.logoUrl())
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    (info?.year ?: s.year)?.let { MetaChip(it) }
-                    val r = info?.rating?.takeIf { it > 0 } ?: s.rating
+                    (tm?.year ?: info?.year ?: s.year)?.let { MetaChip(it) }
+                    val r = tm?.rating?.takeIf { it > 0 } ?: info?.rating?.takeIf { it > 0 } ?: s.rating
                     if (r > 0) MetaChip(String.format(Locale("pt", "BR"), "★ %.1f", r), C.star, Color(0x33FBBF24))
-                    (info?.genre ?: s.genre)?.let { Txt(it, F.s(8.5.sp, C.dim)) }
+                    (tm?.genres ?: info?.genre ?: s.genre)?.let { Txt(it, F.s(8.5.sp, C.dim)) }
                 }
                 Spacer(Modifier.height(10.dp))
                 Txt(tm?.overview ?: info?.plot ?: s.plot ?: "", F.s(9.5.sp, C.text), maxLines = 4)
