@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="LoginScreen" extends="Group">
+    <interface>
+        <field id="params" type="assocarray" />
+        <field id="action" type="assocarray" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/common.brs" />
+    <script type="text/brightscript" uri="pkg:/components/LoginScreen.brs" />
+    <script type="text/brightscript" uri="pkg:/source/bslib.brs" />
+    <children>
+        <Poster uri="pkg:/images/splash_fhd.png" width="1920" height="1080" opacity="0.35" />
+        <Label text="Conectar lista" translation="[660,250]" width="600" horizAlign="center" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" />
+        <Label text="Informe os dados Xtream Codes do seu provedor" translation="[560,320]" width="800" horizAlign="center" font="font:SmallSystemFont" color="0xA59FC0FF" />
+        <LabelList id="form" translation="[660,400]" itemSize="[600,76]" itemSpacing="[0,14]" numRows="4" color="0xE9E6F5FF" focusedColor="0x0B0A12FF" focusBitmapUri="pkg:/images/row.png" focusBitmapBlendColor="0xF4F2FAFF" font="font:MediumSystemFont" focusedFont="font:MediumBoldSystemFont" />
+        <Label id="msg" translation="[560,800]" width="800" horizAlign="center" font="font:SmallSystemFont" color="0xFF6B81FF" />
+    </children>
+</component>

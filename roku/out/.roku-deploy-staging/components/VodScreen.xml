@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="VodScreen" extends="Group">
+    <interface>
+        <field id="params" type="assocarray" onChange="onParams" />
+        <field id="action" type="assocarray" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/common.brs" />
+    <script type="text/brightscript" uri="pkg:/components/VodScreen.brs" />
+    <script type="text/brightscript" uri="pkg:/source/bslib.brs" />
+    <children>
+        <Label id="title" translation="[80,50]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" />
+        <Rectangle translation="[70,130]" width="500" height="900" color="0x0D0B18E6" />
+        <Label text="CATEGORIAS" translation="[90,145]" font="font:SmallestBoldSystemFont" color="0x6D6788FF" />
+        <LabelList id="cats" translation="[80,190]" itemSize="[480,64]" numRows="12" color="0xCFC8EAFF" focusedColor="0xFFFFFFFF" focusBitmapUri="pkg:/images/row.png" focusBitmapBlendColor="0x7C5CFFFF" font="font:MediumSystemFont" focusedFont="font:MediumBoldSystemFont" />
+        <Label id="catTitle" translation="[620,145]" width="1200" font="font:SmallestBoldSystemFont" color="0x6D6788FF" />
+        <PosterGrid id="grid" translation="[620,190]" basePosterSize="[240,360]" itemSpacing="[28,70]" numColumns="5" numRows="2" posterDisplayMode="scaleToZoom" caption1NumLines="1" caption1Font="font:SmallSystemFont" caption1Color="0xE9E6F5FF" loadingBitmapUri="pkg:/images/tile.png" failedBitmapUri="pkg:/images/tile.png" />
+        <Label id="status" translation="[620,500]" width="1220" horizAlign="center" font="font:MediumSystemFont" color="0xA59FC0FF" text="Carregando…" />
+    </children>
+</component>

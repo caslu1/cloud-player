@@ -1,0 +1,41 @@
+name: Orbita Play Roku
+
+# Valida o código BrightScript e publica o pacote do canal Roku:
+# https://github.com/caslu1/cloud-player/releases/download/orbita-play/Orbita-Play-Roku.zip
+on:
+  push:
+    paths:
+      - 'roku/**'
+      - '.github/workflows/roku.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: orbita-roku
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validar código
+        run: |
+          cd roku
+          npx --yes brighterscript@0.69 --project bsconfig.json
+      - name: Empacotar
+        run: |
+          cd roku
+          sed -i "s/^build_version=.*/build_version=${{ github.run_number }}/" manifest
+          zip -r ../Orbita-Play-Roku.zip manifest source components images
+          ls -la ../Orbita-Play-Roku.zip
+      - name: Publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload orbita-play Orbita-Play-Roku.zip --clobber

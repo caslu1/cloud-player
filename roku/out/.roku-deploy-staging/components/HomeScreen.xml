@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="HomeScreen" extends="Group">
+    <interface>
+        <field id="params" type="assocarray" />
+        <field id="action" type="assocarray" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/common.brs" />
+    <script type="text/brightscript" uri="pkg:/components/HomeScreen.brs" />
+    <script type="text/brightscript" uri="pkg:/source/bslib.brs" />
+    <children>
+        <Poster uri="pkg:/images/splash_fhd.png" width="1920" height="1080" opacity="0.25" />
+        <Poster uri="pkg:/images/icon_hd.png" translation="[815,90]" width="290" height="218" />
+        <Group id="tiles" translation="[218,420]" />
+        <Label id="clock" translation="[1600,50]" width="260" horizAlign="right" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" />
+        <Label id="info" translation="[80,1000]" width="1760" font="font:SmallestSystemFont" color="0x6D6788FF" />
+        <Timer id="timer" repeat="true" duration="20" />
+    </children>
+</component>
