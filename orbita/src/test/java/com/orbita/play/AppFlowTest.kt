@@ -203,8 +203,10 @@ class AppFlowTest {
         waitText("Ribeirense")
         waitText("AO VIVO 67'")
         waitText("2 × 1")
-        rule.onAllNodesWithText("Ribeirense", substring = true)[0].performClick() // abre a prévia no canal Futebol 2 FHD
+        rule.onAllNodesWithText("Ribeirense", substring = true)[0].performClick() // Futebol 2 FHD já está na prévia: abre em tela cheia
         repeat(10) { pump() }
+        shot("10-player")
+        back() // sai da tela cheia
         shot("07-futebol")
 
         // Buscar, Biblioteca, Configurações
