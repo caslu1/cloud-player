@@ -226,8 +226,9 @@ fun VodRows(
                         } else {
                             listItemsIndexed(row.entries, key = { _, e -> e.key }) { i, e ->
                                 val m = e.movie; val s = e.series
-                                if (e.image == null) LaunchedEffect(e.key) { delay(250); m?.let { vm.requestMeta(it) }; s?.let { vm.requestMeta(it) } }
-                                val img = e.image ?: (m?.let { vm.metaOf(it) } ?: s?.let { vm.metaOf(it) })?.posterUrl()
+                                LaunchedEffect(e.key) { delay(200); m?.let { vm.requestMeta(it) }; s?.let { vm.requestMeta(it) } }
+                                // capa do TMDB quando encontrada; senão a do provedor
+                                val img = (m?.let { vm.metaOf(it) } ?: s?.let { vm.metaOf(it) })?.posterUrl() ?: e.image
                                 BigPoster(
                                     e, img, 112.dp, "${row.key}:${e.key}", if (rowIdx == 0 && i == 0) firstReq else null,
                                     onFocus = { sel.key = e.key; sel.row = rowIdx }
@@ -353,7 +354,7 @@ private fun movieHero(vm: Vm, m: Movie, label: String): HeroData {
     val info = vm.movieInfos[m.id]
     val dur = info?.durationSec?.takeIf { it > 0 } ?: t?.runtimeMin?.takeIf { it > 0 }?.times(60)
     return HeroData(
-        m.id, label, m.name, t?.logoUrl(), t?.backdropUrl() ?: info?.backdrop ?: m.poster,
+        m.id, label, t?.title ?: Tmdb.clean(m.name).first, t?.logoUrl(), t?.backdropUrl() ?: info?.backdrop ?: m.poster,
         listOfNotNull(t?.year ?: info?.year, dur?.let(::fmtDuration), info?.age),
         t?.rating?.takeIf { it > 0 } ?: info?.rating?.takeIf { it > 0 } ?: m.rating,
         t?.genres ?: info?.genre, t?.overview ?: info?.plot,
@@ -386,7 +387,7 @@ fun MovieDetail(vm: Vm, pb: Playback, ui: Ui, m: Movie) {
             Column(Modifier.weight(1f)) {
                 Txt("FILME", F.s(8.sp, C.cyan, FontWeight.SemiBold, spacing = 2.sp))
                 Spacer(Modifier.height(6.dp))
-                TitleArt(m.name, h.logo)
+                TitleArt(h.title, h.logo)
                 Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     h.chips.forEach { MetaChip(it) }
@@ -413,7 +414,7 @@ fun MovieDetail(vm: Vm, pb: Playback, ui: Ui, m: Movie) {
             }
             Box(Modifier.padding(top = 16.dp).width(170.dp).height(255.dp).clip(RoundedCornerShape(12.dp))) {
                 GeneratedArt(m.name, Modifier.fillMaxSize(), big = true)
-                (m.poster ?: t?.posterUrl("w500"))?.let { AsyncImage(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
+                (t?.posterUrl("w500") ?: m.poster)?.let { AsyncImage(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
             }
         }
         HintBar(listOf("OK" to "Selecionar", "VOLTAR" to "Filmes"), Modifier.align(Alignment.BottomStart).padding(bottom = 14.dp))
@@ -446,8 +447,8 @@ fun CategoryGrid(vm: Vm, pb: Playback, ui: Ui, r: Route.CategoryGrid) {
                     horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     itemsIndexed(entries, key = { _, e -> e.key }) { i, e ->
-                        if (e.image == null) LaunchedEffect(e.key) { delay(250); e.movie?.let { vm.requestMeta(it) }; e.series?.let { vm.requestMeta(it) } }
-                        val img = e.image ?: (e.movie?.let { vm.metaOf(it) } ?: e.series?.let { vm.metaOf(it) })?.posterUrl()
+                        LaunchedEffect(e.key) { delay(200); e.movie?.let { vm.requestMeta(it) }; e.series?.let { vm.requestMeta(it) } }
+                        val img = (e.movie?.let { vm.metaOf(it) } ?: e.series?.let { vm.metaOf(it) })?.posterUrl() ?: e.image
                         BigPoster(e, img, 108.dp, "grid:${e.key}", if (i == 0) first else null, onFocus = {})
                     }
                 }
@@ -515,7 +516,7 @@ fun seriesHero(vm: Vm, s: Series, label: String, info: SeriesInfo? = null): Hero
     val t = vm.metaOf(s)
     val seasons = info?.seasons?.size ?: t?.seasons ?: 0
     return HeroData(
-        s.id, if (seasons > 0) "$label · $seasons TEMPORADA${if (seasons > 1) "S" else ""}" else label, s.name, t?.logoUrl(),
+        s.id, if (seasons > 0) "$label · $seasons TEMPORADA${if (seasons > 1) "S" else ""}" else label, t?.title ?: Tmdb.clean(s.name).first, t?.logoUrl(),
         t?.backdropUrl() ?: info?.backdrop ?: s.backdrop ?: s.cover,
         listOfNotNull(t?.year ?: info?.year ?: s.year),
         t?.rating?.takeIf { it > 0 } ?: info?.rating?.takeIf { it > 0 } ?: s.rating,

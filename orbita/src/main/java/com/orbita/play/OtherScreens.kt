@@ -228,7 +228,8 @@ fun SearchScreen(vm: Vm, pb: Playback, ui: Ui) {
                     SectionTitle("Filmes (${r.movies.size})")
                     LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(11.dp)) {
                         items(r.movies, key = { it.id }) { m ->
-                            Poster(m.name, m.poster, rating = m.rating, memKey = "s:mv:${m.id}") { ui.push(Route.MovieDetail(m, FocusMem.last)) }
+                            LaunchedEffect(m.id) { delay(200); vm.requestMeta(m) }
+                            Poster(m.name, vm.metaOf(m)?.posterUrl() ?: m.poster, rating = m.rating, memKey = "s:mv:${m.id}") { ui.push(Route.MovieDetail(m, FocusMem.last)) }
                         }
                     }
                 }
@@ -236,7 +237,8 @@ fun SearchScreen(vm: Vm, pb: Playback, ui: Ui) {
                     SectionTitle("Séries (${r.series.size})")
                     LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(11.dp)) {
                         items(r.series, key = { it.id }) { s ->
-                            Poster(s.name, s.cover, rating = s.rating, memKey = "s:se:${s.id}") { ui.push(Route.SeriesDetail(s, FocusMem.last)) }
+                            LaunchedEffect(s.id) { delay(200); vm.requestMeta(s) }
+                            Poster(s.name, vm.metaOf(s)?.posterUrl() ?: s.cover, rating = s.rating, memKey = "s:se:${s.id}") { ui.push(Route.SeriesDetail(s, FocusMem.last)) }
                         }
                     }
                 }

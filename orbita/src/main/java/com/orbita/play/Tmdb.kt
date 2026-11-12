@@ -101,7 +101,7 @@ object Tmdb {
     fun find(name: String, tv: Boolean, hintId: String? = null): Meta? {
         if (!enabled) return null
         val (title, year) = clean(name)
-        val key = (if (tv) "t:" else "m:") + MatchLogic.norm(title).lowercase() + "|" + (year ?: "")
+        val key = (if (tv) "t2:" else "m2:") + MatchLogic.norm(title).lowercase() + "|" + (year ?: "")
         cache[key]?.let { return if (it.isEmpty()) null else runCatching { Meta.of(JSONObject(it)) }.getOrNull() }
 
         var id = hintId?.trim()?.toIntOrNull()?.takeIf { it > 0 }
@@ -117,15 +117,21 @@ object Tmdb {
         else "/search/movie?language=pt-BR&query=${enc(title)}" + (year?.let { "&year=$it" } ?: "")
         val results = get(path)?.optJSONArray("results") ?: return null
         if (results.length() == 0) return null
-        // prefere título igual; senão o mais popular entre os 5 primeiros
+        // pontua: mesmo título + mesmo ano > mesmo ano > mesmo título > ordem do TMDB (relevância)
         val norm = MatchLogic.norm(title).lowercase()
         var best: JSONObject? = null
-        for (i in 0 until minOf(results.length(), 5)) {
+        var bestScore = -1
+        for (i in 0 until minOf(results.length(), 8)) {
             val r = results.optJSONObject(i) ?: continue
             val names = listOf("title", "name", "original_title", "original_name").map { MatchLogic.norm(r.optString(it)).lowercase() }
-            if (names.any { it == norm }) { best = r; break }
+            val y = (r.optString("release_date").ifBlank { r.optString("first_air_date") }).take(4).toIntOrNull()
+            val sameTitle = names.any { it == norm }
+            val sameYear = year != null && y != null && kotlin.math.abs(y - year.toInt()) <= 1
+            val score = (if (sameTitle) 4 else 0) + (if (sameYear) 3 else 0) + (if (names.any { it.contains(norm) || norm.contains(it) }) 1 else 0) - i / 3
+            if (score > bestScore) { best = r; bestScore = score }
         }
-        if (best == null) best = (0 until minOf(results.length(), 5)).mapNotNull { results.optJSONObject(it) }.maxByOrNull { it.optDouble("popularity") }
+        // com ano informado e nada parecido, melhor não mostrar dados de outro filme
+        if (year != null && bestScore < 3) return null
         return best?.optInt("id")?.takeIf { it > 0 }
     }
 

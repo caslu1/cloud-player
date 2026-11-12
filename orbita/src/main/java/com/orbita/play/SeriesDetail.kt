@@ -97,7 +97,7 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
             Column(Modifier.width(360.dp).padding(top = 42.dp)) {
                 Txt("SÉRIE · ${seasons.size.coerceAtLeast(1)} TEMPORADA${if (seasons.size > 1) "S" else ""}", F.s(8.sp, C.cyan, FontWeight.SemiBold, spacing = 2.sp))
                 Spacer(Modifier.height(4.dp))
-                TitleArt(s.name, tm?.logoUrl())
+                TitleArt(tm?.title ?: Tmdb.clean(s.name).first, tm?.logoUrl())
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     (tm?.year ?: info?.year ?: s.year)?.let { MetaChip(it) }
