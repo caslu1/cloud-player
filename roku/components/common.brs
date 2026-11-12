@@ -225,3 +225,33 @@ end function
 function ISEM() as string
     return "inter_semibold.otf"
 end function
+
+' --- ativação pelo site ----------------------------------------------------
+
+function siteUrl() as string
+    s = CreateObject("roAppInfo").GetValue("site_url")
+    if s = invalid then return ""
+    while Right(s, 1) = "/"
+        s = Left(s, Len(s) - 1)
+    end while
+    return s
+end function
+
+' Lista do site → dados Xtream (converte link get.php)
+function playlistCreds(p as object) as object
+    if p.type = "xtream" then return { server: p.server, user: p.username, pass: p.password }
+    u = asText(p.url)
+    rx = CreateObject("roRegex", "^(https?://[^/]+)/get\.php\?.*username=([^&]+).*password=([^&]+)", "i")
+    mm = rx.Match(u)
+    if mm.Count() >= 4 then return { server: mm[1], user: mm[2], pass: mm[3] }
+    return invalid
+end function
+
+sub startActTask(wantQr as boolean)
+    if siteUrl() = "" then return
+    t = CreateObject("roSGNode", "ActTask")
+    t.request = { site: siteUrl(), wantQr: wantQr }
+    t.observeField("response", "onAct")
+    t.control = "RUN"
+    m.actTask = t
+end sub

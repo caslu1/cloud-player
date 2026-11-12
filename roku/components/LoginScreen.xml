@@ -7,6 +7,7 @@
     <children>
         <Group id="root" />
         <Timer id="timeout" duration="25" />
+        <Timer id="poll" duration="6" repeat="true" />
     </children>
     <script type="text/brightscript" uri="pkg:/components/common.brs" />
     <script type="text/brightscript" uri="pkg:/components/Buttons.brs" />

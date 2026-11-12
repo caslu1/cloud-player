@@ -13,6 +13,7 @@ sub init()
     if reg.Exists("server")
         m.global.creds = { server: reg.Read("server"), user: reg.Read("user"), pass: reg.Read("pass") }
         pushScreen("HomeScreen", {})
+        startActTask(false)
     else
         pushScreen("LoginScreen", {})
     end if
@@ -125,6 +126,17 @@ sub onVideoState(event as object)
         stopVideo()
     else if st = "finished"
         stopVideo()
+    end if
+end sub
+
+' Situação no site: vencido/bloqueado volta para a tela de ativação.
+sub onAct(event as object)
+    r = event.getData()
+    if not r.ok or type(r.data) <> "roAssociativeArray" then return
+    st = asText(r.data.status)
+    if st = "expired" or st = "blocked"
+        if m.video.visible then stopVideo()
+        resetTo("LoginScreen")
     end if
 end sub
 
