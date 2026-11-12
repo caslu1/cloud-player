@@ -42,6 +42,23 @@ object Tmdb {
 
     /** Episódio da temporada no TMDB (imagem e sinopse quando o provedor não tem). */
     class Ep(val name: String?, val overview: String?, val still: String?, val runtimeMin: Int)
+    class Person(val name: String, val character: String?, val photo: String?)
+
+    private val castCache = ConcurrentHashMap<String, List<Person>>()
+
+    /** Elenco com fotos (séries usam os créditos de todas as temporadas). */
+    fun cast(id: Int, tv: Boolean): List<Person> {
+        val k = "$tv/$id"
+        castCache[k]?.let { return it }
+        val o = get(if (tv) "/tv/$id/aggregate_credits?language=pt-BR" else "/movie/$id/credits?language=pt-BR") ?: return emptyList()
+        val a = o.optJSONArray("cast") ?: return emptyList()
+        val out = (0 until minOf(a.length(), 20)).mapNotNull { a.optJSONObject(it) }.map { p ->
+            val role = p.optJSONArray("roles")?.optJSONObject(0)?.optString("character") ?: p.optString("character")
+            Person(p.optString("name"), role?.ifBlank { null }, p.optString("profile_path").ifBlank { null }?.let { IMG + "w185" + it })
+        }.filter { it.name.isNotBlank() }.sortedBy { if (it.photo == null) 1 else 0 }.take(10)
+        castCache[k] = out
+        return out
+    }
 
     // cache: chave → resultado ("" = não encontrado)
     private val cache = ConcurrentHashMap<String, String>()

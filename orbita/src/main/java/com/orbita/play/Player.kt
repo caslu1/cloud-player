@@ -262,6 +262,13 @@ fun FullPlayer(vm: Vm, pb: Playback) {
     var pos by remember { mutableLongStateOf(0L) }
     var dur by remember { mutableLongStateOf(0L) }
     var seekTarget by remember { mutableLongStateOf(-1L) }
+    /** Botão selecionado na barra do filme/episódio (-1 = nenhum; ▼ seleciona). */
+    var vodBtn by remember { mutableIntStateOf(-1) }
+    val hasNext = !live && item.kind == Kind.EPISODE && pb.neighbor(1) != null
+    val vodButtons = buildList {
+        add(Ic.Settings to "Áudio e legendas")
+        if (hasNext) add(Ic.Forward to "Próximo episódio")
+    }
     val root = remember { FocusRequester() }
     val qualityReq = remember { FocusRequester() }
 
@@ -281,8 +288,9 @@ fun FullPlayer(vm: Vm, pb: Playback) {
         delay(30)
         runCatching { if (overlay) qualityReq.requestFocus() else root.requestFocus() }
     }
-    LaunchedEffect(overlayTick, overlay) {
-        if (overlay) { delay(if (live) 4_500 else 4_000); if (pb.isPlaying || live) overlay = false }
+    LaunchedEffect(overlay) { if (!overlay) vodBtn = -1 }
+    LaunchedEffect(overlayTick, overlay, vodBtn) {
+        if (overlay && vodBtn < 0) { delay(if (live) 4_500 else 4_000); if (pb.isPlaying || live) overlay = false }
     }
     LaunchedEffect(item.key) { showOverlay(); if (live) item.channel?.let { vm.requestEpg(it) } }
     LaunchedEffect(Unit) {
@@ -307,6 +315,7 @@ fun FullPlayer(vm: Vm, pb: Playback) {
     BackHandler {
         when {
             panel != PPanel.NONE -> panel = PPanel.NONE
+            vodBtn >= 0 -> { vodBtn = -1; showOverlay() }
             digits.isNotEmpty() -> digits = ""
             overlay -> overlay = false
             else -> close()
@@ -345,6 +354,25 @@ fun FullPlayer(vm: Vm, pb: Playback) {
                 if (ev.type != KeyEventType.KeyDown) return@onPreviewKeyEvent isSelectKey(ev.key)
                 val code = ev.nativeKeyEvent.keyCode
                 val rep = ev.nativeKeyEvent.repeatCount
+                // botões do filme/episódio (Áudio e legendas, Próximo episódio)
+                if (!live && vodBtn >= 0) {
+                    val handled = when (code) {
+                        AKey.KEYCODE_DPAD_LEFT -> { vodBtn = (vodBtn - 1).coerceAtLeast(0); true }
+                        AKey.KEYCODE_DPAD_RIGHT -> { vodBtn = (vodBtn + 1).coerceAtMost(vodButtons.size - 1); true }
+                        AKey.KEYCODE_DPAD_UP -> { vodBtn = -1; true }
+                        AKey.KEYCODE_DPAD_DOWN -> true
+                        AKey.KEYCODE_DPAD_CENTER, AKey.KEYCODE_ENTER, AKey.KEYCODE_NUMPAD_ENTER -> {
+                            if (rep == 0) {
+                                val b = vodBtn
+                                vodBtn = -1
+                                if (b == 0) panel = PPanel.OPTIONS else pb.neighbor(1)?.let { pb.play(it, pb.list) }
+                            }
+                            true
+                        }
+                        else -> false
+                    }
+                    if (handled) { showOverlay(); return@onPreviewKeyEvent true }
+                }
                 if (code in AKey.KEYCODE_0..AKey.KEYCODE_9 && live) {
                     if (digits.length < 5) digits += (code - AKey.KEYCODE_0).toString(); return@onPreviewKeyEvent true
                 }
@@ -368,7 +396,7 @@ fun FullPlayer(vm: Vm, pb: Playback) {
                         true
                     }
                     AKey.KEYCODE_DPAD_UP -> { if (live) pb.neighbor(-1)?.let { pb.play(it, pb.list) } else showOverlay(); true }
-                    AKey.KEYCODE_DPAD_DOWN -> { if (live) pb.neighbor(1)?.let { pb.play(it, pb.list) } else if (overlay) panel = PPanel.OPTIONS else showOverlay(); true }
+                    AKey.KEYCODE_DPAD_DOWN -> { if (live) pb.neighbor(1)?.let { pb.play(it, pb.list) } else { vodBtn = 0; showOverlay() }; true }
                     AKey.KEYCODE_DPAD_LEFT -> { if (live) panel = PPanel.CHANNELS else seekBy(-step(rep)); true }
                     AKey.KEYCODE_DPAD_RIGHT -> { if (live) showOverlay() else seekBy(step(rep)); true }
                     else -> false
@@ -397,7 +425,7 @@ fun FullPlayer(vm: Vm, pb: Playback) {
         if (overlay && panel == PPanel.NONE) {
             if (live) LiveOverlay(vm, pb, item, qualityReq, Modifier.fillMaxSize())
             else {
-                VodOverlay(item, if (seekTarget >= 0) seekTarget else pos, dur, pb.isPlaying, seekTarget >= 0, Modifier.align(Alignment.BottomCenter))
+                VodOverlay(item, if (seekTarget >= 0) seekTarget else pos, dur, pb.isPlaying, seekTarget >= 0, vodButtons, vodBtn, Modifier.align(Alignment.BottomCenter))
                 if (seekTarget >= 0 && seekStart >= 0) SeekBadge(seekTarget - seekStart, Modifier.align(Alignment.Center))
                 Txt(hhmm(System.currentTimeMillis()), F.s(12.sp, C.white, FontWeight.Bold), Modifier.align(Alignment.TopEnd).padding(20.dp))
             }
@@ -567,7 +595,10 @@ private fun QualityPill(label: String, selected: Boolean, available: Boolean, re
 }
 
 @Composable
-private fun VodOverlay(item: PlayItem, pos: Long, dur: Long, playing: Boolean, seeking: Boolean, modifier: Modifier) {
+private fun VodOverlay(
+    item: PlayItem, pos: Long, dur: Long, playing: Boolean, seeking: Boolean,
+    buttons: List<Pair<androidx.compose.ui.graphics.vector.ImageVector, String>>, selected: Int, modifier: Modifier,
+) {
     Box(
         modifier.fillMaxWidth()
             .background(Brush.verticalGradient(0f to Color.Transparent, 0.4f to Color(0xB3050409), 1f to Color(0xF5050409)))
@@ -590,6 +621,24 @@ private fun VodOverlay(item: PlayItem, pos: Long, dur: Long, playing: Boolean, s
                 SeekBar(if (dur > 0) pos.toFloat() / dur else 0f, seeking, Modifier.weight(1f))
                 Spacer(Modifier.width(14.dp))
                 if (dur > 0) Txt("-" + fmtTime((dur - pos).coerceAtLeast(0)), F.s(10.sp, C.dim, FontWeight.Medium))
+            }
+            Spacer(Modifier.height(14.dp))
+            // botões com ícone (▼ para escolher, OK para abrir)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                buttons.forEachIndexed { i, (icon, label) ->
+                    val sel = i == selected
+                    val shape = RoundedCornerShape(18.dp)
+                    Row(
+                        Modifier.clip(shape).background(if (sel) C.accent else Color(0x33FFFFFF))
+                            .then(if (sel) Modifier.border(1.5.dp, C.white, shape) else Modifier)
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(icon, 13.dp, if (sel) C.white else C.text)
+                        Spacer(Modifier.width(6.dp))
+                        Txt(label, F.s(9.sp, if (sel) C.white else C.text, FontWeight.SemiBold))
+                    }
+                }
             }
         }
     }

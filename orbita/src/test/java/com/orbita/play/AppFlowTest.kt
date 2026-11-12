@@ -236,6 +236,15 @@ class AppFlowTest {
         waitText("O Plantão")
         waitText("Sirene")
         shot("06-serie-episodios")
+        rule.onAllNodesWithText("O Plantão")[0].performClick()
+        settle(800)
+        sendKey(androidx.compose.ui.input.key.Key.DirectionDown) // seleciona "Áudio e legendas"
+        repeat(3) { pump(50) }
+        shot("18-player-serie", wait = false)
+        back() // tira a seleção do botão
+        back() // esconde os controles
+        back() // fecha o player
+        settle(400)
         back()
 
         // Futebol (jogos vindos do EPG)

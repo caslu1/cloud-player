@@ -40,6 +40,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 fun episodeItem(s: Series, e: Episode) = PlayItem(
@@ -86,6 +92,20 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
         }
     }
 
+    // elenco com fotos reais (TMDB)
+    var tmCast by remember { mutableStateOf<List<Tmdb.Person>>(emptyList()) }
+    LaunchedEffect(tm?.id) {
+        val id = tm?.id ?: return@LaunchedEffect
+        tmCast = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { Tmdb.cast(id, true) }.getOrDefault(emptyList()) }
+    }
+    val listState = rememberLazyListState()
+    val firstEp = remember { FocusRequester() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var onListButton by remember { mutableStateOf(false) }
+    /** ▶ saindo dos botões: sempre o primeiro episódio da lista. */
+    fun toFirstEpisode() {
+        scope.launch { listState.scrollToItem(0); kotlinx.coroutines.delay(30); runCatching { firstEp.requestFocus() } }
+    }
     val playReq = remember { FocusRequester() }
     InitialFocus(playReq, info != null)
 
@@ -94,7 +114,11 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xCC050409), Color(0x66050409)))))
         Row(Modifier.fillMaxSize().padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 34.dp)) {
             // Informações
-            Column(Modifier.width(360.dp).padding(top = 42.dp)) {
+            Column(
+                Modifier.width(360.dp).padding(top = 42.dp).onPreviewKeyEvent { ev ->
+                    if (onListButton && ev.type == KeyEventType.KeyDown && ev.key == Key.DirectionRight && allEps.isNotEmpty()) { toFirstEpisode(); true } else false
+                }
+            ) {
                 Txt("SÉRIE · ${seasons.size.coerceAtLeast(1)} TEMPORADA${if (seasons.size > 1) "S" else ""}", F.s(8.sp, C.cyan, FontWeight.SemiBold, spacing = 2.sp))
                 Spacer(Modifier.height(4.dp))
                 TitleArt(tm?.title ?: Tmdb.clean(s.name).first, tm?.logoUrl())
@@ -113,13 +137,33 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
                         resumeEp != null -> "Continuar T${resumeEp.season} · E${resumeEp.num}"
                         else -> "Assistir T${allEps.firstOrNull()?.season ?: 1} · E${allEps.firstOrNull()?.num ?: 1}"
                     }
-                    ActionButton(label, primary = true, icon = Ic.Play, requester = playReq) {
+                    ActionButton(label, primary = true, icon = Ic.Play, requester = playReq, onFocus = { onListButton = false }) {
                         (resumeEp ?: allEps.firstOrNull())?.let { play(it) }
                     }
-                    ActionButton(if (vm.store.inList("s:${s.id}")) "Na minha lista" else "Minha lista", icon = if (vm.store.inList("s:${s.id}")) Ic.Check else Ic.Add) { vm.store.toggleList("s:${s.id}") }
+                    ActionButton(if (vm.store.inList("s:${s.id}")) "Na minha lista" else "Minha lista", icon = if (vm.store.inList("s:${s.id}")) Ic.Check else Ic.Add, onFocus = { onListButton = true }) { vm.store.toggleList("s:${s.id}") }
                 }
                 val cast = info?.cast.orEmpty()
-                if (cast.isNotEmpty()) {
+                if (tmCast.isNotEmpty()) {
+                    Spacer(Modifier.height(20.dp))
+                    Txt("ELENCO", F.label)
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        tmCast.take(6).forEach { p ->
+                            Column(Modifier.width(52.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    Modifier.size(46.dp).clip(CircleShape).background(Brush.linearGradient(listOf(C.hash(p.name), C.hash(p.name + "x")))),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Txt(MatchLogic.initials(p.name), F.s(10.sp, C.white, FontWeight.Bold))
+                                    p.photo?.let { AsyncImage(it, p.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
+                                }
+                                Spacer(Modifier.height(5.dp))
+                                Txt(p.name, F.s(7.sp, C.white, FontWeight.Medium), maxLines = 2, align = androidx.compose.ui.text.style.TextAlign.Center)
+                                p.character?.let { Txt(it, F.s(6.5.sp, C.dim), maxLines = 1, align = androidx.compose.ui.text.style.TextAlign.Center) }
+                            }
+                        }
+                    }
+                } else if (cast.isNotEmpty()) {
                     Spacer(Modifier.height(20.dp))
                     Txt("ELENCO", F.label)
                     Spacer(Modifier.height(8.dp))
@@ -156,11 +200,10 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
                             }
                             Txt("${eps.size} episódios", F.s(8.5.sp, C.dim))
                         }
-                        val listState = rememberLazyListState()
                         LaunchedEffect(season) { listState.scrollToItem(0) }
                         LazyColumn(state = listState, contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            itemsIndexed(eps, key = { _, e -> e.id }) { _, e ->
-                                EpisodeRow(vm, s, e, tmEps[e.num]) { play(e) }
+                            itemsIndexed(eps, key = { _, e -> e.id }) { i, e ->
+                                EpisodeRow(vm, s, e, tmEps[e.num], if (i == 0) firstEp else null) { play(e) }
                             }
                         }
                     }
@@ -171,9 +214,9 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
 }
 
 @Composable
-private fun EpisodeRow(vm: Vm, s: Series, e: Episode, tme: Tmdb.Ep?, onClick: () -> Unit) {
+private fun EpisodeRow(vm: Vm, s: Series, e: Episode, tme: Tmdb.Ep?, requester: FocusRequester?, onClick: () -> Unit) {
     val p = vm.store.progress["ep:${e.id}"]
-    Focus(Modifier.fillMaxWidth(), onClick = onClick, memKey = "ep:${e.id}") { f ->
+    Focus(Modifier.fillMaxWidth(), onClick = onClick, memKey = "ep:${e.id}", requester = requester) { f ->
         val shape = RoundedCornerShape(9.dp)
         Row(
             Modifier.fillMaxWidth().clip(shape).background(if (f) C.focusBg else Color.Transparent)
