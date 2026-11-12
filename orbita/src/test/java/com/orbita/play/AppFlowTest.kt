@@ -159,10 +159,10 @@ class AppFlowTest {
     }
 
     @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
-    private fun pressLeft() = pressKey(androidx.compose.ui.input.key.Key.DirectionLeft)
+    private fun pressLeft() = sendKey(androidx.compose.ui.input.key.Key.DirectionLeft)
 
     @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
-    private fun pressKey(k: androidx.compose.ui.input.key.Key) {
+    private fun sendKey(k: androidx.compose.ui.input.key.Key) {
         rule.onRoot().performKeyInput { pressKey(k) }
         repeat(3) { pump() }
     }
@@ -201,7 +201,7 @@ class AppFlowTest {
         shot("04-filme-detalhe")
         click("Assistir")
         settle(800)
-        repeat(4) { pressKey(androidx.compose.ui.input.key.Key.DirectionRight) }
+        repeat(4) { sendKey(androidx.compose.ui.input.key.Key.DirectionRight) }
         repeat(3) { pump(50) }
         shot("12-filme-avancar", wait = false)
         settle(1500)
