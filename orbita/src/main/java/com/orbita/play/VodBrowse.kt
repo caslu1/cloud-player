@@ -54,6 +54,8 @@ fun VodBrowse(
     entriesOf: (String) -> List<VodEntry>,
     hero: @Composable (VodEntry?) -> HeroData,
     empty: String,
+    search: (String) -> List<VodEntry>,
+    searchHint: String,
 ) {
     // sem escolha: abre em Continuar assistindo se houver algo em andamento, senão na primeira categoria com títulos
     val cat = selected?.takeIf { id -> cats.any { it.id == id } } ?: (cats.firstOrNull { it.count > 0 } ?: cats.firstOrNull())?.id ?: ""
@@ -63,9 +65,19 @@ fun VodBrowse(
     var shownCat by remember { mutableStateOf(cat) }
     LaunchedEffect(cat) { if (shownCat != cat) { gridState.scrollToItem(0); shownCat = cat } }
 
-    val entries = remember(cat, cats) { entriesOf(cat) }
+    // busca: filtra as categorias e também procura os títulos (fora da thread da tela)
+    var results by remember { mutableStateOf<List<VodEntry>?>(null) }
+    LaunchedEffect(catQuery) {
+        if (catQuery.trim().length < 2) { results = null; return@LaunchedEffect }
+        delay(300)
+        results = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { search(catQuery.trim()) }
+        gridState.scrollToItem(0)
+    }
+    val searching = results != null
+    val catEntries = remember(cat, cats) { entriesOf(cat) }
+    val entries = results ?: catEntries
     var focused by remember { mutableStateOf<VodEntry?>(null) }
-    var heroEntry by remember(cat) { mutableStateOf(entries.firstOrNull()) }
+    var heroEntry by remember(cat, searching) { mutableStateOf(entries.firstOrNull()) }
     LaunchedEffect(focused) { val f = focused ?: return@LaunchedEffect; delay(280); heroEntry = f }
 
     val visibleCats = remember(cats, catQuery) {
@@ -83,12 +95,12 @@ fun VodBrowse(
             Panel(Modifier.width(206.dp).fillMaxHeight().padding(bottom = 14.dp)) {
                 Column {
                     PanelHeader("Categorias", "${cats.size}")
-                    SearchField(catQuery, { catQuery = it }, "Buscar categoria", Modifier.padding(horizontal = 10.dp))
+                    SearchField(catQuery, { catQuery = it }, searchHint, Modifier.padding(horizontal = 10.dp))
                     Spacer(Modifier.height(8.dp))
                     LazyColumn(state = catState, modifier = Modifier.weight(1f)) {
                         items(visibleCats, key = { it.id }) { c ->
-                            CatRow(c.name, c.count, c.id == cat, "vcat:${c.id}", { pending = c.id }, if (c.id == cat) catReq else null, c.icon) {
-                                onSelect(c.id); runCatching { gridReq.requestFocus() }
+                            CatRow(c.name, c.count, c.id == cat && !searching, "vcat:${c.id}", { if (!searching) pending = c.id }, if (c.id == cat) catReq else null, c.icon) {
+                                catQuery = ""; results = null; onSelect(c.id); runCatching { gridReq.requestFocus() }
                             }
                         }
                     }
@@ -111,11 +123,12 @@ fun VodBrowse(
                     Txt(h.plot ?: "", F.s(9.5.sp, C.text.copy(alpha = 0.92f)), Modifier.width(520.dp), maxLines = 2)
                 }
                 Row(Modifier.padding(end = 28.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Txt(cats.firstOrNull { it.id == cat }?.name ?: "", F.s(12.sp, C.white, FontWeight.SemiBold), Modifier.weight(1f))
+                    Txt(if (searching) "Resultados para \"${catQuery.trim()}\"" else cats.firstOrNull { it.id == cat }?.name ?: "", F.s(12.sp, C.white, FontWeight.SemiBold), Modifier.weight(1f))
                     Txt("${entries.size} títulos", F.s(9.sp, C.dim))
                 }
                 if (entries.isEmpty()) {
-                    EmptyState(if (cat == "__cont") "Nada em andamento" else if (cat == "__mine") "Sua lista está vazia" else empty,
+                    if (searching) EmptyState("Nada encontrado", "Tente outro nome.", Modifier.fillMaxWidth().padding(top = 40.dp))
+                    else EmptyState(if (cat == "__cont") "Nada em andamento" else if (cat == "__mine") "Sua lista está vazia" else empty,
                         if (cat == "__cont") "O que você começar a assistir aparece aqui." else if (cat == "__mine") "Segure OK sobre uma capa para adicionar." else "",
                         Modifier.fillMaxWidth().padding(top = 40.dp))
                 } else TvScroll {
@@ -128,7 +141,7 @@ fun VodBrowse(
                         itemsIndexed(entries, key = { _, e -> e.key }) { i, e ->
                             LaunchedEffect(e.key) { delay(200); e.movie?.let { vm.requestMeta(it) }; e.series?.let { vm.requestMeta(it) } }
                             val img = (e.movie?.let { vm.metaOf(it) } ?: e.series?.let { vm.metaOf(it) })?.posterUrl() ?: e.image
-                            BigPoster(e, img, 100.dp, "vgrid:$cat:${e.key}", if (i == 0) gridReq else null, onFocus = { focused = e })
+                            BigPoster(e, img, 100.dp, if (searching) "vsearch:${e.key}" else "vgrid:$cat:${e.key}", if (i == 0) gridReq else null, onFocus = { focused = e })
                         }
                     }
                 }

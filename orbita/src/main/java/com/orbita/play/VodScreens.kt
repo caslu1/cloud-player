@@ -301,6 +301,11 @@ fun MoviesScreen(vm: Vm, pb: Playback, ui: Ui) {
             movieHero(vm, m, "FILME")
         },
         empty = "Nenhum filme nesta categoria",
+        search = { q ->
+            val n = MatchLogic.norm(q).lowercase()
+            vm.movies.asSequence().filter { MatchLogic.norm(it.name).lowercase().contains(n) }.take(150).map(::entry).toList()
+        },
+        searchHint = "Buscar filme ou categoria",
     )
 }
 
@@ -470,6 +475,11 @@ fun SeriesScreen(vm: Vm, pb: Playback, ui: Ui) {
             seriesHero(vm, s, "SÉRIE")
         },
         empty = "Nenhuma série nesta categoria",
+        search = { q ->
+            val n = MatchLogic.norm(q).lowercase()
+            vm.series.asSequence().filter { MatchLogic.norm(it.name).lowercase().contains(n) }.take(150).map(::entry).toList()
+        },
+        searchHint = "Buscar série ou categoria",
     )
 }
 

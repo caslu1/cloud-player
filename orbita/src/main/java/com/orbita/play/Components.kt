@@ -172,7 +172,7 @@ fun Pill(
                 .then(if (f) Modifier.border(1.5.dp, if (selected) C.white else C.accent, RoundedCornerShape(6.dp)) else Modifier)
                 .padding(horizontal = padH, vertical = padV)
         ) {
-            Txt(text, F.s(size.sp, if (selected || f) C.white else C.dim, FontWeight.SemiBold))
+            Txt(text, F.s(size.sp, if (selected || f) C.white else C.dim, FontWeight.Bold, spacing = 0.8.sp))
         }
     }
 }

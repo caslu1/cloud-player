@@ -192,7 +192,7 @@ class AppFlowTest {
         repeat(10) { pump() }
 
         // Filmes
-        click("Filmes", exact = true)
+        click("FILMES", exact = true)
         waitText("Duna")
         waitText("Lançamentos")
         shot("03-filmes")
@@ -209,9 +209,15 @@ class AppFlowTest {
         back() // fecha o player
         settle(400)
         back()
+        // busca por título dentro de Filmes
+        click("Buscar filme ou categoria")
+        rule.onAllNodes(hasSetTextAction())[0].performTextInput("Inter")
+        waitText("Resultados para")
+        waitText("Interestelar")
+        shot("13-busca-filmes")
 
         // Séries
-        click("Séries", exact = true)
+        click("SÉRIES", exact = true)
         waitText("The Last of Us")
         shot("05-series")
         rule.onAllNodesWithText("The Last of Us").let { it[it.fetchSemanticsNodes().size - 1] }.performClick()
@@ -221,7 +227,7 @@ class AppFlowTest {
         back()
 
         // Futebol (jogos vindos do EPG)
-        click("Futebol", exact = true)
+        click("FUTEBOL", exact = true)
         waitText("Atlético Serrano")
         waitText("Ribeirense")
         waitText("AO VIVO 67'")
@@ -240,18 +246,13 @@ class AppFlowTest {
         back() // sai da tela cheia
 
         // Buscar, Biblioteca, Configurações
-        click("Buscar", exact = true)
-        waitText("O que você quer assistir?")
-        click("Biblioteca", exact = true)
-        waitText("Canais favoritos")
-        shot("08-biblioteca")
         rule.onNodeWithContentDescription("Configurações").performClick()
         repeat(5) { pump() }
         waitText("Configurações")
         waitText("Ativa")
         shot("09-configuracoes")
         back()
-        click("Canais", exact = true)
+        click("TV", exact = true)
         waitText("Futebol 1 HD")
     }
 }

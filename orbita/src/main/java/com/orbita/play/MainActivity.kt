@@ -68,7 +68,7 @@ class OrbitaApp : Application(), ImageLoaderFactory {
         .build()
 }
 
-enum class Tab(val label: String) { CANAIS("Canais"), FILMES("Filmes"), SERIES("Séries"), FUTEBOL("Futebol"), BUSCAR("Buscar"), BIBLIOTECA("Biblioteca") }
+enum class Tab(val label: String) { CANAIS("TV"), FILMES("FILMES"), SERIES("SÉRIES"), FUTEBOL("FUTEBOL") }
 
 /** Telas empilhadas por cima das abas. [returnKey] devolve o foco ao item que abriu a tela. */
 sealed class Route(val returnKey: String?) {
@@ -212,8 +212,6 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
                     Tab.FILMES -> MoviesScreen(vm, pb, ui)
                     Tab.SERIES -> SeriesScreen(vm, pb, ui)
                     Tab.FUTEBOL -> FootballScreen(vm, pb, ui)
-                    Tab.BUSCAR -> SearchScreen(vm, pb, ui)
-                    Tab.BIBLIOTECA -> LibraryScreen(vm, pb, ui)
                 }
                 TopBar(ui, tabReq) { ui.push(Route.Settings(FocusMem.last)) }
             }
@@ -236,7 +234,7 @@ fun TopBar(ui: Ui, tabReq: FocusRequester, onSettings: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             for (t in Tab.entries) {
                 Pill(
-                    t.label, ui.tab == t, Modifier.padding(end = 3.dp),
+                    t.label, ui.tab == t, Modifier.padding(end = 6.dp), padH = 14.dp,
                     requester = if (ui.tab == t) tabReq else null,
                     onFocus = { FocusMem.last = "tab:${t.name}" }, // só troca de aba com OK
                     onClick = { ui.tab = t }
