@@ -435,7 +435,7 @@ fun SeriesScreen(vm: Vm, pb: Playback, ui: Ui) {
     val cats = remember(vm.seriesCats, cont.size, mine.size) {
         buildList {
             if (cont.isNotEmpty()) add(BrowseCat("__cont", "▶  Continuar assistindo", cont.size))
-            add(BrowseCat("__new", "✦  Adicionadas recentemente", latest.size))
+            add(BrowseCat("__new", "✦  Novidades", latest.size))
             if (mine.isNotEmpty()) add(BrowseCat("__mine", "＋  Minha lista", mine.size))
             vm.seriesCats.forEach { add(BrowseCat(it.id, it.name, vm.seriesByCat[it.id]?.size ?: 0)) }
         }
