@@ -19,7 +19,8 @@ android {
         versionCode = 100 + run
         versionName = "1.0.$run"
         // site de ativação (MAC + chave). Vazio = desligado. No GitHub: Settings → Variables → ORBITA_SITE_URL
-        buildConfigField("String", "SITE_URL", "\"${System.getenv("ORBITA_SITE_URL") ?: ""}\"")
+        val site = System.getenv("ORBITA_SITE_URL")?.takeIf { it.isNotBlank() } ?: "https://orbita-ativar.suporteyosepay.workers.dev"
+        buildConfigField("String", "SITE_URL", "\"$site\"")
     }
 
     signingConfigs {

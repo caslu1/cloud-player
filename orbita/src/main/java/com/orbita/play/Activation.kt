@@ -48,7 +48,10 @@ import java.security.MessageDigest
  */
 object Activation {
     /** Endereço do site (vazio = ativação desligada). Vem do build: ORBITA_SITE_URL. */
-    var site: String by androidx.compose.runtime.mutableStateOf(BuildConfig.SITE_URL.trimEnd('/'))
+    var site: String by androidx.compose.runtime.mutableStateOf(
+        // nos testes automáticos não fala com o site de verdade (o teste usa um servidor de mentira)
+        if (android.os.Build.FINGERPRINT == "robolectric") "" else BuildConfig.SITE_URL.trimEnd('/')
+    )
     fun enabled() = site.isNotBlank()
 
     /** "MAC" do aparelho: gerado a partir do ID do Android (o MAC real não é acessível nas versões novas). */
