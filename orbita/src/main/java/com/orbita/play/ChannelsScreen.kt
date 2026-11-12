@@ -136,7 +136,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
                     }
                     items(cats, key = { "c" + it.id }) { c ->
                         val locked = vm.catLocked(c)
-                        val icon = if (locked) Ic.Lock else if (MatchLogic.isSportsName(c.name)) Ic.Soccer else null
+                        val icon = if (locked) Ic.Lock else null
                         CatRow(c.name, if (locked) -1 else vm.uniqueByCat[c.id]?.size ?: 0, ui.liveCat == c.id, "cat:${c.id}",
                             {}, icon = icon, onRight = ::toFirst) {
                             if (locked) ui.unlockAdult(vm) { choose(c.id) } else choose(c.id)

@@ -682,7 +682,7 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
                                     .padding(horizontal = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                val ic = when (c.id) { "__fav" -> Ic.Star; "__recent" -> Ic.History; "__all" -> Ic.LiveTv; else -> if (MatchLogic.isSportsName(c.name)) Ic.Soccer else null }
+                                val ic = when (c.id) { "__fav" -> Ic.Star; "__recent" -> Ic.History; "__all" -> Ic.LiveTv; else -> null }
                                 if (ic != null) { Icon(ic, 13.dp, if (sel || f) C.white else C.dim); Spacer(Modifier.width(7.dp)) }
                                 Txt(c.name, F.s(11.sp, if (sel || f) C.white else C.text, if (sel) FontWeight.SemiBold else FontWeight.Medium), Modifier.weight(1f))
                                 if (sel) Box(Modifier.size(5.dp).clip(androidx.compose.foundation.shape.CircleShape).background(C.accent))

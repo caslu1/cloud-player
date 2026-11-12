@@ -166,7 +166,7 @@ fun InitialFocus(req: FocusRequester, key: Any = Unit) {
 @Composable
 fun Pill(
     text: String, selected: Boolean, modifier: Modifier = Modifier, onFocus: () -> Unit = {}, requester: FocusRequester? = null,
-    size: Float = 10f, padH: Dp = 11.dp, padV: Dp = 5.dp, onClick: () -> Unit = {},
+    size: Float = 10f, padH: Dp = 11.dp, padV: Dp = 5.dp, icon: androidx.compose.ui.graphics.vector.ImageVector? = null, onClick: () -> Unit = {},
 ) {
     Focus(modifier, onClick = onClick, onFocus = onFocus, requester = requester) { f ->
         val bg = when { selected -> C.accent; f -> C.focusBg; else -> Color.Transparent }
@@ -175,7 +175,10 @@ fun Pill(
                 .then(if (f) Modifier.border(1.5.dp, if (selected) C.white else C.accent, RoundedCornerShape(6.dp)) else Modifier)
                 .padding(horizontal = padH, vertical = padV)
         ) {
-            Txt(text, F.s(size.sp, if (selected || f) C.white else C.dim, FontWeight.Bold, spacing = 0.8.sp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (icon != null) { Icon(icon, (size + 2).dp, if (selected || f) C.white else C.dim); Spacer(Modifier.width(5.dp)) }
+                Txt(text, F.s(size.sp, if (selected || f) C.white else C.dim, FontWeight.Bold, spacing = 0.8.sp))
+            }
         }
     }
 }
@@ -247,9 +250,9 @@ fun fmtCount(n: Int): String = if (n >= 1000) String.format(Locale("pt", "BR"), 
 @Composable
 fun SearchField(
     value: String, onChange: (String) -> Unit, placeholder: String, modifier: Modifier = Modifier,
-    requester: FocusRequester? = null, onFocus: () -> Unit = {},
+    requester: FocusRequester? = null, onFocus: () -> Unit = {}, autoEdit: Boolean = false,
 ) {
-    var editing by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf(autoEdit) }
     val fieldReq = remember { FocusRequester() }
     val shape = RoundedCornerShape(7.dp)
     if (editing) {

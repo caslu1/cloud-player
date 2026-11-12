@@ -112,14 +112,10 @@ fun Backdrop(image: String?, seed: String) {
 
 /** Título: logo do TMDB quando existe, senão o nome em letras grandes. */
 @Composable
+@Suppress("UNUSED_PARAMETER")
 fun TitleArt(title: String, logo: String?, big: Boolean = true) {
-    if (logo != null) {
-        AsyncImage(
-            logo, title,
-            Modifier.widthIn(max = if (big) 330.dp else 230.dp).heightIn(max = if (big) 92.dp else 52.dp),
-            contentScale = ContentScale.Fit, alignment = Alignment.CenterStart
-        )
-    } else Txt(title, F.s(if (big) 30.sp else 20.sp, C.white, FontWeight.Bold, FontFamily.Serif), maxLines = 2)
+    // sempre o nome em texto, com a fonte do app (sem logos oficiais)
+    Txt(title, F.s(if (big) 28.sp else 21.sp, C.white, FontWeight.Bold, F.outfit), maxLines = 2)
 }
 
 /** Dados do destaque (filme ou série), já juntando provedor + TMDB. */
@@ -363,12 +359,7 @@ fun MovieDetail(vm: Vm, pb: Playback, ui: Ui, m: Movie) {
             Column(Modifier.weight(1f)) {
                 Txt("FILME", F.s(9.sp, C.cyan, FontWeight.SemiBold, spacing = 2.sp))
                 Spacer(Modifier.height(8.dp))
-                if (h.logo != null) {
-                    AsyncImage(
-                        h.logo, h.title, Modifier.widthIn(max = 380.dp).heightIn(max = 110.dp),
-                        contentScale = ContentScale.Fit, alignment = Alignment.CenterStart
-                    )
-                } else Txt(h.title, F.s(30.sp, C.white, FontWeight.Bold, FontFamily.Serif), maxLines = 2)
+                Txt(h.title, F.s(30.sp, C.white, FontWeight.Bold, F.outfit), maxLines = 2)
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     h.chips.forEach { BigChip(it) }

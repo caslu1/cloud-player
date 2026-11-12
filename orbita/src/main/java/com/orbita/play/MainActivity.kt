@@ -76,6 +76,7 @@ sealed class Route(val returnKey: String?) {
     class SeriesDetail(val series: Series, rk: String?) : Route(rk)
     class CategoryGrid(val movies: Boolean, val cat: Cat, rk: String?) : Route(rk)
     class Settings(rk: String?) : Route(rk)
+    class Search(rk: String?) : Route(rk)
 }
 
 /** Estado de navegação/telas que sobrevive enquanto o app está aberto. */
@@ -196,8 +197,8 @@ fun Playback.openFull(item: PlayItem, items: List<PlayItem> = emptyList(), start
 
 @Composable
 private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
-    var lastBack by remember { mutableLongStateOf(0L) }
     var toast by remember { mutableStateOf<String?>(null) }
+    var exitAsk by remember { mutableStateOf(false) }
     val top = ui.stack.lastOrNull()
     val tabReq = remember { FocusRequester() }
 
@@ -205,8 +206,7 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
         when {
             ui.stack.isNotEmpty() -> ui.pop()
             FocusMem.last?.startsWith("tab:") != true -> { FocusMem.restore = "tab:${ui.tab.name}"; runCatching { tabReq.requestFocus() } }
-            System.currentTimeMillis() - lastBack < 2500 -> { pb.stop(); exit() }
-            else -> { lastBack = System.currentTimeMillis(); toast = "Pressione VOLTAR de novo para sair" }
+            else -> exitAsk = true
         }
     }
     LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
@@ -223,6 +223,7 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
             is Route.SeriesDetail -> SeriesDetail(vm, pb, ui, top.series)
             is Route.CategoryGrid -> CategoryGrid(vm, pb, ui, top)
             is Route.Settings -> SettingsScreen(vm, pb, ui)
+            is Route.Search -> SearchScreen(vm, pb, ui)
             null -> {
                 when (ui.tab) {
                     Tab.CANAIS -> ChannelsScreen(vm, pb, ui)
@@ -230,10 +231,11 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
                     Tab.SERIES -> SeriesScreen(vm, pb, ui)
                     Tab.FUTEBOL -> FootballScreen(vm, pb, ui)
                 }
-                TopBar(ui, tabReq) { ui.push(Route.Settings(FocusMem.last)) }
+                TopBar(ui, tabReq, onSearch = { ui.push(Route.Search(FocusMem.last)) }) { ui.push(Route.Settings(FocusMem.last)) }
             }
         }
         ui.pinPrompt?.let { p -> PinDialog(p) { if (ui.pinPrompt === p) ui.pinPrompt = null } }
+        if (exitAsk) ConfirmDialog("Sair do Orbita Play?", "O que estiver tocando será fechado.", "Sair", onConfirm = { pb.stop(); exit() }) { exitAsk = false }
         toast?.let {
             Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 36.dp).background(Color(0xEE15121F), androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).padding(horizontal = 14.dp, vertical = 8.dp)) {
                 Txt(it, F.s(9.sp, C.white, FontWeight.Medium))
@@ -243,7 +245,7 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
 }
 
 @Composable
-fun TopBar(ui: Ui, tabReq: FocusRequester, onSettings: () -> Unit) {
+fun TopBar(ui: Ui, tabReq: FocusRequester, onSearch: () -> Unit, onSettings: () -> Unit) {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(10_000) } }
     Row(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 29.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -252,7 +254,7 @@ fun TopBar(ui: Ui, tabReq: FocusRequester, onSettings: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             for (t in Tab.entries) {
                 Pill(
-                    t.label, ui.tab == t, Modifier.padding(end = 6.dp), padH = 14.dp,
+                    t.label, ui.tab == t, Modifier.padding(end = 6.dp), padH = 14.dp, icon = if (t == Tab.FUTEBOL) Ic.Soccer else null,
                     requester = if (ui.tab == t) tabReq else null,
                     onFocus = { FocusMem.last = "tab:${t.name}" }, // só troca de aba com OK
                     onClick = { ui.tab = t }
@@ -260,6 +262,13 @@ fun TopBar(ui: Ui, tabReq: FocusRequester, onSettings: () -> Unit) {
             }
         }
         Spacer(Modifier.weight(1f))
+        Focus(onClick = onSearch, memKey = "search") { f ->
+            Box(
+                Modifier.size(22.dp).background(if (f) C.accent else Color.Transparent, androidx.compose.foundation.shape.CircleShape),
+                contentAlignment = Alignment.Center
+            ) { Icon(Ic.Search, 14.dp, desc = "Buscar") }
+        }
+        Spacer(Modifier.width(8.dp))
         Focus(onClick = onSettings, memKey = "settings") { f ->
             Box(
                 Modifier.size(22.dp).background(if (f) C.accent else Color.Transparent, androidx.compose.foundation.shape.CircleShape),

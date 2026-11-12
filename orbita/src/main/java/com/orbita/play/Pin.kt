@@ -123,3 +123,28 @@ fun Switch(on: Boolean) {
         contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart
     ) { Box(Modifier.size(14.dp).clip(CircleShape).background(C.white)) }
 }
+
+/** Janela de confirmação (ex.: sair do app). */
+@Composable
+fun ConfirmDialog(title: String, message: String, confirm: String, onConfirm: () -> Unit, onCancel: () -> Unit) {
+    val cancelReq = remember { FocusRequester() }
+    LaunchedEffect(Unit) { delay(60); runCatching { cancelReq.requestFocus() } }
+    BackHandler { onCancel() }
+    Box(Modifier.fillMaxSize().background(Color(0xCC000000)), contentAlignment = Alignment.Center) {
+        Column(
+            Modifier.width(330.dp).clip(RoundedCornerShape(16.dp)).background(C.panelSolid).border(1.dp, C.panelBorder, RoundedCornerShape(16.dp))
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(Modifier.size(40.dp).clip(CircleShape).background(C.accentSoft), contentAlignment = Alignment.Center) { Icon(Ic.Logout, 18.dp, C.accentText) }
+            Spacer(Modifier.height(12.dp))
+            Txt(title, F.s(14.sp, C.white, FontWeight.Bold, F.outfit))
+            if (message.isNotEmpty()) { Spacer(Modifier.height(4.dp)); Txt(message, F.s(9.sp, C.dim), maxLines = 2) }
+            Spacer(Modifier.height(18.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ActionButton("Cancelar", requester = cancelReq) { onCancel() }
+                ActionButton(confirm, primary = true, icon = Ic.Logout) { onConfirm() }
+            }
+        }
+    }
+}

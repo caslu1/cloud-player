@@ -191,22 +191,28 @@ fun SearchScreen(vm: Vm, pb: Playback, ui: Ui) {
         val q = MatchLogic.norm(ui.query).lowercase()
         if (q.length < 2) { res = null; return@LaunchedEffect }
         delay(250)
+        // respeita categorias ocultas e o controle parental
+        val chans = vm.allowedChannels()
+        val badMovie = vm.movieCats.filter { !vm.catAllowed("vod", it) }.map { it.id }.toSet()
+        val badSeries = vm.seriesCats.filter { !vm.catAllowed("series", it) }.map { it.id }.toSet()
         res = withContext(Dispatchers.Default) {
             fun hit(n: String) = MatchLogic.norm(n).lowercase().contains(q)
             Results(
-                vm.uniqueChannels.asSequence().filter { hit(it.name) || it.num.toString() == q }.take(40).toList(),
-                vm.movies.asSequence().filter { hit(it.name) }.take(60).toList(),
-                vm.series.asSequence().filter { hit(it.name) }.take(60).toList(),
+                chans.asSequence().filter { hit(it.name) || it.num.toString() == q }.take(40).toList(),
+                vm.movies.asSequence().filter { it.catId !in badMovie && hit(it.name) }.take(60).toList(),
+                vm.series.asSequence().filter { it.catId !in badSeries && hit(it.name) }.take(60).toList(),
             )
         }
     }
     val fieldReq = remember { FocusRequester() }
     InitialFocus(fieldReq)
-    Column(Modifier.fillMaxSize().padding(top = 56.dp)) {
-        Row(Modifier.padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
-            Txt("Buscar", F.s(18.sp, C.white, FontWeight.Bold, F.outfit))
-            Spacer(Modifier.width(16.dp))
-            SearchField(ui.query, { ui.query = it }, "Nome do canal, filme ou série", Modifier.width(500.dp), fieldReq)
+    Column(Modifier.fillMaxSize().padding(top = 26.dp)) {
+        Row(Modifier.padding(horizontal = 28.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Ic.Search, 20.dp, C.accentText)
+            Spacer(Modifier.width(10.dp))
+            Txt("Buscar", F.s(20.sp, C.white, FontWeight.Bold, F.outfit))
+            Spacer(Modifier.width(18.dp))
+            SearchField(ui.query, { ui.query = it }, "Canal, filme ou série", Modifier.width(520.dp), fieldReq, autoEdit = ui.query.isEmpty())
         }
         Spacer(Modifier.height(10.dp))
         val r = res
@@ -217,7 +223,7 @@ fun SearchScreen(vm: Vm, pb: Playback, ui: Ui) {
             else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 30.dp)) {
                 if (r.channels.isNotEmpty()) item(key = "ch") {
                     SectionTitle("Canais (${r.channels.size})")
-                    LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LazyRow(contentPadding = PaddingValues(horizontal = 28.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         items(r.channels, key = { it.id }) { c ->
                             ChannelCard(vm, c) { pb.openFull(liveItem(c), r.channels.map { liveItem(it) }) }
                         }
@@ -225,19 +231,25 @@ fun SearchScreen(vm: Vm, pb: Playback, ui: Ui) {
                 }
                 if (r.movies.isNotEmpty()) item(key = "mv") {
                     SectionTitle("Filmes (${r.movies.size})")
-                    LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+                    LazyRow(contentPadding = PaddingValues(horizontal = 28.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         items(r.movies, key = { it.id }) { m ->
                             LaunchedEffect(m.id) { delay(200); vm.requestMeta(m) }
-                            Poster(m.name, vm.metaOf(m)?.posterUrl() ?: m.poster, rating = m.rating, memKey = "s:mv:${m.id}") { ui.push(Route.MovieDetail(m, FocusMem.last)) }
+                            BigPoster(
+                                VodEntry(m.id, m.name, m.poster, m.rating, { ui.push(Route.MovieDetail(m, FocusMem.last)) }, { vm.store.toggleList("m:${m.id}") }, movie = m),
+                                vm.metaOf(m)?.posterUrl() ?: m.poster, 100.dp, "s:mv:${m.id}", onFocus = {}
+                            )
                         }
                     }
                 }
                 if (r.series.isNotEmpty()) item(key = "se") {
                     SectionTitle("Séries (${r.series.size})")
-                    LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+                    LazyRow(contentPadding = PaddingValues(horizontal = 28.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         items(r.series, key = { it.id }) { s ->
                             LaunchedEffect(s.id) { delay(200); vm.requestMeta(s) }
-                            Poster(s.name, vm.metaOf(s)?.posterUrl() ?: s.cover, rating = s.rating, memKey = "s:se:${s.id}") { ui.push(Route.SeriesDetail(s, FocusMem.last)) }
+                            BigPoster(
+                                VodEntry(s.id, s.name, s.cover, s.rating, { ui.push(Route.SeriesDetail(s, FocusMem.last)) }, { vm.store.toggleList("s:${s.id}") }, series = s),
+                                vm.metaOf(s)?.posterUrl() ?: s.cover, 100.dp, "s:se:${s.id}", onFocus = {}
+                            )
                         }
                     }
                 }
@@ -247,7 +259,7 @@ fun SearchScreen(vm: Vm, pb: Playback, ui: Ui) {
 }
 
 @Composable
-private fun SectionTitle(t: String) = Txt(t, F.s(11.sp, C.white, FontWeight.SemiBold), Modifier.padding(start = 24.dp, top = 12.dp, bottom = 7.dp))
+private fun SectionTitle(t: String) = Txt(t, F.s(12.sp, C.white, FontWeight.SemiBold), Modifier.padding(start = 28.dp, top = 14.dp, bottom = 8.dp))
 
 @Composable
 private fun ChannelCard(vm: Vm, c: Channel, onClick: () -> Unit) {
