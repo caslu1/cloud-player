@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500" width="1200" height="500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3d3756"/><stop offset="1" stop-color="#2a2640"/>
+    </linearGradient>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0V24" fill="none" stroke="#ffffff" stroke-opacity=".05" stroke-width="1"/>
+    </pattern>
+    <pattern id="grid2" width="120" height="120" patternUnits="userSpaceOnUse">
+      <path d="M120 0H0V120" fill="none" stroke="#ffffff" stroke-opacity=".08" stroke-width="1"/>
+      <path d="M-4 0H4M0 -4V4" stroke="#ffffff" stroke-opacity=".25" stroke-width="1.5"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="500" fill="url(#bg)"/>
+  <rect width="1200" height="500" fill="url(#grid)"/>
+  <rect width="1200" height="500" fill="url(#grid2)"/>
+  <g transform="translate(92 110)">
+  <defs>
+      <mask id="cutFront" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1600" height="700">
+        <rect x="-200" y="-200" width="1600" height="700" fill="#fff"/>
+        <g transform="translate(75 125) rotate(-32)">
+          <path d="M-120 0 A120 36 0 0 0 120 0" fill="none" stroke="#000" stroke-width="22"/>
+        </g>
+      </mask>
+      <mask id="cutBack" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1600" height="700">
+        <rect x="-200" y="-200" width="1600" height="700" fill="#fff"/>
+        <circle cx="75" cy="125" r="83" fill="#000"/>
+      </mask>
+    </defs>
+    <g fill="none" stroke="#fff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Ø with orbit -->
+      <g mask="url(#cutFront)">
+        <circle cx="75" cy="125" r="63"/>
+        <path d="M58 160 L92 90" stroke-width="16"/>
+      </g>
+      <g mask="url(#cutBack)">
+        <g transform="translate(75 125) rotate(-32)">
+          <path d="M-120 0 A120 36 0 0 1 120 0" stroke-width="9"/>
+        </g>
+      </g>
+      <g transform="translate(75 125) rotate(-32)">
+        <path d="M-120 0 A120 36 0 0 0 120 0" stroke-width="9"/>
+        <circle cx="-92" cy="23.1" r="10" fill="#fff" stroke="none"/>
+      </g>
+      <!-- r -->
+      <path d="M185 200 V100 M185 145 A45 45 0 0 1 230 100"/>
+      <!-- b -->
+      <path d="M270 50 V200"/><circle cx="308" cy="150" r="38"/>
+      <!-- i -->
+      <path d="M390 108 V200"/><circle cx="390" cy="62" r="14" fill="#fff" stroke="none"/>
+      <!-- t -->
+      <path d="M442 62 V170 A30 30 0 0 0 472 200 M424 104 H470"/>
+      <!-- a -->
+      <circle cx="547" cy="150" r="38"/><path d="M585 100 V200"/>
+      <!-- p -->
+      <path d="M627 100 V250"/><circle cx="665" cy="150" r="38"/>
+      <!-- l -->
+      <path d="M747 50 V170 A30 30 0 0 0 777 200"/>
+      <!-- a -->
+      <circle cx="852" cy="150" r="38"/><path d="M890 100 V200"/>
+      <!-- y -->
+      <path d="M932 100 V150 A38 38 0 0 0 1008 150 M1008 100 V212 A38 38 0 0 1 970 250 H947"/>
+    </g>
+  </g>
+</svg>
