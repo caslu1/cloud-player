@@ -47,7 +47,7 @@ class Store(ctx: Context) {
     val hiddenCats = mutableStateListOf<String>()
     val sortAZ = mutableStateOf(p.getBoolean("sortAZ", false))
 
-    init { reload() }
+    init { reload(); Wall.index = p.getInt("wallpaper", 1) }
 
     fun reload() {
         favChannels.clear(); favChannels += list("fav")
@@ -142,6 +142,7 @@ class Store(ctx: Context) {
         if (!hiddenCats.remove(key)) hiddenCats.add(key)
         save("hiddenCats", hiddenCats.toList())
     }
+    fun setWallpaper(i: Int) { Wall.index = i; p.edit().putInt("wallpaper", i).apply() }
     fun setSortAZ(b: Boolean) { sortAZ.value = b; p.edit().putBoolean("sortAZ", b).apply() }
 
     fun setLiveFormat(f: String) { liveFormat.value = f; p.edit().putString("liveFormat", f).apply() }

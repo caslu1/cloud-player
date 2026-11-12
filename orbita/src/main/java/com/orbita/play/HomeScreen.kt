@@ -75,40 +75,16 @@ private fun RoundAction(icon: ImageVector, desc: String, key: String, onClick: (
 
 private class HomeTile(val tab: Tab, val label: String, val icon: ImageVector, val sub: String)
 
-/** Tela inicial: filme em destaque ao fundo, 4 blocos grandes e "Continuar assistindo". */
+/** Tela inicial: papel de parede escolhido, saudação, 4 blocos grandes e "Continuar assistindo". */
 @Composable
 fun HomeScreen(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit) {
-    // destaques: lançamentos com capa, trocando a cada 12 s
-    val blocked = vm.movieCats.filter { !vm.catAllowed("vod", it) }.map { it.id }.toSet()
-    val featured = remember(vm.movies, blocked) {
-        vm.movies.asSequence().filter { it.catId !in blocked }.sortedByDescending { it.added }.take(6).toList()
-    }
-    var idx by remember { mutableIntStateOf(0) }
-    LaunchedEffect(featured) {
-        featured.forEach { vm.requestMeta(it) }
-        while (featured.size > 1) { delay(12_000); idx = (idx + 1) % featured.size }
-    }
-    val m = featured.getOrNull(idx % featured.size.coerceAtLeast(1))
-    val hero = m?.let { movieHero(vm, it, "EM DESTAQUE · FILME") }
-
     Box(Modifier.fillMaxSize()) {
-        if (hero != null) Backdrop(hero.backdrop, hero.key) else ScreenBackground()
-        // escurece a parte de baixo para os blocos e a fileira ficarem legíveis
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Transparent, 0.42f to Color(0x66050409), 0.62f to Color(0xE6050409), 1f to C.bg)))
-        if (hero != null) Box(Modifier.padding(top = 2.dp)) {
-            Column(Modifier.padding(start = 28.dp, top = 56.dp).width(440.dp)) {
-                Txt(hero.label, F.s(8.sp, C.accentText, FontWeight.SemiBold, spacing = 2.sp))
-                Spacer(Modifier.height(5.dp))
-                TitleArt(hero.title, null, big = true)
-                Spacer(Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    hero.chips.forEach { MetaChip(it) }
-                    if (hero.rating > 0) RatingChip(hero.rating)
-                    hero.genre?.let { Txt(it, F.s(8.5.sp, C.dim), Modifier.padding(start = 2.dp)) }
-                }
-                Spacer(Modifier.height(6.dp))
-                Txt(hero.plot ?: "", F.s(9.sp, C.text.copy(alpha = 0.9f)), maxLines = 2)
-            }
+        ScreenBackground()
+        Column(Modifier.padding(start = 28.dp, top = 62.dp)) {
+            val h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+            Txt(if (h < 5) "Boa noite" else if (h < 12) "Bom dia" else if (h < 18) "Boa tarde" else "Boa noite", F.s(22.sp, C.white, FontWeight.Bold, F.outfit))
+            Spacer(Modifier.height(2.dp))
+            Txt("O que vamos assistir hoje?", F.s(10.sp, C.dim))
         }
 
         // topo: logo + ações
@@ -118,7 +94,7 @@ fun HomeScreen(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () 
             TopActions(onSearch, onReload, onSettings, showDate = true)
         }
 
-        Column(Modifier.fillMaxSize().padding(top = 196.dp)) {
+        Column(Modifier.fillMaxSize().padding(top = 134.dp)) {
             val tiles = listOf(
                 HomeTile(Tab.CANAIS, "CANAIS", Ic.LiveTv, countLabel(vm.allowedChannels().size, "canal", "canais", vm.liveState == LoadState.READY)),
                 HomeTile(Tab.FILMES, "FILMES", Ic.Movie, countLabel(vm.movies.size, "título", "títulos", vm.movieState == LoadState.READY)),
@@ -132,7 +108,7 @@ fun HomeScreen(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () 
                     BigTile(t, if (t.tab == ui.tab) first else null) { ui.tab = t.tab; ui.home = false }
                 }
             }
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(26.dp))
             ContinueRow(vm, pb, ui)
         }
     }
@@ -143,11 +119,11 @@ private fun countLabel(n: Int, one: String, many: String, ready: Boolean) =
 
 @Composable
 private fun BigTile(t: HomeTile, requester: FocusRequester?, onClick: () -> Unit) {
-    Focus(Modifier.width(176.dp), onClick = onClick, requester = requester, memKey = "home:${t.tab.name}") { f ->
+    Focus(Modifier.width(194.dp), onClick = onClick, requester = requester, memKey = "home:${t.tab.name}") { f ->
         val sc by animateFloatAsState(if (f) 1.07f else 1f, tween(140), label = "s")
         val shape = RoundedCornerShape(16.dp)
         Box(
-            Modifier.graphicsLayer { scaleX = sc; scaleY = sc }.fillMaxWidth().height(112.dp).clip(shape)
+            Modifier.graphicsLayer { scaleX = sc; scaleY = sc }.fillMaxWidth().height(138.dp).clip(shape)
                 .background(
                     if (f) Brush.linearGradient(listOf(Color(0xFF9378FF), Color(0xFF5A36E0)))
                     else Brush.linearGradient(listOf(Color(0xCC1A1530), Color(0xCC0E0B1A)))

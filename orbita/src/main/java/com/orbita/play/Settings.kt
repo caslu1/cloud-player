@@ -51,6 +51,7 @@ private val sections = listOf(
     Section("Ocultar categorias", Ic.EyeOff),
     Section("Reprodução", Ic.Play),
     Section("Armazenamento", Ic.Refresh),
+    Section("Papel de parede", Ic.Grid),
     Section("Sair da conta", Ic.Logout),
 )
 
@@ -72,12 +73,12 @@ fun SettingsScreen(vm: Vm, pb: Playback, ui: Ui) {
         }
         Spacer(Modifier.height(16.dp))
         Row(Modifier.weight(1f)) {
-            Column(Modifier.width(250.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(Modifier.width(230.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 sections.forEachIndexed { i, s ->
                     Focus(Modifier.fillMaxWidth(), onClick = { section = i }, requester = if (i == 0) first else null, memKey = "set:$i") { f ->
                         val sel = section == i
                         Row(
-                            Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(9.dp))
+                            Modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(9.dp))
                                 .background(if (f) C.accent else if (sel) C.accentSoft else C.panel)
                                 .border(1.dp, if (sel && !f) C.accent.copy(alpha = 0.6f) else C.panelBorder, RoundedCornerShape(9.dp))
                                 .padding(horizontal = 14.dp),
@@ -103,6 +104,7 @@ fun SettingsScreen(vm: Vm, pb: Playback, ui: Ui) {
                         4 -> HideCategories(vm)
                         5 -> PlaybackPrefs(vm)
                         6 -> Storage(vm) { msg = it }
+                        7 -> WallpaperPicker(vm)
                         else -> Logout(vm, pb, ui)
                     }
                     msg?.let { Spacer(Modifier.height(10.dp)); Txt(it, F.s(9.5.sp, C.cyan, FontWeight.Medium)) }

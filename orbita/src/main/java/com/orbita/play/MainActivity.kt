@@ -272,13 +272,7 @@ fun TopBar(ui: Ui, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () ->
 
 /** Fundo com gradiente roxo do design. */
 @Composable
-fun ScreenBackground() {
-    Box(
-        Modifier.fillMaxSize().background(
-            Brush.radialGradient(listOf(Color(0xFF1F1150), Color(0xFF0A0716), Color(0xFF040308)), radius = 1400f, center = androidx.compose.ui.geometry.Offset(200f, 0f))
-        )
-    )
-}
+fun ScreenBackground() = WallpaperView(Wall.index)
 
 @Composable
 fun BrandSplash() {
