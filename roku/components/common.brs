@@ -26,6 +26,21 @@ function formatFor(ext as string) as string
     return "mp4"
 end function
 
+' Conteúdo de vídeo com o mesmo "User-Agent" do app Android (muitos servidores bloqueiam o da Roku).
+function mkVideo(url as string, fmt as string, live as boolean) as object
+    c = CreateObject("roSGNode", "ContentNode")
+    c.url = url
+    c.streamFormat = fmt
+    c.HttpHeaders = ["User-Agent: IPTVSmartersPlayer"]
+    if live then c.live = true
+    return c
+end function
+
+' Endereços para tentar num canal ao vivo: m3u8 (HLS) e depois .ts.
+function liveSources(id as string) as object
+    return [{ url: streamUrl("live", id, "m3u8"), format: "hls" }, { url: streamUrl("live", id, "ts"), format: "ts" }]
+end function
+
 ' Dispara uma consulta à API em segundo plano; a resposta chega em onApi(event).
 sub callApi(id as string, url as string)
     t = CreateObject("roSGNode", "ApiTask")

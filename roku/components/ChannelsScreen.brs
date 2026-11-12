@@ -20,6 +20,10 @@ sub init()
     m.pvTrack = addRect(info, 1136, 396, 708, 5, "0x33FFFFFF")
     m.pvBar = addRect(info, 1136, 396, 0, 5, "0x22D3EEFF")
     m.pvNext = addLabel(info, "", 1136, 410, IREG(), 18, "0x9D9ABBFF", 708)
+    m.pvErr = addLabel(info, "", 1136, 200, IMED(), 20, "0xF43F5EFF", 708, "center")
+    m.pvErr.wrap = true
+    m.pvErr.maxLines = 3
+    m.pv.observeField("state", "onPvState")
     ' guia
     g = m.top.findNode("epg")
     addLabel(g, "PROGRAMAÇÃO", 1134, 506, ISEM(), 17, "0x9D9ABBFF")
@@ -215,27 +219,44 @@ end sub
 ' 1º OK: toca na prévia. 2º OK no mesmo canal: tela cheia.
 sub onChannel()
     c = m.shown[m.list.itemSelected]
-    url = streamUrl("live", c.id, "m3u8")
     if m.playingId = c.id
         m.pv.control = "stop"
         m.pv.visible = false
         m.live.visible = false
         m.playingId = ""
-        m.top.action = { type: "play", url: url, title: c.name, format: "hls", live: true }
+        m.top.action = { type: "play", streamId: c.id, title: c.name, live: true }
         return
     end if
     addRecent(c)
-    v = CreateObject("roSGNode", "ContentNode")
-    v.url = url
-    v.streamFormat = "hls"
-    v.live = true
-    m.pv.content = v
-    m.pv.visible = true
-    m.pv.control = "play"
+    m.pvSources = liveSources(c.id)
+    m.pvTry = 0
+    m.pvErr.text = ""
+    startPreview()
     m.pvLogo.visible = false
     m.live.visible = true
     m.playingId = c.id
     m.list.setFocus(true)
+end sub
+
+sub startPreview()
+    s = m.pvSources[m.pvTry]
+    m.pv.content = mkVideo(s.url, s.format, true)
+    m.pv.visible = true
+    m.pv.control = "play"
+end sub
+
+sub onPvState()
+    if m.pv.state = "error"
+        if m.pvTry + 1 < m.pvSources.Count()
+            m.pvTry = m.pvTry + 1
+            startPreview()
+        else
+            m.pv.visible = false
+            m.live.visible = false
+            m.pvErr.text = "Não abriu (erro " + m.pv.errorCode.ToStr() + "): " + m.pv.errorMsg
+            m.playingId = ""
+        end if
+    end if
 end sub
 
 sub toggleFav()

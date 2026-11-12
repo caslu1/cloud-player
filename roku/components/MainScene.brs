@@ -3,6 +3,10 @@ sub init()
     m.screens = m.top.findNode("screens")
     m.video = m.top.findNode("video")
     m.video.observeField("state", "onVideoState")
+    m.errBox = m.top.findNode("errBox")
+    m.errMsg = m.top.findNode("errMsg")
+    m.errMsg.font = mkFont(IMED(), 24)
+    m.top.findNode("errTimer").observeField("fire", "hideError")
     m.playing = invalid
     m.global.addFields({ creds: {} })
     reg = CreateObject("roRegistrySection", "orbita")
@@ -62,13 +66,21 @@ sub onAction(event as object)
 end sub
 
 sub play(a as object)
-    c = CreateObject("roSGNode", "ContentNode")
-    c.url = a.url
-    c.title = a.title
-    c.streamFormat = a.format
-    if a.live = true then c.live = true
-    if a.start <> invalid and a.start > 0 then c.PlayStart = a.start
+    if a.live = true and a.streamId <> invalid and a.sources = invalid then a.sources = liveSources(a.streamId)
+    if a.sources <> invalid
+        a.try = 0
+        a.url = a.sources[0].url
+        a.format = a.sources[0].format
+    end if
     m.playing = a
+    startVideo()
+end sub
+
+sub startVideo()
+    a = m.playing
+    c = mkVideo(a.url, a.format, a.live = true)
+    c.title = a.title
+    if a.start <> invalid and a.start > 0 then c.PlayStart = a.start
     m.video.content = c
     m.video.visible = true
     m.video.control = "play"
@@ -98,7 +110,34 @@ end sub
 
 sub onVideoState(event as object)
     st = event.getData()
-    if st = "finished" or st = "error" then stopVideo()
+    if st = "error"
+        a = m.playing
+        ' tenta o próximo formato do canal (m3u8 → ts)
+        if a <> invalid and a.sources <> invalid and a.try + 1 < a.sources.Count()
+            a.try = a.try + 1
+            a.url = a.sources[a.try].url
+            a.format = a.sources[a.try].format
+            m.playing = a
+            startVideo()
+            return
+        end if
+        showError("Não foi possível abrir o vídeo." + Chr(10) + "Erro " + m.video.errorCode.ToStr() + ": " + m.video.errorMsg)
+        stopVideo()
+    else if st = "finished"
+        stopVideo()
+    end if
+end sub
+
+sub showError(t as string)
+    m.errMsg.text = t
+    m.errBox.visible = true
+    tm = m.top.findNode("errTimer")
+    tm.control = "stop"
+    tm.control = "start"
+end sub
+
+sub hideError()
+    m.errBox.visible = false
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
