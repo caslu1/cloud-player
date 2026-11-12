@@ -195,7 +195,7 @@ fun ChipPill(
 /** Botão de ação (Assistir, Minha lista, Trailer...). */
 @Composable
 fun ActionButton(
-    text: String, modifier: Modifier = Modifier, primary: Boolean = false, icon: String? = null, requester: FocusRequester? = null,
+    text: String, modifier: Modifier = Modifier, primary: Boolean = false, icon: androidx.compose.ui.graphics.vector.ImageVector? = null, requester: FocusRequester? = null,
     onFocus: () -> Unit = {}, onClick: () -> Unit,
 ) {
     Focus(modifier, onClick = onClick, requester = requester, onFocus = onFocus) { f ->
@@ -208,7 +208,7 @@ fun ActionButton(
                 .padding(horizontal = 18.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (icon != null) { Txt(icon, F.s(11.sp, C.white, FontWeight.Bold)); Spacer(Modifier.width(6.dp)) }
+            if (icon != null) { Icon(icon, 15.dp); Spacer(Modifier.width(6.dp)) }
             Txt(text, F.s(10.5.sp, C.white, FontWeight.Bold))
         }
     }
@@ -271,9 +271,8 @@ fun SearchField(
                     .border(if (f) 1.5.dp else 1.dp, if (f) C.accent else C.panelBorder, shape).padding(horizontal = 9.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Txt("🔍", F.s(8.sp, C.dim)); Spacer(Modifier.width(5.dp))
+                Icon(Ic.Search, 13.dp, C.dim); Spacer(Modifier.width(6.dp))
                 Txt(value.ifEmpty { placeholder }, F.s(10.5.sp, if (value.isEmpty()) C.faint else C.white), Modifier.weight(1f))
-                if (value.isNotEmpty() && f) Txt("OK editar", F.s(7.sp, C.faint))
             }
         }
     }
@@ -363,9 +362,7 @@ fun Poster(
             GeneratedArt(title, Modifier.fillMaxSize())
             if (image != null) AsyncImage(image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             if (rating > 0f) {
-                Box(Modifier.align(Alignment.TopEnd).padding(4.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xCC000000)).padding(horizontal = 3.dp, vertical = 1.dp)) {
-                    Txt("★ " + String.format(Locale.US, "%.1f", rating), F.s(6.5.sp, C.star, FontWeight.Bold))
-                }
+                RatingBadge(rating, Modifier.align(Alignment.TopEnd).padding(4.dp))
             }
             if (f) {
                 Box(Modifier.fillMaxWidth().align(Alignment.BottomCenter).background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xEE000000)))).padding(5.dp)) {
@@ -520,4 +517,31 @@ fun fmtTime(ms: Long): String {
     val s = (ms / 1000).coerceAtLeast(0)
     val h = s / 3600; val m = (s % 3600) / 60; val sec = s % 60
     return if (h > 0) "%d:%02d:%02d".format(h, m, sec) else "%02d:%02d".format(m, sec)
+}
+
+/** Nota com ícone de estrela (nos cantos das capas). */
+@Composable
+fun RatingBadge(rating: Float, modifier: Modifier = Modifier) {
+    Row(
+        modifier.clip(RoundedCornerShape(4.dp)).background(Color(0xD9000000)).padding(horizontal = 4.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Ic.Star, 8.dp, C.star)
+        Spacer(Modifier.width(2.dp))
+        Txt(String.format(Locale.US, "%.1f", rating), F.s(7.sp, C.white, FontWeight.Bold))
+    }
+}
+
+/** Chip de nota (ano · duração · ★ 8,1) com estrela desenhada. */
+@Composable
+fun RatingChip(rating: Float, big: Boolean = false) {
+    Row(
+        Modifier.clip(RoundedCornerShape(if (big) 5.dp else 4.dp)).background(Color(0x33FBBF24))
+            .padding(horizontal = if (big) 8.dp else 6.dp, vertical = if (big) 3.5.dp else 2.5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Ic.Star, if (big) 11.dp else 9.dp, C.star)
+        Spacer(Modifier.width(3.dp))
+        Txt(String.format(Locale("pt", "BR"), "%.1f", rating), F.s(if (big) 9.5.sp else 7.5.sp, C.star, FontWeight.Bold))
+    }
 }

@@ -312,14 +312,24 @@ fun FullPlayer(vm: Vm, pb: Playback) {
         }
     }
 
+    // ◀▶ avançam/voltam; segurando, o passo aumenta (10 s → 30 s → 1 min → 2 min).
+    // O salto só é aplicado quando você solta, então a imagem não fica travando a cada toque.
+    var seekStart by remember { mutableLongStateOf(-1L) }
     fun seekBy(ms: Long) {
+        if (seekTarget < 0) seekStart = pb.exo.currentPosition
         val base = if (seekTarget >= 0) seekTarget else pb.exo.currentPosition
-        val t = (base + ms).coerceIn(0, (pb.exo.duration.takeIf { it > 0 } ?: Long.MAX_VALUE))
-        seekTarget = t
-        pb.exo.seekTo(t)
+        val max = pb.exo.duration.takeIf { it > 0 }?.minus(2_000) ?: Long.MAX_VALUE
+        seekTarget = (base + ms).coerceIn(0, max.coerceAtLeast(0))
         showOverlay()
     }
-    LaunchedEffect(seekTarget) { if (seekTarget >= 0) { delay(800); seekTarget = -1 } }
+    fun step(rep: Int) = when { rep < 3 -> 10_000L; rep < 10 -> 30_000L; rep < 20 -> 60_000L; else -> 120_000L }
+    LaunchedEffect(seekTarget) {
+        if (seekTarget < 0) return@LaunchedEffect
+        delay(650)
+        pb.exo.seekTo(seekTarget)
+        delay(350)
+        seekTarget = -1; seekStart = -1
+    }
 
     Box(
         Modifier.fillMaxSize().background(Color.Black)
@@ -345,8 +355,8 @@ fun FullPlayer(vm: Vm, pb: Playback) {
                     AKey.KEYCODE_MEDIA_PLAY_PAUSE, AKey.KEYCODE_MEDIA_PLAY, AKey.KEYCODE_MEDIA_PAUSE -> {
                         if (pb.exo.isPlaying) pb.exo.pause() else pb.exo.play(); showOverlay(); true
                     }
-                    AKey.KEYCODE_MEDIA_FAST_FORWARD -> { if (!live) seekBy(30_000); true }
-                    AKey.KEYCODE_MEDIA_REWIND -> { if (!live) seekBy(-30_000); true }
+                    AKey.KEYCODE_MEDIA_FAST_FORWARD -> { if (!live) seekBy(maxOf(30_000L, step(rep))); true }
+                    AKey.KEYCODE_MEDIA_REWIND -> { if (!live) seekBy(-maxOf(30_000L, step(rep))); true }
                     AKey.KEYCODE_MEDIA_NEXT -> { pb.neighbor(1)?.let { pb.play(it, pb.list) }; true }
                     AKey.KEYCODE_MEDIA_PREVIOUS -> { pb.neighbor(-1)?.let { pb.play(it, pb.list) }; true }
                     AKey.KEYCODE_DPAD_CENTER, AKey.KEYCODE_ENTER, AKey.KEYCODE_NUMPAD_ENTER -> {
@@ -358,8 +368,8 @@ fun FullPlayer(vm: Vm, pb: Playback) {
                     }
                     AKey.KEYCODE_DPAD_UP -> { if (live) pb.neighbor(-1)?.let { pb.play(it, pb.list) } else showOverlay(); true }
                     AKey.KEYCODE_DPAD_DOWN -> { if (live) pb.neighbor(1)?.let { pb.play(it, pb.list) } else if (overlay) panel = PPanel.OPTIONS else showOverlay(); true }
-                    AKey.KEYCODE_DPAD_LEFT -> { if (live) panel = PPanel.CHANNELS else seekBy(-10_000L * (1 + rep / 4)); true }
-                    AKey.KEYCODE_DPAD_RIGHT -> { if (live) showOverlay() else seekBy(10_000L * (1 + rep / 4)); true }
+                    AKey.KEYCODE_DPAD_LEFT -> { if (live) panel = PPanel.CHANNELS else seekBy(-step(rep)); true }
+                    AKey.KEYCODE_DPAD_RIGHT -> { if (live) showOverlay() else seekBy(step(rep)); true }
                     else -> false
                 }
             }
@@ -374,8 +384,6 @@ fun FullPlayer(vm: Vm, pb: Playback) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Txt(msg, F.s(10.sp, C.white, FontWeight.SemiBold), maxLines = 3)
-                Spacer(Modifier.height(6.dp))
-                Txt(if (live) "▲▼ trocar de canal · VOLTAR sair" else "OK tentar de novo · VOLTAR sair", F.s(8.sp, C.dim))
             }
         }
 
@@ -388,7 +396,8 @@ fun FullPlayer(vm: Vm, pb: Playback) {
         if (overlay && panel == PPanel.NONE) {
             if (live) LiveOverlay(vm, pb, item, qualityReq, Modifier.fillMaxSize())
             else {
-                VodOverlay(item, if (seekTarget >= 0) seekTarget else pos, dur, pb.isPlaying, Modifier.align(Alignment.BottomCenter))
+                VodOverlay(item, if (seekTarget >= 0) seekTarget else pos, dur, pb.isPlaying, seekTarget >= 0, Modifier.align(Alignment.BottomCenter))
+                if (seekTarget >= 0 && seekStart >= 0) SeekBadge(seekTarget - seekStart, Modifier.align(Alignment.Center))
                 Txt(hhmm(System.currentTimeMillis()), F.s(12.sp, C.white, FontWeight.Bold), Modifier.align(Alignment.TopEnd).padding(20.dp))
             }
         }
@@ -557,22 +566,59 @@ private fun QualityPill(label: String, selected: Boolean, available: Boolean, re
 }
 
 @Composable
-private fun VodOverlay(item: PlayItem, pos: Long, dur: Long, playing: Boolean, modifier: Modifier) {
-    Box(modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xF0050409)))).padding(horizontal = 28.dp, vertical = 22.dp)) {
+private fun VodOverlay(item: PlayItem, pos: Long, dur: Long, playing: Boolean, seeking: Boolean, modifier: Modifier) {
+    Box(
+        modifier.fillMaxWidth()
+            .background(Brush.verticalGradient(0f to Color.Transparent, 0.4f to Color(0xB3050409), 1f to Color(0xF5050409)))
+            .padding(start = 36.dp, end = 36.dp, top = 50.dp, bottom = 28.dp)
+    ) {
         Column {
-            Txt(item.title, F.s(16.sp, C.white, FontWeight.Bold, F.outfit))
-            if (item.subtitle.isNotEmpty()) Txt(item.subtitle, F.s(9.sp, C.dim))
-            Spacer(Modifier.height(10.dp))
+            Txt(item.title, F.s(19.sp, C.white, FontWeight.Bold, F.outfit))
+            if (item.subtitle.isNotEmpty()) { Spacer(Modifier.height(2.dp)); Txt(item.subtitle, F.s(10.sp, C.dim)) }
+            Spacer(Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Txt(if (playing) "❚❚" else "▶", F.s(12.sp, C.white, FontWeight.Bold), Modifier.width(22.dp))
-                Txt(fmtTime(pos), F.s(8.5.sp, C.text), Modifier.width(52.dp))
-                ProgressBar(if (dur > 0) pos.toFloat() / dur else 0f, Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp)), C.accent)
-                Spacer(Modifier.width(10.dp))
-                Txt(fmtTime(dur), F.s(8.5.sp, C.text))
+                Icon(Ic.Rewind, 18.dp, C.white.copy(alpha = 0.75f))
+                Spacer(Modifier.width(12.dp))
+                Box(Modifier.size(34.dp).clip(androidx.compose.foundation.shape.CircleShape).background(C.white), contentAlignment = Alignment.Center) {
+                    Icon(if (playing && !seeking) Ic.Pause else Ic.Play, 18.dp, Color(0xFF0B0A14))
+                }
+                Spacer(Modifier.width(12.dp))
+                Icon(Ic.Forward, 18.dp, C.white.copy(alpha = 0.75f))
+                Spacer(Modifier.width(20.dp))
+                Txt(fmtTime(pos), F.s(10.sp, if (seeking) C.accentText else C.white, FontWeight.SemiBold), Modifier.width(62.dp))
+                SeekBar(if (dur > 0) pos.toFloat() / dur else 0f, seeking, Modifier.weight(1f))
+                Spacer(Modifier.width(14.dp))
+                Txt("-" + fmtTime((dur - pos).coerceAtLeast(0)), F.s(10.sp, C.dim, FontWeight.Medium))
             }
-            Spacer(Modifier.height(6.dp))
-            Txt("OK pausar   ◀▶ voltar/avançar 10s (segure p/ acelerar)   ▼ ou MENU áudio/legenda", F.s(7.5.sp, C.faint))
         }
+    }
+}
+
+/** Barra de progresso com marcador (fica roxa enquanto você avança/volta). */
+@Composable
+private fun SeekBar(fraction: Float, seeking: Boolean, modifier: Modifier) {
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier.height(16.dp), contentAlignment = Alignment.CenterStart) {
+        val f = fraction.coerceIn(0f, 1f)
+        Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color(0x40FFFFFF)))
+        Box(Modifier.fillMaxWidth(f).height(4.dp).clip(RoundedCornerShape(2.dp)).background(C.accent))
+        val d = if (seeking) 16.dp else 12.dp
+        Box(
+            Modifier.padding(start = (maxWidth - d) * f).size(d).clip(androidx.compose.foundation.shape.CircleShape)
+                .background(if (seeking) C.accentText else C.white)
+        )
+    }
+}
+
+/** Indicador grande no centro: "+1:30" / "-0:20". */
+@Composable
+private fun SeekBadge(delta: Long, modifier: Modifier) {
+    Row(
+        modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xCC0B0A14)).padding(horizontal = 22.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(if (delta < 0) Ic.Rewind else Ic.Forward, 26.dp)
+        Spacer(Modifier.width(10.dp))
+        Txt((if (delta < 0) "-" else "+") + fmtTime(kotlin.math.abs(delta)), F.s(22.sp, C.white, FontWeight.Bold, F.outfit))
     }
 }
 
@@ -583,7 +629,7 @@ private fun VodOverlay(item: PlayItem, pos: Long, dur: Long, playing: Boolean, m
 @Composable
 private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
     val cur = pb.current?.channel
-    val cats = remember(vm.liveCats) { listOf(Cat("__fav", "★  Favoritos"), Cat("__recent", "🕘  Recentes"), Cat("__all", "Todos os canais")) + vm.liveCats }
+    val cats = remember(vm.liveCats) { listOf(Cat("__fav", "Favoritos"), Cat("__recent", "Recentes"), Cat("__all", "Todos os canais")) + vm.liveCats }
     // categoria inicial: a da lista que está tocando (se for uma só), senão a do canal
     val startCat = remember {
         val ids = pb.list.mapNotNull { it.channel?.catId }.distinct()
@@ -638,6 +684,8 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
                                     .padding(horizontal = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                val ic = when (c.id) { "__fav" -> Ic.Star; "__recent" -> Ic.History; "__all" -> Ic.LiveTv; else -> if (MatchLogic.isSportsName(c.name)) Ic.Soccer else null }
+                                if (ic != null) { Icon(ic, 13.dp, if (sel || f) C.white else C.dim); Spacer(Modifier.width(7.dp)) }
                                 Txt(c.name, F.s(11.sp, if (sel || f) C.white else C.text, if (sel) FontWeight.SemiBold else FontWeight.Medium), Modifier.weight(1f))
                                 if (sel) Box(Modifier.size(5.dp).clip(androidx.compose.foundation.shape.CircleShape).background(C.accent))
                             }
@@ -648,7 +696,7 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f).fillMaxHeight()) {
                 Row(Modifier.padding(start = 10.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Txt(cats.firstOrNull { it.id == cat }?.name?.trimStart('★', ' ')?.removePrefix("🕘")?.trim()?.uppercase() ?: "CANAIS", F.label, Modifier.weight(1f))
+                    Txt(cats.firstOrNull { it.id == cat }?.name?.uppercase() ?: "CANAIS", F.label, Modifier.weight(1f))
                     Txt("${list.size} CANAIS", F.label)
                 }
                 if (list.isEmpty()) {
@@ -686,8 +734,8 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
                                 Column(Modifier.weight(1f)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Txt(c.name, F.s(11.5.sp, C.white, FontWeight.SemiBold), Modifier.weight(1f, fill = false))
-                                        if (playing) { Spacer(Modifier.width(6.dp)); Txt("▶ assistindo", F.s(7.5.sp, C.cyan, FontWeight.Bold)) }
-                                        if (vm.store.isFav(c.id)) { Spacer(Modifier.width(5.dp)); Txt("★", F.s(9.sp, C.star)) }
+                                        if (playing) { Spacer(Modifier.width(6.dp)); Icon(Ic.Play, 10.dp, C.cyan); Txt("Assistindo", F.s(7.5.sp, C.cyan, FontWeight.Bold)) }
+                                        if (vm.store.isFav(c.id)) { Spacer(Modifier.width(5.dp)); Icon(Ic.Star, 11.dp, C.star) }
                                     }
                                     val now = vm.nowOn(c)
                                     if (now != null) {
@@ -700,8 +748,6 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
                         }
                     }
                 }
-                Spacer(Modifier.height(6.dp))
-                Txt("OK assistir   ◀ categorias   ▶ ou VOLTAR fechar   segurar OK favoritar", F.s(8.sp, C.faint), Modifier.padding(start = 10.dp))
             }
         }
     }
@@ -739,7 +785,6 @@ private fun OptionsPanel(pb: Playback, modifier: Modifier, onClose: () -> Unit) 
             pb.neighbor(1)?.let { n -> OptionRow("Próximo episódio", n.title) { pb.play(n, pb.list); onClose() } }
         }
         if (item?.kind == Kind.LIVE) OptionRow("Reconectar", "") { pb.retry(); onClose() }
-        Txt("OK altera · VOLTAR fecha", F.s(7.sp, C.faint), Modifier.padding(4.dp))
     }
     LaunchedEffect(Unit) {
         // faixas chegam depois do início da reprodução

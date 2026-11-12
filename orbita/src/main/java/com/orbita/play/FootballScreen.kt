@@ -93,11 +93,11 @@ fun FootballScreen(vm: Vm, pb: Playback, ui: Ui) {
     }
 
     Column(Modifier.fillMaxSize().padding(top = 50.dp)) {
-        Row(Modifier.weight(1f).padding(horizontal = 24.dp)) {
+        Row(Modifier.weight(1f).padding(start = 24.dp, end = 24.dp, bottom = 16.dp)) {
             // Menu
             Panel(Modifier.width(170.dp).fillMaxHeight()) {
                 Column {
-                    PanelHeader("Futebol", "⚽")
+                    PanelHeader("Futebol")
                     menu.forEachIndexed { i, label ->
                         val count = when (i) {
                             0 -> all.count { dayIndex(it.start) == 0 }
@@ -114,7 +114,7 @@ fun FootballScreen(vm: Vm, pb: Playback, ui: Ui) {
                         Box(
                             Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(if (f) C.accent else C.chip).padding(7.dp),
                             contentAlignment = Alignment.Center
-                        ) { Txt("↻ Atualizar jogos", F.s(8.5.sp, C.white, FontWeight.SemiBold)) }
+                        ) { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Ic.Refresh, 12.dp); Spacer(Modifier.width(6.dp)); Txt("Atualizar jogos", F.s(8.5.sp, C.white, FontWeight.SemiBold)) } }
                     }
                 }
             }
@@ -178,10 +178,6 @@ fun FootballScreen(vm: Vm, pb: Playback, ui: Ui) {
                 }
             }
         }
-        HintBar(
-            listOf("OK" to "Assistir jogo", "◀▶" to "Dias / menu", "▲▼" to "Jogos", "★" to "Seguir time (segurar OK)"),
-            Modifier.height(30.dp).fillMaxWidth().padding(top = 8.dp)
-        )
     }
 }
 
@@ -234,7 +230,7 @@ private fun MatchRow(vm: Vm, m: Match, followed: Boolean, requester: FocusReques
             Spacer(Modifier.width(6.dp))
             Txt(m.away, F.s(9.sp, C.white, FontWeight.SemiBold), Modifier.weight(1f))
             Column(Modifier.width(90.dp), horizontalAlignment = Alignment.End) {
-                Txt((if (followed) "★ " else "") + (m.channels.firstOrNull()?.name ?: ""), F.s(7.sp, if (followed) C.star else C.dim))
+                Txt((m.channels.firstOrNull()?.name ?: ""), F.s(7.sp, if (followed) C.star else C.dim))
                 m.comp?.let { Txt(it, F.s(7.sp, C.faint)) }
             }
         }
@@ -284,7 +280,7 @@ private fun MatchDetails(vm: Vm, pb: Playback, m: Match?, follows: List<String>,
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 TeamShield(m.home, 34.dp); Spacer(Modifier.height(5.dp))
                 Txt(m.home, F.s(9.sp, C.white, FontWeight.SemiBold), align = TextAlign.Center, maxLines = 2)
-                if (follows.any { it.equals(m.home, true) }) Txt("★ seguindo", F.s(7.sp, C.star))
+                if (follows.any { it.equals(m.home, true) }) Txt("Seguindo", F.s(7.sp, C.star, FontWeight.SemiBold))
             }
             Column(Modifier.width(70.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Txt(if (m.isLive()) "AO VIVO" else if (m.isOver()) "Encerrado" else hhmm(m.start), F.s(if (m.isLive()) 9.sp else 16.sp, if (m.isLive()) C.live else C.white, FontWeight.Bold, F.outfit))
@@ -293,7 +289,7 @@ private fun MatchDetails(vm: Vm, pb: Playback, m: Match?, follows: List<String>,
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 TeamShield(m.away, 34.dp); Spacer(Modifier.height(5.dp))
                 Txt(m.away, F.s(9.sp, C.white, FontWeight.SemiBold), align = TextAlign.Center, maxLines = 2)
-                if (follows.any { it.equals(m.away, true) }) Txt("★ seguindo", F.s(7.sp, C.star))
+                if (follows.any { it.equals(m.away, true) }) Txt("Seguindo", F.s(7.sp, C.star, FontWeight.SemiBold))
             }
         }
         m.comp?.let { Spacer(Modifier.height(8.dp)); Txt(it, F.s(8.sp, C.text), align = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }

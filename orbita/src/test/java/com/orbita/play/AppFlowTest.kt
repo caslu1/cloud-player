@@ -23,6 +23,7 @@ import org.robolectric.annotation.GraphicsMode
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.printToString
@@ -232,7 +233,8 @@ class AppFlowTest {
         click("Biblioteca", exact = true)
         waitText("Canais favoritos")
         shot("08-biblioteca")
-        click("⚙")
+        rule.onNodeWithContentDescription("Configurações").performClick()
+        repeat(5) { pump() }
         waitText("Configurações")
         waitText("Ativa")
         shot("09-configuracoes")

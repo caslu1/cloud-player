@@ -84,10 +84,10 @@ fun ApiFootballScreen(vm: Vm, pb: Playback, ui: Ui) {
     }
 
     Column(Modifier.fillMaxSize().padding(top = 50.dp)) {
-        Row(Modifier.weight(1f).padding(horizontal = 24.dp)) {
+        Row(Modifier.weight(1f).padding(start = 24.dp, end = 24.dp, bottom = 16.dp)) {
             Panel(Modifier.width(170.dp).fillMaxHeight()) {
                 Column {
-                    PanelHeader("Futebol", "⚽")
+                    PanelHeader("Futebol")
                     apiMenu.forEachIndexed { i, label ->
                         val count = when (i) {
                             0 -> all.size
@@ -104,7 +104,7 @@ fun ApiFootballScreen(vm: Vm, pb: Playback, ui: Ui) {
                         Box(
                             Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(if (f) C.accent else C.chip).padding(7.dp),
                             contentAlignment = Alignment.Center
-                        ) { Txt("↻ Atualizar placar", F.s(8.5.sp, C.white, FontWeight.SemiBold)) }
+                        ) { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Ic.Refresh, 12.dp); Spacer(Modifier.width(6.dp)); Txt("Atualizar placar", F.s(8.5.sp, C.white, FontWeight.SemiBold)) } }
                     }
                 }
             }
@@ -164,10 +164,6 @@ fun ApiFootballScreen(vm: Vm, pb: Playback, ui: Ui) {
                 }
             }
         }
-        HintBar(
-            listOf("OK" to "Assistir jogo", "◀▶" to "Dias / menu", "▲▼" to "Jogos", "★" to "Seguir time (segurar OK)"),
-            Modifier.height(30.dp).fillMaxWidth().padding(top = 8.dp)
-        )
     }
 }
 
@@ -213,7 +209,7 @@ private fun GameRow(
             Txt(g.away, F.s(8.5.sp, C.white, FontWeight.SemiBold), Modifier.weight(1f))
             Column(Modifier.width(92.dp), horizontalAlignment = Alignment.End) {
                 val ch = channels.firstOrNull()?.name ?: g.broadcasters.firstOrNull() ?: ""
-                Txt((if (followed) "★ " else "") + ch, F.s(7.sp, if (channels.isNotEmpty()) C.cyan else if (followed) C.star else C.dim))
+                Txt(ch, F.s(7.sp, if (channels.isNotEmpty()) C.cyan else if (followed) C.star else C.dim))
                 g.comp?.let { Txt(it, F.s(6.5.sp, C.faint)) }
             }
         }
@@ -257,7 +253,7 @@ private fun GameDetails(pb: Playback, g: FootballApi.Game?, channels: List<Chann
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 TeamShield(g.home, 34.dp, g.logoA); Spacer(Modifier.height(5.dp))
                 Txt(g.home, F.s(9.sp, C.white, FontWeight.SemiBold), align = TextAlign.Center, maxLines = 2)
-                if (follows.any { it.equals(g.home, true) }) Txt("★ seguindo", F.s(7.sp, C.star))
+                if (follows.any { it.equals(g.home, true) }) Txt("Seguindo", F.s(7.sp, C.star, FontWeight.SemiBold))
             }
             Column(Modifier.width(80.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 val sc = score(g)
@@ -267,7 +263,7 @@ private fun GameDetails(pb: Playback, g: FootballApi.Game?, channels: List<Chann
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 TeamShield(g.away, 34.dp, g.logoB); Spacer(Modifier.height(5.dp))
                 Txt(g.away, F.s(9.sp, C.white, FontWeight.SemiBold), align = TextAlign.Center, maxLines = 2)
-                if (follows.any { it.equals(g.away, true) }) Txt("★ seguindo", F.s(7.sp, C.star))
+                if (follows.any { it.equals(g.away, true) }) Txt("Seguindo", F.s(7.sp, C.star, FontWeight.SemiBold))
             }
         }
         Spacer(Modifier.height(12.dp))

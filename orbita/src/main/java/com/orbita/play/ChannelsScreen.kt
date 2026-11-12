@@ -125,13 +125,13 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
                     Spacer(Modifier.height(8.dp))
                     LazyColumn(state = ui.catList, modifier = Modifier.weight(1f)) {
                         if (catQuery.isBlank()) {
-                            item(key = FAV) { CatRow("★  Favoritos", favCount, ui.liveCat == FAV, "cat:$FAV", { pendingCat = FAV }, catReq) { ui.liveCat = FAV; runCatching { firstChannel.requestFocus() } } }
-                            item(key = RECENT) { CatRow("🕘  Recentes", recentCount, ui.liveCat == RECENT, "cat:$RECENT", { pendingCat = RECENT }) { ui.liveCat = RECENT; runCatching { firstChannel.requestFocus() } } }
-                            item(key = ALL) { CatRow("Todos os canais", vm.uniqueChannels.size, ui.liveCat == ALL, "cat:$ALL", { pendingCat = ALL }) { ui.liveCat = ALL; runCatching { firstChannel.requestFocus() } } }
+                            item(key = FAV) { CatRow("Favoritos", favCount, ui.liveCat == FAV, "cat:$FAV", { pendingCat = FAV }, catReq, Ic.Star) { ui.liveCat = FAV; runCatching { firstChannel.requestFocus() } } }
+                            item(key = RECENT) { CatRow("Recentes", recentCount, ui.liveCat == RECENT, "cat:$RECENT", { pendingCat = RECENT }, icon = Ic.History) { ui.liveCat = RECENT; runCatching { firstChannel.requestFocus() } } }
+                            item(key = ALL) { CatRow("Todos os canais", vm.uniqueChannels.size, ui.liveCat == ALL, "cat:$ALL", { pendingCat = ALL }, icon = Ic.LiveTv) { ui.liveCat = ALL; runCatching { firstChannel.requestFocus() } } }
                         }
                         items(cats, key = { "c" + it.id }) { c ->
-                            val icon = if (c.name.contains("futebol", true)) "⚽  " else ""
-                            CatRow(icon + c.name, vm.uniqueByCat[c.id]?.size ?: 0, ui.liveCat == c.id, "cat:${c.id}", { pendingCat = c.id }) {
+                            val icon = if (MatchLogic.isSportsName(c.name)) Ic.Soccer else null
+                            CatRow(c.name, vm.uniqueByCat[c.id]?.size ?: 0, ui.liveCat == c.id, "cat:${c.id}", { pendingCat = c.id }, icon = icon) {
                                 ui.liveCat = c.id; runCatching { firstChannel.requestFocus() }
                             }
                         }
@@ -172,15 +172,15 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
                 Panel(Modifier.fillMaxWidth().weight(1f)) { EpgList(vm, shown) }
             }
         }
-        HintBar(
-            listOf("OK" to "Assistir / tela cheia", "▲▼" to "Trocar canal", "◀▶" to "Categorias / canais", "★" to "Favoritar (segurar OK)", "VOLTAR" to "Menu"),
-            Modifier.height(30.dp).fillMaxWidth().padding(top = 8.dp)
-        )
+        Spacer(Modifier.height(14.dp))
     }
 }
 
 @Composable
-internal fun CatRow(label: String, count: Int, selected: Boolean, memKey: String, onFocus: () -> Unit, requester: FocusRequester? = null, onClick: () -> Unit) {
+internal fun CatRow(
+    label: String, count: Int, selected: Boolean, memKey: String, onFocus: () -> Unit, requester: FocusRequester? = null,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null, onClick: () -> Unit,
+) {
     Focus(Modifier.fillMaxWidth().height(36.dp), onClick = onClick, onFocus = onFocus, memKey = memKey, requester = requester) { f ->
         Row(
             Modifier.fillMaxSize()
@@ -190,6 +190,7 @@ internal fun CatRow(label: String, count: Int, selected: Boolean, memKey: String
         ) {
             Box(Modifier.width(2.5.dp).fillMaxHeight().background(if (selected) C.accent else Color.Transparent))
             Spacer(Modifier.width(12.dp))
+            if (icon != null) { Icon(icon, 14.dp, if (selected || f) C.white else C.dim); Spacer(Modifier.width(8.dp)) }
             Txt(label, F.s(11.5.sp, if (selected || f) C.white else C.text, if (selected) FontWeight.SemiBold else FontWeight.Medium), Modifier.weight(1f))
             Count(count, selected)
             Spacer(Modifier.width(12.dp))
@@ -227,7 +228,7 @@ fun ChannelRow(
                 }
                 if (sub.isNotEmpty()) Txt(sub, F.s(9.sp, if (playing) C.cyan else C.dim))
             }
-            if (fav) Txt("★", F.s(10.sp, C.star))
+            if (fav) Icon(Ic.Star, 13.dp, C.star)
         }
     }
 }
@@ -243,8 +244,6 @@ private fun Preview(vm: Vm, pb: Playback, c: Channel?, modifier: Modifier) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     if (c.logo != null) AsyncImage(c.logo, null, Modifier.size(90.dp, 60.dp))
                     else ChannelLogo(c, Modifier.size(80.dp, 50.dp))
-                    Spacer(Modifier.height(8.dp))
-                    Txt("Pressione OK para assistir", F.s(9.sp, C.white.copy(alpha = 0.8f)))
                 }
             }
         }

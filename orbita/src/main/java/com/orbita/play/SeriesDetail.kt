@@ -102,7 +102,7 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     (tm?.year ?: info?.year ?: s.year)?.let { MetaChip(it) }
                     val r = tm?.rating?.takeIf { it > 0 } ?: info?.rating?.takeIf { it > 0 } ?: s.rating
-                    if (r > 0) MetaChip(String.format(Locale("pt", "BR"), "★ %.1f", r), C.star, Color(0x33FBBF24))
+                    if (r > 0) RatingChip(r)
                     (tm?.genres ?: info?.genre ?: s.genre)?.let { Txt(it, F.s(8.5.sp, C.dim)) }
                 }
                 Spacer(Modifier.height(10.dp))
@@ -113,10 +113,10 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
                         resumeEp != null -> "Continuar T${resumeEp.season} · E${resumeEp.num}"
                         else -> "Assistir T${allEps.firstOrNull()?.season ?: 1} · E${allEps.firstOrNull()?.num ?: 1}"
                     }
-                    ActionButton(label, primary = true, icon = "▶", requester = playReq) {
+                    ActionButton(label, primary = true, icon = Ic.Play, requester = playReq) {
                         (resumeEp ?: allEps.firstOrNull())?.let { play(it) }
                     }
-                    ActionButton(if (vm.store.inList("s:${s.id}")) "✓ Na minha lista" else "+ Minha lista") { vm.store.toggleList("s:${s.id}") }
+                    ActionButton(if (vm.store.inList("s:${s.id}")) "Na minha lista" else "Minha lista", icon = if (vm.store.inList("s:${s.id}")) Ic.Check else Ic.Add) { vm.store.toggleList("s:${s.id}") }
                 }
                 val cast = info?.cast.orEmpty()
                 if (cast.isNotEmpty()) {
@@ -167,10 +167,6 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
                 }
             }
         }
-        HintBar(
-            listOf("OK" to "Assistir episódio", "◀▶" to "Temporadas", "▲▼" to "Episódios", "VOLTAR" to "Séries"),
-            Modifier.align(Alignment.BottomStart).padding(bottom = 10.dp)
-        )
     }
 }
 

@@ -142,7 +142,7 @@ fun HeroBlock(h: HeroData, compact: Boolean, buttons: @Composable () -> Unit) {
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             h.chips.forEach { MetaChip(it) }
-            if (h.rating > 0) MetaChip(stars(h.rating), C.star, Color(0x33FBBF24))
+            if (h.rating > 0) RatingChip(h.rating)
             h.genre?.let { Txt(it, F.s(8.5.sp, C.dim), Modifier.padding(start = 2.dp)) }
         }
         if (!compact) {
@@ -170,9 +170,7 @@ fun BigPoster(
                 GeneratedArt(e.title, Modifier.fillMaxSize(), big = true)
                 if (image != null) AsyncImage(image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 if (e.rating > 0f) {
-                    Box(Modifier.align(Alignment.TopEnd).padding(5.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xCC000000)).padding(horizontal = 4.dp, vertical = 1.5.dp)) {
-                        Txt(String.format(Locale.US, "★ %.1f", e.rating), F.s(7.sp, C.star, FontWeight.Bold))
-                    }
+                    RatingBadge(e.rating, Modifier.align(Alignment.TopEnd).padding(5.dp))
                 }
             }
             Spacer(Modifier.height(6.dp))
@@ -281,9 +279,9 @@ fun MoviesScreen(vm: Vm, pb: Playback, ui: Ui) {
 
     val cats = remember(vm.movieCats, cont.size, mine.size) {
         buildList {
-            if (cont.isNotEmpty()) add(BrowseCat("__cont", "▶  Continuar assistindo", cont.size))
-            add(BrowseCat("__new", "✦  Lançamentos", latest.size))
-            if (mine.isNotEmpty()) add(BrowseCat("__mine", "＋  Minha lista", mine.size))
+            add(BrowseCat("__cont", "Continuar assistindo", cont.size, Ic.Resume))
+            add(BrowseCat("__new", "Lançamentos", latest.size, Ic.New))
+            add(BrowseCat("__mine", "Minha lista", mine.size, Ic.Bookmark))
             vm.movieCats.forEach { add(BrowseCat(it.id, it.name, vm.moviesByCat[it.id]?.size ?: 0)) }
         }
     }
@@ -321,11 +319,11 @@ private fun movieHero(vm: Vm, m: Movie, label: String): HeroData {
 @Composable
 private fun MovieButtons(vm: Vm, pb: Playback, ctx: Context, m: Movie, req: FocusRequester) {
     val prog = vm.store.progress["mv:${m.id}"]?.takeIf { !it.finished && it.pos > 30_000 }
-    ActionButton(if (prog != null) "Continuar" else "Assistir", primary = true, icon = "▶", requester = req) {
+    ActionButton(if (prog != null) "Continuar" else "Assistir", primary = true, icon = Ic.Play, requester = req) {
         pb.openFull(movieItem(m, vm.metaOf(m)?.genres ?: vm.movieInfos[m.id]?.genre.orEmpty()), startMs = prog?.pos ?: 0L)
     }
-    ActionButton(if (vm.store.inList("m:${m.id}")) "✓ Na minha lista" else "+ Minha lista") { vm.store.toggleList("m:${m.id}") }
-    ActionButton("Trailer") { openTrailer(ctx, vm.metaOf(m)?.trailer ?: vm.movieInfos[m.id]?.trailer, m.name) }
+    ActionButton(if (vm.store.inList("m:${m.id}")) "Na minha lista" else "Minha lista", icon = if (vm.store.inList("m:${m.id}")) Ic.Check else Ic.Add) { vm.store.toggleList("m:${m.id}") }
+    ActionButton("Trailer", icon = Ic.Trailer) { openTrailer(ctx, vm.metaOf(m)?.trailer ?: vm.movieInfos[m.id]?.trailer, m.name) }
 }
 
 @Composable
@@ -362,7 +360,7 @@ fun MovieDetail(vm: Vm, pb: Playback, ui: Ui, m: Movie) {
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     h.chips.forEach { BigChip(it) }
-                    if (h.rating > 0) BigChip(stars(h.rating), C.star, Color(0x33FBBF24))
+                    if (h.rating > 0) RatingChip(h.rating, big = true)
                 }
                 h.genre?.let { Spacer(Modifier.height(8.dp)); Txt(it, F.s(11.sp, C.dim, FontWeight.Medium)) }
                 Spacer(Modifier.height(12.dp))
@@ -370,12 +368,12 @@ fun MovieDetail(vm: Vm, pb: Playback, ui: Ui, m: Movie) {
                 info?.cast?.let { Spacer(Modifier.height(10.dp)); Txt("Elenco: $it", F.s(10.sp, C.dim), maxLines = 2) }
                 Spacer(Modifier.height(20.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ActionButton(if (prog != null) "Continuar ${fmtTime(prog.pos)}" else "Assistir", primary = true, icon = "▶", requester = playReq) {
+                    ActionButton(if (prog != null) "Continuar ${fmtTime(prog.pos)}" else "Assistir", primary = true, icon = Ic.Play, requester = playReq) {
                         pb.openFull(movieItem(m, h.genre.orEmpty()), startMs = prog?.pos ?: 0L)
                     }
-                    if (prog != null) ActionButton("Do início") { pb.openFull(movieItem(m, h.genre.orEmpty()), startMs = 1L); pb.exo.seekTo(0) }
-                    ActionButton(if (vm.store.inList("m:${m.id}")) "✓ Na minha lista" else "+ Minha lista") { vm.store.toggleList("m:${m.id}") }
-                    ActionButton("Trailer") { openTrailer(ctx, t?.trailer ?: info?.trailer, m.name) }
+                    if (prog != null) ActionButton("Do início", icon = Ic.Rewind) { pb.openFull(movieItem(m, h.genre.orEmpty()), startMs = 1L); pb.exo.seekTo(0) }
+                    ActionButton(if (vm.store.inList("m:${m.id}")) "Na minha lista" else "Minha lista", icon = if (vm.store.inList("m:${m.id}")) Ic.Check else Ic.Add) { vm.store.toggleList("m:${m.id}") }
+                    ActionButton("Trailer", icon = Ic.Trailer) { openTrailer(ctx, t?.trailer ?: info?.trailer, m.name) }
                 }
                 if (prog != null) {
                     Spacer(Modifier.height(14.dp))
@@ -384,7 +382,6 @@ fun MovieDetail(vm: Vm, pb: Playback, ui: Ui, m: Movie) {
                 }
             }
         }
-        HintBar(listOf("OK" to "Selecionar", "VOLTAR" to "Filmes"), Modifier.align(Alignment.BottomStart).padding(bottom = 14.dp))
     }
 }
 
@@ -451,9 +448,9 @@ fun SeriesScreen(vm: Vm, pb: Playback, ui: Ui) {
 
     val cats = remember(vm.seriesCats, cont.size, mine.size) {
         buildList {
-            if (cont.isNotEmpty()) add(BrowseCat("__cont", "▶  Continuar assistindo", cont.size))
-            add(BrowseCat("__new", "✦  Novidades", latest.size))
-            if (mine.isNotEmpty()) add(BrowseCat("__mine", "＋  Minha lista", mine.size))
+            add(BrowseCat("__cont", "Continuar assistindo", cont.size, Ic.Resume))
+            add(BrowseCat("__new", "Novidades", latest.size, Ic.New))
+            add(BrowseCat("__mine", "Minha lista", mine.size, Ic.Bookmark))
             vm.seriesCats.forEach { add(BrowseCat(it.id, it.name, vm.seriesByCat[it.id]?.size ?: 0)) }
         }
     }

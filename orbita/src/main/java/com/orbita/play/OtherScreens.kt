@@ -144,7 +144,6 @@ fun LoginScreen(vm: Vm) {
                 Spacer(Modifier.height(10.dp))
                 Row {
                     Txt("Sem conta? Fale com seu provedor.", F.s(7.5.sp, C.dim), Modifier.weight(1f))
-                    Txt("Ajuda: OK abre o teclado", F.s(7.5.sp, Color(0xFF6CD4FF)))
                 }
             }
         }
@@ -207,7 +206,7 @@ fun SearchScreen(vm: Vm, pb: Playback, ui: Ui) {
         Row(Modifier.padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
             Txt("Buscar", F.s(18.sp, C.white, FontWeight.Bold, F.outfit))
             Spacer(Modifier.width(16.dp))
-            SearchField(ui.query, { ui.query = it }, "Digite o nome do canal, filme ou série (OK abre o teclado)", Modifier.width(500.dp), fieldReq)
+            SearchField(ui.query, { ui.query = it }, "Nome do canal, filme ou série", Modifier.width(500.dp), fieldReq)
         }
         Spacer(Modifier.height(10.dp))
         val r = res
@@ -276,7 +275,7 @@ fun LibraryScreen(vm: Vm, pb: Playback, ui: Ui) {
     val menuReq = remember { FocusRequester() }
     InitialFocus(menuReq)
     Column(Modifier.fillMaxSize().padding(top = 50.dp)) {
-        Row(Modifier.weight(1f).padding(horizontal = 24.dp)) {
+        Row(Modifier.weight(1f).padding(start = 24.dp, end = 24.dp, bottom = 16.dp)) {
             Panel(Modifier.width(200.dp).fillMaxHeight()) {
                 Column {
                     PanelHeader("Biblioteca")
@@ -363,7 +362,6 @@ fun LibraryScreen(vm: Vm, pb: Playback, ui: Ui) {
                 }
             }
         }
-        HintBar(listOf("OK" to "Abrir", "★" to "Remover (segurar OK)", "VOLTAR" to "Menu"), Modifier.height(30.dp).fillMaxWidth().padding(top = 8.dp))
     }
 }
 
@@ -420,7 +418,6 @@ fun SettingsScreen(vm: Vm, pb: Playback, ui: Ui) {
             }
             msg?.let { Txt(it, F.s(9.sp, C.cyan, FontWeight.Medium), Modifier.padding(top = 6.dp)) }
             Spacer(Modifier.height(10.dp))
-            Txt("Controle remoto: OK seleciona · segurar OK favorita · VOLTAR volta · MENU no player abre áudio/legenda · 0–9 digita o número do canal", F.s(7.5.sp, C.faint), maxLines = 3)
         }
     }
 }

@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
 /** Categoria da lateral de Filmes/Séries. */
-class BrowseCat(val id: String, val name: String, val count: Int)
+class BrowseCat(val id: String, val name: String, val count: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null)
 
 /**
  * Filmes e Séries: categorias na lateral esquerda; à direita o destaque (do título com foco) e a grade de capas.
@@ -55,7 +55,8 @@ fun VodBrowse(
     hero: @Composable (VodEntry?) -> HeroData,
     empty: String,
 ) {
-    val cat = selected?.takeIf { id -> cats.any { it.id == id } } ?: cats.firstOrNull()?.id ?: ""
+    // sem escolha: abre em Continuar assistindo se houver algo em andamento, senão na primeira categoria com títulos
+    val cat = selected?.takeIf { id -> cats.any { it.id == id } } ?: (cats.firstOrNull { it.count > 0 } ?: cats.firstOrNull())?.id ?: ""
     var catQuery by remember { mutableStateOf("") }
     var pending by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(pending) { val p = pending ?: return@LaunchedEffect; delay(260); if (p != cat) onSelect(p) }
@@ -86,7 +87,7 @@ fun VodBrowse(
                     Spacer(Modifier.height(8.dp))
                     LazyColumn(state = catState, modifier = Modifier.weight(1f)) {
                         items(visibleCats, key = { it.id }) { c ->
-                            CatRow(c.name, c.count, c.id == cat, "vcat:${c.id}", { pending = c.id }, if (c.id == cat) catReq else null) {
+                            CatRow(c.name, c.count, c.id == cat, "vcat:${c.id}", { pending = c.id }, if (c.id == cat) catReq else null, c.icon) {
                                 onSelect(c.id); runCatching { gridReq.requestFocus() }
                             }
                         }
@@ -103,7 +104,7 @@ fun VodBrowse(
                     Spacer(Modifier.height(7.dp))
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         h.chips.forEach { MetaChip(it) }
-                        if (h.rating > 0) MetaChip(stars(h.rating), C.star, Color(0x33FBBF24))
+                        if (h.rating > 0) RatingChip(h.rating)
                         h.genre?.let { Txt(it, F.s(8.5.sp, C.dim), Modifier.padding(start = 2.dp)) }
                     }
                     Spacer(Modifier.height(7.dp))
@@ -114,7 +115,9 @@ fun VodBrowse(
                     Txt("${entries.size} títulos", F.s(9.sp, C.dim))
                 }
                 if (entries.isEmpty()) {
-                    EmptyState(empty, "", Modifier.fillMaxWidth().padding(top = 40.dp))
+                    EmptyState(if (cat == "__cont") "Nada em andamento" else if (cat == "__mine") "Sua lista está vazia" else empty,
+                        if (cat == "__cont") "O que você começar a assistir aparece aqui." else if (cat == "__mine") "Segure OK sobre uma capa para adicionar." else "",
+                        Modifier.fillMaxWidth().padding(top = 40.dp))
                 } else TvScroll {
                     LazyVerticalGrid(
                         GridCells.Fixed(6), Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0x33050409)))),

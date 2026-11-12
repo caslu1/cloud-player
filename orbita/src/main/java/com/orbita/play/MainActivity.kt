@@ -248,7 +248,7 @@ fun TopBar(ui: Ui, tabReq: FocusRequester, onSettings: () -> Unit) {
             Box(
                 Modifier.size(22.dp).background(if (f) C.accent else Color.Transparent, androidx.compose.foundation.shape.CircleShape),
                 contentAlignment = Alignment.Center
-            ) { Txt("⚙", F.s(11.sp, C.white)) }
+            ) { Icon(Ic.Settings, 14.dp, desc = "Configurações") }
         }
         Spacer(Modifier.width(10.dp))
         Txt(hhmm(now), F.s(11.sp, C.white, FontWeight.Bold))
