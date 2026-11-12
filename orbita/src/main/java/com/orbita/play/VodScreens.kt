@@ -113,8 +113,9 @@ fun VodRows(rows: List<VodRow>, state: LazyListState, onFocusEntry: (String) -> 
             Column(Modifier.padding(top = 10.dp)) {
                 Txt(row.title, F.s(11.sp, C.white, FontWeight.SemiBold), Modifier.padding(start = 24.dp, bottom = 7.dp))
                 LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(11.dp)) {
-                    if (row.wide != null) {
-                        items(row.wide, key = { it.key }) { p ->
+                    val wide = row.wide
+                    if (wide != null) {
+                        items(wide, key = { it.key }) { p ->
                             WideCard(
                                 p.title, p.image, p.fraction,
                                 if (p.kind == Kind.EPISODE) "${p.subtitle} · faltam ${p.remainingMin} min" else "Faltam ${p.remainingMin} min",
@@ -125,8 +126,9 @@ fun VodRows(rows: List<VodRow>, state: LazyListState, onFocusEntry: (String) -> 
                         items(row.entries, key = { it.key }) { e ->
                             Poster(e.title, e.image, rating = e.rating, memKey = "${row.key}:${e.key}", onFocus = { onFocusEntry(e.key) }, onLongClick = e.longPress) { e.open() }
                         }
-                        if (row.more != null) item(key = "more") {
-                            Focus(Modifier.width(84.dp), onClick = row.more, memKey = "${row.key}:more") { f ->
+                        val more = row.more
+                        if (more != null) item(key = "more") {
+                            Focus(Modifier.width(84.dp), onClick = more, memKey = "${row.key}:more") { f ->
                                 Box(
                                     Modifier.width(84.dp).height(126.dp).clip(RoundedCornerShape(7.dp)).background(if (f) C.accent else C.item),
                                     contentAlignment = Alignment.Center

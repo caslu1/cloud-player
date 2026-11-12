@@ -1,5 +1,6 @@
 package com.orbita.play
 
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -100,7 +101,7 @@ fun Focus(
             if (runCatching { req.requestFocus() }.isSuccess) { FocusMem.restore = null; FocusMem.restoredAt = System.currentTimeMillis() }
         }
     }
-    val state = remember { BoolArray(2) } // [0] = OK pressionado aqui, [1] = longo já disparado
+    val state = remember { BooleanArray(2) } // [0] = OK pressionado aqui, [1] = longo já disparado
     val click by rememberUpdatedState(onClick)
     val long by rememberUpdatedState(onLongClick)
     val focusCb by rememberUpdatedState(onFocus)
@@ -152,6 +153,8 @@ fun InitialFocus(req: FocusRequester, key: Any = Unit) {
         while (FocusMem.restore != null && waited < 500) { kotlinx.coroutines.delay(50); waited += 50 }
         FocusMem.restore = null
         if (System.currentTimeMillis() - FocusMem.restoredAt < 1500) return@LaunchedEffect
+        // navegando pelas abas do topo: não puxa o foco para o conteúdo
+        if (FocusMem.last?.startsWith("tab:") == true) return@LaunchedEffect
         runCatching { req.requestFocus() }
     }
 }
