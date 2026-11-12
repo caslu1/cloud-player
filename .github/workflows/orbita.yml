@@ -53,6 +53,7 @@ jobs:
           NOTES="Orbita Play – player IPTV para Android TV, Google TV, Fire TV e TV box.
 
           Download: https://github.com/${{ github.repository }}/releases/download/$TAG/Orbita-Play.apk
+          Esta versão: https://github.com/${{ github.repository }}/releases/download/$TAG/Orbita-Play-v${{ github.run_number }}.apk
 
           Build: ${{ github.sha }}"
           # remove rascunhos duplicados do mesmo tag (sobra de builds simultâneos)
@@ -62,3 +63,6 @@ jobs:
             gh release create "$TAG" --title "Orbita Play" --notes "$NOTES" --target "${{ github.sha }}" --latest=false
           fi
           gh release upload "$TAG" Orbita-Play.apk --clobber
+          # link com o número da versão: nunca fica em cache no Downloader/navegador
+          cp Orbita-Play.apk "Orbita-Play-v${{ github.run_number }}.apk"
+          gh release upload "$TAG" "Orbita-Play-v${{ github.run_number }}.apk" --clobber

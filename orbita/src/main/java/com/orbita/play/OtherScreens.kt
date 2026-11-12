@@ -398,7 +398,9 @@ fun SettingsScreen(vm: Vm, pb: Playback, ui: Ui) {
                 }
             }
             Spacer(Modifier.height(10.dp))
-            Txt("Orbita Play 1.0 · O app não fornece conteúdo: use apenas listas que você tem direito de usar.", F.s(7.5.sp, C.faint), maxLines = 3)
+            val ctx = androidx.compose.ui.platform.LocalContext.current
+            val ver = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: "1.0" }
+            Txt("Orbita Play $ver · O app não fornece conteúdo: use apenas listas que você tem direito de usar.", F.s(7.5.sp, C.faint), maxLines = 3)
         }
         Spacer(Modifier.width(30.dp))
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {

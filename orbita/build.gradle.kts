@@ -14,8 +14,10 @@ android {
         applicationId = "com.orbita.play"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        // cada build do GitHub tem um número novo, para a TV aceitar a atualização
+        val run = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0
+        versionCode = 100 + run
+        versionName = "1.0.$run"
     }
 
     signingConfigs {
