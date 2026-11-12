@@ -43,7 +43,7 @@ object FootballApi {
             // a API pode devolver jogos de outros dias perto da virada (UTC): fica só com o dia pedido
             val start = Calendar.getInstance().apply { timeInMillis = c.timeInMillis; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
             val inDay = games.filter { it.start in start until start + 86_400_000L }
-            return (inDay.ifEmpty { games }).distinctBy { it.id }.sortedBy { it.start }
+            return inDay.distinctBy { it.id }.sortedBy { it.start }
         }
     }
 

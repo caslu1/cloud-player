@@ -145,6 +145,7 @@ fun ApiFootballScreen(vm: Vm, pb: Playback, ui: Ui) {
                                     onFocus = { selected = g },
                                     onLong = { if (vm.store.follows(g.home) && !vm.store.follows(g.away)) vm.store.toggleTeam(g.away) else vm.store.toggleTeam(g.home) }
                                 ) {
+                                    selected = g
                                     val chs = channelsOf(g)
                                     if (chs.isNotEmpty()) watch(chs.first(), chs)
                                     else note = if (g.broadcasters.isEmpty()) "Sem informação de transmissão para este jogo." else "Nenhum canal da sua lista transmite este jogo (${g.broadcasters.take(3).joinToString()})."
