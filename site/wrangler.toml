@@ -1,0 +1,16 @@
+# Site de ativação do Orbita Play (Cloudflare Workers + banco D1)
+name = "orbita-ativar"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "orbita"
+database_id = "TROCAR_PELO_ID_DO_BANCO"   # npx wrangler d1 create orbita  → copie o id aqui
+
+[vars]
+SITE_NAME = "Orbita Play"
+# Segredos (não ficam no código), configure com:
+#   npx wrangler secret put ADMIN_PASSWORD     (senha do painel admin)
+#   npx wrangler secret put SESSION_SECRET     (texto aleatório longo)
+#   npx wrangler secret put MP_ACCESS_TOKEN    (token do Mercado Pago, para o Pix)
