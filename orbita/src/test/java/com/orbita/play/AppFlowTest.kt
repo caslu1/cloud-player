@@ -184,11 +184,10 @@ class AppFlowTest {
         click("Entrar")
 
         // Tela inicial
-        waitText("CANAIS")
-        waitText("Ao vivo, hoje e amanhã")
+        waitText("Recarregar")
         settle(1500)
         shot("00-inicio")
-        click("CANAIS", exact = true)
+        click("Canais", exact = true)
 
         // Canais
         waitText("Futebol 1 HD")
@@ -200,8 +199,8 @@ class AppFlowTest {
 
         // Filmes (volta ao início e abre o bloco)
         back()
-        waitText("Ao vivo, hoje e amanhã")
-        click("FILMES", exact = true)
+        waitText("Recarregar")
+        click("Filmes", exact = true)
         waitText("Duna")
         waitText("Lançamentos")
         shot("03-filmes")
@@ -227,9 +226,9 @@ class AppFlowTest {
 
         // Séries
         back()
-        waitText("Ao vivo, hoje e amanhã")
+        waitText("Recarregar")
         shot("15-inicio-continuar")
-        click("SÉRIES", exact = true)
+        click("Séries", exact = true)
         waitText("The Last of Us")
         shot("05-series")
         rule.onAllNodesWithText("The Last of Us").let { it[it.fetchSemanticsNodes().size - 1] }.performClick()
@@ -249,8 +248,8 @@ class AppFlowTest {
 
         // Futebol (jogos vindos do EPG)
         back()
-        waitText("Ao vivo, hoje e amanhã")
-        click("FUTEBOL", exact = true)
+        waitText("Recarregar")
+        click("Futebol", exact = true)
         waitText("Atlético Serrano")
         waitText("Ribeirense")
         waitText("AO VIVO 67'")
@@ -268,10 +267,10 @@ class AppFlowTest {
         back() // fecha a lista
         back() // sai da tela cheia
         back() // volta ao início
-        waitText("Ao vivo, hoje e amanhã")
+        waitText("Recarregar")
 
         // Buscar, Biblioteca, Configurações
-        rule.onNodeWithContentDescription("Configurações").performClick()
+        click("Configurações", exact = true)
         repeat(5) { pump() }
         waitText("Configurações")
         waitText("Ativa")
@@ -283,16 +282,16 @@ class AppFlowTest {
         shot("16-papel-de-parede")
         back()
         // busca geral (lupa no topo)
-        rule.onNodeWithContentDescription("Buscar").performClick()
+        click("Buscar", exact = true)
         repeat(5) { pump() }
         rule.onAllNodes(hasSetTextAction())[0].performTextInput("Fut")
         waitText("Canais (")
         shot("14-busca")
         back()
-        waitText("Ao vivo, hoje e amanhã")
+        waitText("Recarregar")
         settle(500)
         shot("17-inicio-nebulosa")
-        click("CANAIS", exact = true)
+        click("Canais", exact = true)
         waitText("Futebol 1 HD")
     }
 }
