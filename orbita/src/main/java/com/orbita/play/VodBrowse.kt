@@ -56,9 +56,11 @@ fun VodBrowse(
     empty: String,
     search: (String) -> List<VodEntry>,
     searchHint: String,
+    locked: (String) -> Boolean = { false },
+    unlock: (then: () -> Unit) -> Unit = { it() },
 ) {
     // sem escolha: abre em Continuar assistindo se houver algo em andamento, senão na primeira categoria com títulos
-    val cat = selected?.takeIf { id -> cats.any { it.id == id } } ?: (cats.firstOrNull { it.count > 0 } ?: cats.firstOrNull())?.id ?: ""
+    val cat = selected?.takeIf { id -> cats.any { it.id == id } && !locked(id) } ?: (cats.firstOrNull { it.count > 0 } ?: cats.firstOrNull())?.id ?: ""
     var catQuery by remember { mutableStateOf("") }
     var pending by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(pending) { val p = pending ?: return@LaunchedEffect; delay(260); if (p != cat) onSelect(p) }
@@ -99,8 +101,9 @@ fun VodBrowse(
                     Spacer(Modifier.height(8.dp))
                     LazyColumn(state = catState, modifier = Modifier.weight(1f)) {
                         items(visibleCats, key = { it.id }) { c ->
-                            CatRow(c.name, c.count, c.id == cat && !searching, "vcat:${c.id}", { if (!searching) pending = c.id }, if (c.id == cat) catReq else null, c.icon) {
-                                catQuery = ""; results = null; onSelect(c.id); runCatching { gridReq.requestFocus() }
+                            CatRow(c.name, c.count, c.id == cat && !searching, "vcat:${c.id}", { if (!searching && !locked(c.id)) pending = c.id }, if (c.id == cat) catReq else null, c.icon) {
+                                val go = { catQuery = ""; results = null; onSelect(c.id); runCatching { gridReq.requestFocus() }; Unit }
+                                if (locked(c.id)) unlock(go) else go()
                             }
                         }
                     }

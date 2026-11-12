@@ -272,17 +272,23 @@ fun MoviesScreen(vm: Vm, pb: Playback, ui: Ui) {
     }
     if (vm.movies.isEmpty()) { ScreenBackground(); EmptyState("Sua lista não tem filmes", "", Modifier.fillMaxSize()); return }
 
-    val latest = remember(vm.movies) { vm.movies.sortedByDescending { it.added }.take(80) }
+    val blockedM = vm.movieCats.filter { !vm.catAllowed("vod", it) }.map { it.id }.toSet()
+    val latest = remember(vm.movies, blockedM) { vm.movies.asSequence().filter { it.catId !in blockedM }.sortedByDescending { it.added }.take(80).toList().ifEmpty { vm.movies.take(1) } }
     val cont = vm.store.continueWatching(Kind.MOVIE).mapNotNull { vm.movieById[it.key.removePrefix("mv:")] }
     val mine = vm.store.myList.filter { it.startsWith("m:") }.mapNotNull { vm.movieById[it.removePrefix("m:")] }
     fun entry(m: Movie) = VodEntry(m.id, m.name, m.poster, m.rating, { ui.push(Route.MovieDetail(m, FocusMem.last)) }, { vm.store.toggleList("m:${m.id}") }, movie = m)
 
-    val cats = remember(vm.movieCats, cont.size, mine.size) {
+    val parental = vm.store.adultMode.value + vm.adultUnlocked + vm.store.hiddenCats.size
+    val blockedMovie = remember(vm.movieCats, parental) { vm.movieCats.filter { !vm.catAllowed("vod", it) }.map { it.id }.toSet() }
+    val cats = remember(vm.movieCats, cont.size, mine.size, parental) {
         buildList {
             add(BrowseCat("__cont", "Continuar assistindo", cont.size, Ic.Resume))
             add(BrowseCat("__new", "Lançamentos", latest.size, Ic.New))
             add(BrowseCat("__mine", "Minha lista", mine.size, Ic.Bookmark))
-            vm.movieCats.forEach { add(BrowseCat(it.id, it.name, vm.moviesByCat[it.id]?.size ?: 0)) }
+            vm.movieCats.filter { vm.catVisible("vod", it) }.forEach {
+                val lk = vm.catLocked(it)
+                add(BrowseCat(it.id, it.name, if (lk) -1 else vm.moviesByCat[it.id]?.size ?: 0, if (lk) Ic.Lock else null))
+            }
         }
     }
     VodBrowse(
@@ -303,9 +309,11 @@ fun MoviesScreen(vm: Vm, pb: Playback, ui: Ui) {
         empty = "Nenhum filme nesta categoria",
         search = { q ->
             val n = MatchLogic.norm(q).lowercase()
-            vm.movies.asSequence().filter { MatchLogic.norm(it.name).lowercase().contains(n) }.take(150).map(::entry).toList()
+            vm.movies.asSequence().filter { it.catId !in blockedMovie && MatchLogic.norm(it.name).lowercase().contains(n) }.take(150).map(::entry).toList()
         },
         searchHint = "Buscar filme ou categoria",
+        locked = { id -> vm.movieCats.firstOrNull { it.id == id }?.let { vm.catLocked(it) } ?: false },
+        unlock = { then -> ui.unlockAdult(vm, then) },
     )
 }
 
@@ -444,17 +452,23 @@ fun SeriesScreen(vm: Vm, pb: Playback, ui: Ui) {
     }
     if (vm.series.isEmpty()) { ScreenBackground(); EmptyState("Sua lista não tem séries", "", Modifier.fillMaxSize()); return }
 
-    val latest = remember(vm.series) { vm.series.sortedByDescending { it.added }.take(80) }
+    val blockedS = vm.seriesCats.filter { !vm.catAllowed("series", it) }.map { it.id }.toSet()
+    val latest = remember(vm.series, blockedS) { vm.series.asSequence().filter { it.catId !in blockedS }.sortedByDescending { it.added }.take(80).toList().ifEmpty { vm.series.take(1) } }
     val cont = vm.store.continueWatching(Kind.EPISODE).mapNotNull { p -> p.seriesId?.let { vm.seriesById[it] } }.distinctBy { it.id }
     val mine = vm.store.myList.filter { it.startsWith("s:") }.mapNotNull { vm.seriesById[it.removePrefix("s:")] }
     fun entry(s: Series) = VodEntry(s.id, s.name, s.cover, s.rating, { ui.push(Route.SeriesDetail(s, FocusMem.last)) }, { vm.store.toggleList("s:${s.id}") }, series = s)
 
-    val cats = remember(vm.seriesCats, cont.size, mine.size) {
+    val parental = vm.store.adultMode.value + vm.adultUnlocked + vm.store.hiddenCats.size
+    val blockedSeries = remember(vm.seriesCats, parental) { vm.seriesCats.filter { !vm.catAllowed("series", it) }.map { it.id }.toSet() }
+    val cats = remember(vm.seriesCats, cont.size, mine.size, parental) {
         buildList {
             add(BrowseCat("__cont", "Continuar assistindo", cont.size, Ic.Resume))
             add(BrowseCat("__new", "Novidades", latest.size, Ic.New))
             add(BrowseCat("__mine", "Minha lista", mine.size, Ic.Bookmark))
-            vm.seriesCats.forEach { add(BrowseCat(it.id, it.name, vm.seriesByCat[it.id]?.size ?: 0)) }
+            vm.seriesCats.filter { vm.catVisible("series", it) }.forEach {
+                val lk = vm.catLocked(it)
+                add(BrowseCat(it.id, it.name, if (lk) -1 else vm.seriesByCat[it.id]?.size ?: 0, if (lk) Ic.Lock else null))
+            }
         }
     }
     VodBrowse(
@@ -475,9 +489,11 @@ fun SeriesScreen(vm: Vm, pb: Playback, ui: Ui) {
         empty = "Nenhuma série nesta categoria",
         search = { q ->
             val n = MatchLogic.norm(q).lowercase()
-            vm.series.asSequence().filter { MatchLogic.norm(it.name).lowercase().contains(n) }.take(150).map(::entry).toList()
+            vm.series.asSequence().filter { it.catId !in blockedSeries && MatchLogic.norm(it.name).lowercase().contains(n) }.take(150).map(::entry).toList()
         },
         searchHint = "Buscar série ou categoria",
+        locked = { id -> vm.seriesCats.firstOrNull { it.id == id }?.let { vm.catLocked(it) } ?: false },
+        unlock = { then -> ui.unlockAdult(vm, then) },
     )
 }
 

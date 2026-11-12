@@ -368,61 +368,6 @@ fun LibraryScreen(vm: Vm, pb: Playback, ui: Ui) {
 // ---------------------------------------------------------------- Configurações
 
 @Composable
-fun SettingsScreen(vm: Vm, pb: Playback, ui: Ui) {
-    ScreenBackground()
-    val first = remember { FocusRequester() }
-    InitialFocus(first)
-    var confirmLogout by remember { mutableStateOf(false) }
-    var msg by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(msg) { if (msg != null) { delay(2500); msg = null } }
-    val a = vm.account
-    val st = vm.status
-    Row(Modifier.fillMaxSize().padding(horizontal = 40.dp, vertical = 30.dp)) {
-        Column(Modifier.width(320.dp)) {
-            Logo(size = 16f)
-            Spacer(Modifier.height(18.dp))
-            Txt("Configurações", F.s(18.sp, C.white, FontWeight.Bold, F.outfit))
-            Spacer(Modifier.height(14.dp))
-            Panel(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Txt("CONTA", F.label)
-                    InfoLine("Tipo", if (a?.type == "xtream") "Xtream Codes" else "Lista M3U")
-                    if (a?.type == "xtream") {
-                        InfoLine("Servidor", a.server)
-                        InfoLine("Usuário", a.user)
-                    } else InfoLine("Lista", a?.m3uUrl.orEmpty())
-                    st?.status?.let { InfoLine("Status", if (it.equals("Active", true)) "Ativa" else it) }
-                    st?.expires?.let { InfoLine("Validade", SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")).format(Date(it))) }
-                    st?.maxConnections?.let { InfoLine("Conexões", "${st.activeConnections ?: "0"} de $it em uso") }
-                    InfoLine("Conteúdo", "${fmtCount(vm.channels.size)} canais · ${fmtCount(vm.movies.size)} filmes · ${fmtCount(vm.series.size)} séries")
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            val ctx = androidx.compose.ui.platform.LocalContext.current
-            val ver = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: "1.0" }
-            Txt("Orbita Play $ver · O app não fornece conteúdo: use apenas listas que você tem direito de usar.", F.s(7.5.sp, C.faint), maxLines = 3)
-        }
-        Spacer(Modifier.width(30.dp))
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Spacer(Modifier.height(50.dp))
-            SettingRow("Formato dos canais ao vivo", if (vm.store.liveFormat.value == "m3u8") "HLS (.m3u8)" else "MPEG-TS (.ts)", first) {
-                vm.store.setLiveFormat(if (vm.store.liveFormat.value == "m3u8") "ts" else "m3u8")
-                vm.reloadAll(); msg = "Formato alterado. Recarregando canais…"
-            }
-            SettingRow("Próximo episódio automático", if (vm.store.autoNext.value) "Ligado" else "Desligado") { vm.store.setAutoNext(!vm.store.autoNext.value) }
-            SettingRow("Prévia automática ao navegar nos canais", if (vm.store.previewAutoplay.value) "Ligada" else "Desligada") { vm.store.setPreviewAutoplay(!vm.store.previewAutoplay.value) }
-            SettingRow("Recarregar listas", "Canais, filmes e séries") { vm.reloadAll(); msg = "Recarregando listas…" }
-            SettingRow("Limpar histórico", "Recentes e continuar assistindo") { vm.store.clearHistory(); msg = "Histórico apagado." }
-            SettingRow(if (confirmLogout) "Confirmar: sair da conta?" else "Sair da conta", if (confirmLogout) "Pressione OK de novo" else "Trocar de lista ou provedor", danger = true) {
-                if (confirmLogout) { pb.stop(); ui.stack.clear(); ui.tab = Tab.CANAIS; vm.logout() } else confirmLogout = true
-            }
-            msg?.let { Txt(it, F.s(9.sp, C.cyan, FontWeight.Medium), Modifier.padding(top = 6.dp)) }
-            Spacer(Modifier.height(10.dp))
-        }
-    }
-}
-
-@Composable
 private fun InfoLine(k: String, v: String) {
     Row {
         Txt(k, F.s(8.5.sp, C.dim), Modifier.width(70.dp))

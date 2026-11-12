@@ -2,6 +2,7 @@ package com.orbita.play
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,8 +44,8 @@ private const val ALL = "__all"
 /** Canais da categoria escolhida (inclui Favoritos, Recentes e Todos). */
 fun channelsOf(vm: Vm, cat: String): List<Channel> = when (cat) {
     FAV -> vm.store.favChannels.mapNotNull { vm.channelById[it] }
-    RECENT -> Quality.unique(vm.store.recentChannels.mapNotNull { vm.channelById[it] })
-    ALL -> vm.uniqueChannels
+    RECENT -> Quality.unique(vm.store.recentChannels.mapNotNull { vm.channelById[it] }).filter { c -> vm.liveCats.firstOrNull { it.id == c.catId }?.let { vm.catAllowed("live", it) } ?: true }
+    ALL -> vm.allowedChannels()
     else -> vm.uniqueByCat[cat].orEmpty()
 }
 
@@ -69,14 +71,17 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
     var focusedCh by remember { mutableStateOf<Channel?>(null) }
     var pendingCat by remember { mutableStateOf<String?>(null) }
 
-    val cats = remember(vm.liveCats, catQuery) {
-        val base = vm.liveCats
-        if (catQuery.isBlank()) base else base.filter { MatchLogic.norm(it.name).contains(MatchLogic.norm(catQuery), true) }
+    val visibleCats = vm.liveCats.filter { vm.catVisible("live", it) }
+    val cats = remember(visibleCats, catQuery) {
+        if (catQuery.isBlank()) visibleCats else visibleCats.filter { MatchLogic.norm(it.name).contains(MatchLogic.norm(catQuery), true) }
     }
     val favCount = vm.store.favChannels.size
     val recentCount = vm.store.recentChannels.size
-    val list = remember(ui.liveCat, chQuery, vm.channels, favCount, recentCount) {
-        val l = channelsOf(vm, ui.liveCat)
+    val sortAZ = vm.store.sortAZ.value
+    val allowed = vm.allowedChannels()
+    val list = remember(ui.liveCat, chQuery, vm.channels, favCount, recentCount, sortAZ, allowed) {
+        var l = channelsOf(vm, ui.liveCat)
+        if (sortAZ) l = l.sortedBy { MatchLogic.norm(it.name).lowercase() }
         if (chQuery.isBlank()) l else {
             val q = MatchLogic.norm(chQuery)
             l.filter { MatchLogic.norm(it.name).contains(q, true) || it.num.toString() == chQuery.trim() }
@@ -89,9 +94,9 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
         delay(220)
         if (ui.liveCat != p) { ui.liveCat = p; chQuery = "" }
     }
-    LaunchedEffect(ui.liveCat) {
-        if (ui.liveCatShown != null && ui.liveCatShown != ui.liveCat) ui.chList.scrollToItem(0)
-        ui.liveCatShown = ui.liveCat
+    LaunchedEffect(ui.liveCat, sortAZ) {
+        if (ui.liveCatShown != null && ui.liveCatShown != ui.liveCat + sortAZ) ui.chList.scrollToItem(0)
+        ui.liveCatShown = ui.liveCat + sortAZ
     }
 
     val playingId = (pb.current?.takeIf { it.kind == Kind.LIVE })?.channel?.id
@@ -107,6 +112,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
         if (playingId == c.id) pb.openFull(liveItem(c), playItems())
         else pb.play(liveItem(c), playItems())
     }
+    fun choose(id: String) { ui.liveCat = id; chQuery = ""; runCatching { firstChannel.requestFocus() } }
 
     // Prévia automática ao parar sobre um canal (opcional em Configurações)
     LaunchedEffect(focusedCh?.id) {
@@ -115,64 +121,171 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
         if (vm.store.previewAutoplay.value && playingId != c.id) { delay(1_200); pb.play(liveItem(c), playItems()) }
     }
 
-    Column(Modifier.fillMaxSize().padding(top = 50.dp)) {
-        Row(Modifier.weight(1f).padding(horizontal = 24.dp)) {
-            // Categorias
-            Panel(Modifier.width(215.dp).fillMaxHeight()) {
-                Column {
-                    PanelHeader("Categorias", "${vm.liveCats.size}")
-                    SearchField(catQuery, { catQuery = it }, "Buscar categoria", Modifier.padding(horizontal = 10.dp))
-                    Spacer(Modifier.height(8.dp))
-                    LazyColumn(state = ui.catList, modifier = Modifier.weight(1f)) {
-                        if (catQuery.isBlank()) {
-                            item(key = FAV) { CatRow("Favoritos", favCount, ui.liveCat == FAV, "cat:$FAV", { pendingCat = FAV }, catReq, Ic.Star) { ui.liveCat = FAV; runCatching { firstChannel.requestFocus() } } }
-                            item(key = RECENT) { CatRow("Recentes", recentCount, ui.liveCat == RECENT, "cat:$RECENT", { pendingCat = RECENT }, icon = Ic.History) { ui.liveCat = RECENT; runCatching { firstChannel.requestFocus() } } }
-                            item(key = ALL) { CatRow("Todos os canais", vm.uniqueChannels.size, ui.liveCat == ALL, "cat:$ALL", { pendingCat = ALL }, icon = Ic.LiveTv) { ui.liveCat = ALL; runCatching { firstChannel.requestFocus() } } }
+    Row(Modifier.fillMaxSize().padding(top = 50.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)) {
+        // Categorias
+        Panel(Modifier.width(196.dp).fillMaxHeight()) {
+            Column {
+                PanelHeader("Categorias", "${visibleCats.size}")
+                SearchField(catQuery, { catQuery = it }, "Buscar categoria", Modifier.padding(horizontal = 10.dp))
+                Spacer(Modifier.height(8.dp))
+                LazyColumn(state = ui.catList, modifier = Modifier.weight(1f)) {
+                    if (catQuery.isBlank()) {
+                        item(key = FAV) { CatRow("Favoritos", favCount, ui.liveCat == FAV, "cat:$FAV", { pendingCat = FAV }, catReq, Ic.Star) { choose(FAV) } }
+                        item(key = RECENT) { CatRow("Recentes", recentCount, ui.liveCat == RECENT, "cat:$RECENT", { pendingCat = RECENT }, icon = Ic.History) { choose(RECENT) } }
+                        item(key = ALL) { CatRow("Todos os canais", allowed.size, ui.liveCat == ALL, "cat:$ALL", { pendingCat = ALL }, icon = Ic.LiveTv) { choose(ALL) } }
+                    }
+                    items(cats, key = { "c" + it.id }) { c ->
+                        val locked = vm.catLocked(c)
+                        val icon = if (locked) Ic.Lock else if (MatchLogic.isSportsName(c.name)) Ic.Soccer else null
+                        CatRow(c.name, if (locked) -1 else vm.uniqueByCat[c.id]?.size ?: 0, ui.liveCat == c.id, "cat:${c.id}",
+                            { if (!locked) pendingCat = c.id }, icon = icon) {
+                            if (locked) ui.unlockAdult(vm) { choose(c.id) } else choose(c.id)
                         }
-                        items(cats, key = { "c" + it.id }) { c ->
-                            val icon = if (MatchLogic.isSportsName(c.name)) Ic.Soccer else null
-                            CatRow(c.name, vm.uniqueByCat[c.id]?.size ?: 0, ui.liveCat == c.id, "cat:${c.id}", { pendingCat = c.id }, icon = icon) {
-                                ui.liveCat = c.id; runCatching { firstChannel.requestFocus() }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.width(8.dp))
+        // Canais (com botão de favoritar ao lado)
+        Panel(Modifier.width(318.dp).fillMaxHeight()) {
+            Column {
+                Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Txt(catTitle.uppercase(), F.label, Modifier.weight(1f))
+                    Txt("${list.size}", F.s(8.5.sp, C.dim, FontWeight.SemiBold))
+                    Spacer(Modifier.width(8.dp))
+                    Focus(onClick = { vm.store.setSortAZ(!sortAZ) }, memKey = "ch:sort") { f ->
+                        Row(
+                            Modifier.clip(RoundedCornerShape(6.dp)).background(if (f) C.accent else C.chip).padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Ic.Sort, 11.dp)
+                            Spacer(Modifier.width(4.dp))
+                            Txt(if (sortAZ) "A–Z" else "Nº", F.s(8.sp, C.white, FontWeight.Bold))
+                        }
+                    }
+                }
+                SearchField(chQuery, { chQuery = it }, "Buscar canal", Modifier.padding(horizontal = 10.dp))
+                Spacer(Modifier.height(6.dp))
+                if (list.isEmpty()) {
+                    EmptyState(
+                        if (ui.liveCat == FAV) "Nenhum favorito ainda" else "Nenhum canal",
+                        if (ui.liveCat == FAV) "Use a estrela ao lado do canal para favoritar." else "",
+                        Modifier.fillMaxWidth()
+                    )
+                }
+                LazyColumn(state = ui.chList, modifier = Modifier.weight(1f).padding(horizontal = 4.dp)) {
+                    itemsIndexed(list, key = { _, c -> c.id }) { i, c ->
+                        val req = when { i == 0 -> firstChannel; i == initialIdx -> initial; else -> null }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.weight(1f)) {
+                                ChannelRow(
+                                    vm, c, playing = c.id == playingId, fav = false, requester = req,
+                                    onFocus = { focusedCh = c }, onClick = { open(c) }, onLong = { vm.store.toggleFav(c.id) }
+                                )
+                            }
+                            Spacer(Modifier.width(4.dp))
+                            FavButton(vm.store.isFav(c.id), "fav:${c.id}") { vm.store.toggleFav(c.id) }
+                        }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.width(8.dp))
+        // Prévia + guia com dias
+        val shown = focusedCh ?: vm.channelById[playingId ?: ""] ?: list.firstOrNull()
+        EpgArea(vm, pb, shown) { shown?.let { open(it) } }
+    }
+}
+
+@Composable
+private fun FavButton(fav: Boolean, memKey: String, onClick: () -> Unit) {
+    Focus(onClick = onClick, memKey = memKey) { f ->
+        val shape = RoundedCornerShape(8.dp)
+        Box(
+            Modifier.size(34.dp, 44.dp).clip(shape).background(if (f) C.focusBg else Color(0x14FFFFFF))
+                .border(if (f) 1.5.dp else 1.dp, if (f) C.accent else Color(0x22FFFFFF), shape),
+            contentAlignment = Alignment.Center
+        ) { Icon(if (fav) Ic.Star else Ic.StarOutline, 15.dp, if (fav) C.star else if (f) C.white else C.dim) }
+    }
+}
+
+/** Prévia em cima, guia do dia escolhido embaixo e a coluna de dias à direita. */
+@Composable
+private fun androidx.compose.foundation.layout.RowScope.EpgArea(vm: Vm, pb: Playback, c: Channel?, onWatch: () -> Unit) {
+    LaunchedEffect(c?.id) { val ch = c ?: return@LaunchedEffect; delay(450); vm.requestFullEpg(ch) }
+    val progs = c?.let { vm.fullEpg[it.id] ?: vm.epg[it.id] }.orEmpty()
+    val days = remember(progs) { (progs.map { dayIndex(it.start) } + 0).filter { it in -3..7 }.distinct().sorted() }
+    var day by remember(c?.id) { mutableIntStateOf(0) }
+    Column(Modifier.weight(1f).fillMaxHeight()) {
+        Preview(vm, pb, c, Modifier.fillMaxWidth().height(188.dp))
+        Spacer(Modifier.height(8.dp))
+        Panel(Modifier.fillMaxWidth().weight(1f)) { DayProgrammes(vm, c, progs, day, onWatch) }
+    }
+    Spacer(Modifier.width(8.dp))
+    // dias
+    Column(Modifier.width(46.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        days.forEach { d ->
+            val cal = java.util.Calendar.getInstance().apply { add(java.util.Calendar.DAY_OF_YEAR, d) }
+            val wd = java.text.SimpleDateFormat("EEE", java.util.Locale("pt", "BR")).format(cal.time).replace(".", "").take(3).replaceFirstChar { it.uppercase() }
+            Focus(onFocus = { day = d }, onClick = { day = d }, memKey = "day:$d") { f ->
+                val sel = d == day
+                Column(
+                    Modifier.width(46.dp).height(42.dp).clip(RoundedCornerShape(8.dp))
+                        .background(if (f) C.accent else if (sel) C.accentSoft else C.panel)
+                        .border(1.dp, if (sel && !f) C.accent else C.panelBorder, RoundedCornerShape(8.dp)),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
+                ) {
+                    Txt(cal.get(java.util.Calendar.DAY_OF_MONTH).toString(), F.s(12.sp, C.white, FontWeight.Bold, F.outfit))
+                    Txt(if (d == 0) "Hoje" else wd, F.s(6.5.sp, if (sel || f) C.white else C.dim, FontWeight.SemiBold))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DayProgrammes(vm: Vm, c: Channel?, all: List<Prog>, day: Int, onWatch: () -> Unit) {
+    Column(Modifier.fillMaxSize()) {
+        val label = when (day) { 0 -> "Hoje"; 1 -> "Amanhã"; -1 -> "Ontem"; else -> dayLabel(day) }
+        PanelHeader("Programação", label)
+        val nowMs = System.currentTimeMillis()
+        val progs = all.filter { dayIndex(it.start) == day }
+        if (c == null || progs.isEmpty()) {
+            EmptyState(
+                if (vm.source is XtreamSource) "Sem programação para este dia" else "Guia indisponível para listas M3U",
+                "", Modifier.fillMaxWidth()
+            )
+            return@Column
+        }
+        val nowIdx = progs.indexOfFirst { it.isNow(nowMs) }
+        val state = androidx.compose.foundation.lazy.rememberLazyListState((if (nowIdx > 0) nowIdx - 1 else 0))
+        LazyColumn(state = state, modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 2.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            items(progs, key = { it.start }) { p ->
+                val now = p.isNow(nowMs)
+                val past = p.end <= nowMs
+                Focus(Modifier.fillMaxWidth(), onClick = { if (now) onWatch() }, memKey = "epg:${p.start}") { f ->
+                    Row(
+                        Modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(8.dp))
+                            .background(if (f) C.focusBg else if (now) C.cyanSoft.copy(alpha = 0.55f) else Color(0x0DFFFFFF))
+                            .then(if (f) Modifier.border(1.5.dp, C.accent, RoundedCornerShape(8.dp)) else Modifier)
+                            .padding(horizontal = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(Modifier.size(9.dp).clip(androidx.compose.foundation.shape.CircleShape).background(
+                            when { now -> Color(0xFF22C55E); past -> Color(0xFF4B4762); else -> Color(0xFFD8D6E6) }
+                        ))
+                        Spacer(Modifier.width(10.dp))
+                        Txt("${hhmm(p.start)} – ${hhmm(p.end)}", F.s(9.sp, if (now) C.cyan else if (past) C.faint else C.dim, FontWeight.SemiBold), Modifier.width(84.dp))
+                        Txt(p.title, F.s(10.5.sp, if (past) C.dim else C.white, if (now) FontWeight.SemiBold else FontWeight.Medium), Modifier.weight(1f))
+                        if (now) {
+                            Box(Modifier.clip(RoundedCornerShape(3.dp)).background(C.cyan).padding(horizontal = 5.dp, vertical = 1.5.dp)) {
+                                Txt("AGORA", F.s(6.5.sp, Color(0xFF062430), FontWeight.Bold))
                             }
                         }
                     }
                 }
             }
-            Spacer(Modifier.width(10.dp))
-            // Canais
-            Panel(Modifier.width(345.dp).fillMaxHeight()) {
-                Column {
-                    PanelHeader(catTitle, "${list.size} canais")
-                    SearchField(chQuery, { chQuery = it }, "Buscar canal", Modifier.padding(horizontal = 10.dp))
-                    Spacer(Modifier.height(6.dp))
-                    if (list.isEmpty()) {
-                        EmptyState(
-                            if (ui.liveCat == FAV) "Nenhum favorito ainda" else "Nenhum canal",
-                            if (ui.liveCat == FAV) "Segure OK sobre um canal para favoritar." else "",
-                            Modifier.fillMaxWidth()
-                        )
-                    }
-                    LazyColumn(state = ui.chList, modifier = Modifier.weight(1f).padding(horizontal = 4.dp)) {
-                        itemsIndexed(list, key = { _, c -> c.id }) { i, c ->
-                            val req = when { i == 0 -> firstChannel; i == initialIdx -> initial; else -> null }
-                            ChannelRow(
-                                vm, c, playing = c.id == playingId, fav = vm.store.isFav(c.id), requester = req,
-                                onFocus = { focusedCh = c }, onClick = { open(c) }, onLong = { vm.store.toggleFav(c.id) }
-                            )
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.width(10.dp))
-            // Prévia + guia
-            Column(Modifier.weight(1f).fillMaxHeight()) {
-                val shown = focusedCh ?: vm.channelById[playingId ?: ""] ?: list.firstOrNull()
-                Preview(vm, pb, shown, Modifier.fillMaxWidth().height(196.dp))
-                Spacer(Modifier.height(10.dp))
-                Panel(Modifier.fillMaxWidth().weight(1f)) { EpgList(vm, shown) }
-            }
         }
-        Spacer(Modifier.height(14.dp))
     }
 }
 
@@ -192,7 +305,7 @@ internal fun CatRow(
             Spacer(Modifier.width(12.dp))
             if (icon != null) { Icon(icon, 14.dp, if (selected || f) C.white else C.dim); Spacer(Modifier.width(8.dp)) }
             Txt(label, F.s(11.5.sp, if (selected || f) C.white else C.text, if (selected) FontWeight.SemiBold else FontWeight.Medium), Modifier.weight(1f))
-            Count(count, selected)
+            if (count >= 0) Count(count, selected)
             Spacer(Modifier.width(12.dp))
         }
     }
@@ -266,6 +379,8 @@ private fun Preview(vm: Vm, pb: Playback, c: Channel?, modifier: Modifier) {
                     Txt("${now.title} · ${hhmm(now.start)} – ${hhmm(now.end)}", F.s(10.sp, C.text))
                     Spacer(Modifier.height(6.dp))
                     ProgressBar(now.progress(), Modifier.fillMaxWidth().height(2.5.dp).clip(RoundedCornerShape(2.dp)))
+                    val next = vm.epg[info.id]?.firstOrNull { it.start >= now.end }
+                    if (next != null) { Spacer(Modifier.height(5.dp)); Txt("${hhmm(next.start)}  ${next.title}", F.s(9.sp, C.dim)) }
                 } else Txt(vm.catName(info.catId), F.s(8.5.sp, C.text))
             }
         }

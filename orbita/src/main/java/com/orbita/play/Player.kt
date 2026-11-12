@@ -630,7 +630,7 @@ private fun SeekBadge(delta: Long, modifier: Modifier) {
 @Composable
 private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
     val cur = pb.current?.channel
-    val cats = remember(vm.liveCats) { listOf(Cat("__fav", "Favoritos"), Cat("__recent", "Recentes"), Cat("__all", "Todos os canais")) + vm.liveCats }
+    val cats = listOf(Cat("__fav", "Favoritos"), Cat("__recent", "Recentes"), Cat("__all", "Todos os canais")) + vm.liveCats.filter { vm.catAllowed("live", it) }
     // categoria inicial: a da lista que está tocando (se for uma só), senão a do canal
     val startCat = remember {
         val ids = pb.list.mapNotNull { it.channel?.catId }.distinct()

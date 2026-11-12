@@ -205,6 +205,44 @@ class Vm(ctx: Context) {
         }
     }
 
+    // ---- guia completo (dias) do canal em foco
+    val fullEpg = StateMap<List<Prog>>()
+    private val fullTime = HashMap<String, Long>()
+
+    fun requestFullEpg(c: Channel) {
+        if (source !is XtreamSource) return
+        val t = fullTime[c.id]
+        if (t != null && System.currentTimeMillis() - t < 30 * 60_000) return
+        fullTime[c.id] = System.currentTimeMillis()
+        scope.launch {
+            val list = epgGate.withPermit { withContext(Dispatchers.IO) { runCatching { source?.epgFull(c) }.getOrNull() } }
+            if (!list.isNullOrEmpty()) fullEpg[c.id] = normalizeEpg(list) else fullTime.remove(c.id)
+        }
+    }
+
+    // ---- controle parental e categorias ocultas
+    var adultUnlocked by mutableStateOf(false)
+    private val adultRx = Regex("""(?i)(adult|adulto|xxx|\+18|18\+|\[18\]|porn|sexy|\bhot\b|er[oó]tic)""")
+    fun isAdult(name: String) = adultRx.containsMatchIn(name)
+
+    /** Aparece na lista (pode estar com cadeado). */
+    fun catVisible(kind: String, c: Cat) = !store.isHidden("$kind:${c.id}") && !(isAdult(c.name) && store.adultMode.value == "hide")
+    /** Precisa de senha para abrir. */
+    fun catLocked(c: Cat) = isAdult(c.name) && store.adultMode.value == "lock" && !adultUnlocked
+    /** Pode ser mostrada e aberta agora (entra em Todos, buscas e lançamentos). */
+    fun catAllowed(kind: String, c: Cat) = catVisible(kind, c) && !catLocked(c)
+
+    private var allowedKey: String? = null
+    private var allowedList: List<Channel> = emptyList()
+    /** "Todos os canais" sem as categorias ocultas/bloqueadas. */
+    fun allowedChannels(): List<Channel> {
+        val blocked = liveCats.filter { !catAllowed("live", it) }.map { it.id }.toSet()
+        if (blocked.isEmpty()) return uniqueChannels
+        val key = blocked.sorted().joinToString(",") + "#" + uniqueChannels.size
+        if (key != allowedKey) { allowedList = uniqueChannels.filter { it.catId !in blocked }; allowedKey = key }
+        return allowedList
+    }
+
     fun nowOn(c: Channel): Prog? { val t = System.currentTimeMillis(); return epg[c.id]?.lastOrNull { it.start <= t && t < it.end } }
 
     fun requestMovieInfo(m: Movie) {

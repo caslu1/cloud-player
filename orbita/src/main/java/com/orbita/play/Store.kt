@@ -41,6 +41,11 @@ class Store(ctx: Context) {
     val liveFormat = mutableStateOf(p.getString("liveFormat", "ts") ?: "ts")
     val autoNext = mutableStateOf(p.getBoolean("autoNext", true))
     val previewAutoplay = mutableStateOf(p.getBoolean("previewAutoplay", false))
+    /** Conteúdo adulto: "lock" (pede senha), "hide" (oculto) ou "show". */
+    val adultMode = mutableStateOf(p.getString("adultMode", "lock") ?: "lock")
+    /** Categorias ocultas: "live:<id>", "vod:<id>", "series:<id>". */
+    val hiddenCats = mutableStateListOf<String>()
+    val sortAZ = mutableStateOf(p.getBoolean("sortAZ", false))
 
     init { reload() }
 
@@ -49,6 +54,7 @@ class Store(ctx: Context) {
         recentChannels.clear(); recentChannels += list("recent")
         myList.clear(); myList += list("myList")
         followedTeams.clear(); followedTeams += list("teams")
+        hiddenCats.clear(); hiddenCats += list("hiddenCats")
         progress.clear()
         runCatching {
             val a = JSONArray(p.getString("progress", "[]"))
@@ -127,6 +133,16 @@ class Store(ctx: Context) {
 
     fun lastEpisodeOf(seriesId: String): Progress? =
         progress.values.filter { it.seriesId == seriesId }.maxByOrNull { it.time }
+
+    fun pin(): String = p.getString("pin", "0000") ?: "0000"
+    fun setPin(v: String) = p.edit().putString("pin", v).apply()
+    fun setAdultMode(m: String) { adultMode.value = m; p.edit().putString("adultMode", m).apply() }
+    fun isHidden(key: String) = hiddenCats.contains(key)
+    fun toggleHidden(key: String) {
+        if (!hiddenCats.remove(key)) hiddenCats.add(key)
+        save("hiddenCats", hiddenCats.toList())
+    }
+    fun setSortAZ(b: Boolean) { sortAZ.value = b; p.edit().putBoolean("sortAZ", b).apply() }
 
     fun setLiveFormat(f: String) { liveFormat.value = f; p.edit().putString("liveFormat", f).apply() }
     fun setAutoNext(b: Boolean) { autoNext.value = b; p.edit().putBoolean("autoNext", b).apply() }

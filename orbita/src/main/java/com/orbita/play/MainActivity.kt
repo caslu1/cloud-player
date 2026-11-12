@@ -87,6 +87,15 @@ class Ui {
     var liveCat by mutableStateOf("__all")
     var footballMenu by mutableIntStateOf(0)
     var footballMenuChosen = false
+    /** Pedido de senha em aberto (controle parental). */
+    var pinPrompt by mutableStateOf<PinPrompt?>(null)
+
+    /** Abre uma categoria adulta bloqueada depois da senha. */
+    fun unlockAdult(vm: Vm, then: () -> Unit) {
+        pinPrompt = PinPrompt("Conteúdo bloqueado", "Digite a senha para ver os canais adultos.") { pin ->
+            if (pin == vm.store.pin()) { vm.adultUnlocked = true; then(); null } else "Senha incorreta"
+        }
+    }
     var footballDay by mutableIntStateOf(0)
     var query by mutableStateOf("")
     var libraryMenu by mutableIntStateOf(0)
@@ -201,6 +210,12 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
         }
     }
     LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
+    // devolve o foco ao item que abriu o pedido de senha
+    var pinReturn by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(ui.pinPrompt) {
+        if (ui.pinPrompt != null) { if (pinReturn == null) pinReturn = FocusMem.last }
+        else if (pinReturn != null) { FocusMem.restoreTo(pinReturn!!); pinReturn = null }
+    }
 
     Box(Modifier.fillMaxSize()) {
         when (top) {
@@ -218,6 +233,7 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
                 TopBar(ui, tabReq) { ui.push(Route.Settings(FocusMem.last)) }
             }
         }
+        ui.pinPrompt?.let { p -> PinDialog(p) { if (ui.pinPrompt === p) ui.pinPrompt = null } }
         toast?.let {
             Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 36.dp).background(Color(0xEE15121F), androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).padding(horizontal = 14.dp, vertical = 8.dp)) {
                 Txt(it, F.s(9.sp, C.white, FontWeight.Medium))

@@ -95,7 +95,7 @@ fun Focus(
 ) {
     var focused by remember { mutableStateOf(false) }
     val req = requester ?: remember { FocusRequester() }
-    if (memKey != null) LaunchedEffect(memKey) {
+    if (memKey != null) LaunchedEffect(memKey, FocusMem.tick) {
         if (FocusMem.restore == memKey) {
             kotlinx.coroutines.delay(16)
             if (runCatching { req.requestFocus() }.isSuccess) { FocusMem.restore = null; FocusMem.restoredAt = System.currentTimeMillis() }
@@ -141,6 +141,9 @@ fun Focus(
 object FocusMem {
     var last: String? = null
     var restore: String? = null
+    /** Muda para pedir que itens já na tela tentem pegar o foco de volta (ex.: depois de fechar a senha). */
+    var tick by androidx.compose.runtime.mutableIntStateOf(0)
+    fun restoreTo(key: String) { restore = key; tick++ }
     var restoredAt = 0L
 }
 

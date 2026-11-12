@@ -57,6 +57,8 @@ interface Source {
     fun movieInfo(m: Movie): MovieInfo?
     fun seriesInfo(s: Series): SeriesInfo
     fun epg(c: Channel, limit: Int): List<Prog>
+    /** Guia completo (vários dias) do canal. */
+    fun epgFull(c: Channel): List<Prog> = emptyList()
 }
 
 class XtreamSource(private val a: Account, private val liveExt: () -> String) : Source {
@@ -256,8 +258,11 @@ class XtreamSource(private val a: Account, private val liveExt: () -> String) : 
         )
     }
 
-    override fun epg(c: Channel, limit: Int): List<Prog> {
-        val o = JSONObject(Net.text(api("get_short_epg", "&stream_id=${c.id}&limit=$limit")))
+    override fun epgFull(c: Channel): List<Prog> = parseEpg(JSONObject(Net.text(api("get_simple_data_table", "&stream_id=${c.id}"))))
+
+    override fun epg(c: Channel, limit: Int): List<Prog> = parseEpg(JSONObject(Net.text(api("get_short_epg", "&stream_id=${c.id}&limit=$limit"))))
+
+    private fun parseEpg(o: JSONObject): List<Prog> {
         val arr = o.optJSONArray("epg_listings") ?: return emptyList()
         return (0 until arr.length()).mapNotNull { i ->
             val e = arr.optJSONObject(i) ?: return@mapNotNull null
