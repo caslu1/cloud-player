@@ -192,7 +192,7 @@ fun Scaled(content: @Composable () -> Unit) {
 
 @Composable
 fun App(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
-    Scaled {
+    Scaled { TvScroll {
         Box(Modifier.fillMaxSize().background(C.screen)) {
             when {
                 vm.account == null -> LoginScreen(vm)
@@ -200,7 +200,7 @@ fun App(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
                 else -> Shell(vm, pb, ui, exit)
             }
         }
-    }
+    } }
     // Volta o foco para quem abriu o player
     LaunchedEffect(pb.fullscreen) {
         if (pb.fullscreen) ui.playerReturnKey = FocusMem.last
