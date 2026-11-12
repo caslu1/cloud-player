@@ -258,7 +258,7 @@ class AppFlowTest {
         rule.onAllNodes(hasSetTextAction())[0].performTextInput("Fut")
         waitText("Canais (")
         shot("14-busca")
-        back(); back()
+        back()
         click("TV", exact = true)
         waitText("Futebol 1 HD")
     }
