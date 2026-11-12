@@ -47,6 +47,16 @@ import coil.memory.MemoryCache
 import kotlinx.coroutines.delay
 
 class OrbitaApp : Application(), ImageLoaderFactory {
+    override fun onCreate() {
+        super.onCreate()
+        // Se o app fechar por erro, guarda o motivo para mostrar na próxima abertura
+        val prev = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            runCatching { java.io.File(filesDir, "crash.txt").writeText(android.util.Log.getStackTraceString(e)) }
+            prev?.uncaughtException(t, e)
+        }
+    }
+
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
         .okHttpClient { Net.client }
         .memoryCache { MemoryCache.Builder(this).maxSizePercent(0.2).build() }
@@ -98,10 +108,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        val crashFile = java.io.File(filesDir, "crash.txt")
+        val crash = runCatching { crashFile.takeIf { it.exists() }?.readText() }.getOrNull()
         vm = Vm(this)
         pb = Playback(this, vm)
         vm.resume()
-        setContent { App(vm, pb, ui) { finish() } }
+        setContent {
+            var lastCrash by remember { mutableStateOf(crash) }
+            val c = lastCrash
+            if (c != null) Scaled { CrashScreen(c) { crashFile.delete(); lastCrash = null } }
+            else App(vm, pb, ui) { finish() }
+        }
     }
 
     override fun onStop() {
@@ -247,5 +264,21 @@ fun BrandSplash() {
             Spacer(Modifier.height(10.dp))
             Logo(Modifier.wrapContentSize(), 16f)
         }
+    }
+}
+
+/** Mostra o erro da última vez que o app fechou sozinho (para enviar ao suporte). */
+@Composable
+fun CrashScreen(text: String, onContinue: () -> Unit) {
+    val r = remember { FocusRequester() }
+    InitialFocus(r)
+    Column(Modifier.fillMaxSize().background(C.bg).padding(24.dp)) {
+        Txt("O app fechou inesperadamente da última vez", F.s(14.sp, C.white, FontWeight.Bold, F.outfit))
+        Spacer(Modifier.height(4.dp))
+        Txt("Tire uma foto desta tela e envie para o suporte. Depois pressione OK para continuar.", F.s(9.sp, C.dim), maxLines = 2)
+        Spacer(Modifier.height(8.dp))
+        ActionButton("Continuar", primary = true, requester = r) { onContinue() }
+        Spacer(Modifier.height(8.dp))
+        Txt(text.take(2500), F.s(7.sp, C.text), maxLines = 40)
     }
 }

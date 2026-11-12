@@ -33,11 +33,8 @@ android {
             signingConfig = signingConfigs.getByName("orbita")
         }
         release {
+            // Sem R8: a otimização embaralhava classes das bibliotecas (coroutines/media3) e o app fechava ao abrir.
             signingConfig = signingConfigs.getByName("orbita")
-            optimization {
-                enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
-            }
         }
     }
     compileOptions {
@@ -46,6 +43,12 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all { it.maxHeapSize = "2g" }
+        }
     }
     lint {
         disable += "UnsafeOptInUsageError"
@@ -70,4 +73,10 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
 
     testImplementation("junit:junit:4.13.2")
+    // Teste de ponta a ponta: abre o app num Android simulado e faz login num servidor IPTV falso
+    testImplementation(platform("androidx.compose:compose-bom:2026.09.00"))
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("org.robolectric:robolectric:4.17")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

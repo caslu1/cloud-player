@@ -31,7 +31,7 @@ jobs:
       - name: Build
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon :orbita:testDebugUnitTest :orbita:assembleRelease
+          ./gradlew --no-daemon :orbita:testDebugUnitTest :orbita:assembleRelease || { find orbita/build/test-results -name "*.xml" -exec grep -l "<failure" {} + | xargs -r sed -n "/<failure/,/<\/failure>/p" | head -120; exit 1; }
           cp orbita/build/outputs/apk/release/*.apk Orbita-Play.apk
           ls -la Orbita-Play.apk
       - uses: actions/upload-artifact@v4
