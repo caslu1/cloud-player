@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="MovieDetail" extends="Group">
+    <interface>
+        <field id="params" type="assocarray" onChange="onParams" />
+        <field id="action" type="assocarray" />
+    </interface>
+    <children>
+        <Poster id="backdrop" width="1920" height="1080" loadDisplayMode="scaleToZoom" />
+        <Poster uri="pkg:/images/detail_shade.png" width="1920" height="1080" />
+        <Group id="root" />
+    </children>
+    <script type="text/brightscript" uri="pkg:/components/common.brs" />
+    <script type="text/brightscript" uri="pkg:/components/Buttons.brs" />
+    <script type="text/brightscript" uri="pkg:/components/MovieDetail.brs" />
+</component>

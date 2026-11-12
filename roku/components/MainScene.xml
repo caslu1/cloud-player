@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="MainScene" extends="Scene">
     <children>
-        <Rectangle id="bg" width="1920" height="1080" color="0x050409FF" />
+        <Poster id="bg" width="1920" height="1080" uri="pkg:/images/bg.png" />
         <Group id="screens" />
         <Video id="video" width="1920" height="1080" visible="false" enableUI="true" />
     </children>

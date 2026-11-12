@@ -1,1 +1,1 @@
-{ "rootDir": ".", "files": ["manifest", "source/**/*", "components/**/*", "images/**/*"], "createPackage": false, "diagnosticFilters": [] }
+{ "rootDir": ".", "files": ["manifest", "source/**/*", "components/**/*", "images/**/*", "fonts/**/*"], "createPackage": false, "diagnosticFilters": [] }

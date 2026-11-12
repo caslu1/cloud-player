@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="ItemData" extends="ContentNode">
+    <interface>
+        <field id="key" type="string" />
+        <field id="num" type="string" />
+        <field id="prog" type="string" />
+        <field id="logo" type="string" />
+        <field id="fav" type="boolean" />
+        <field id="stars" type="string" />
+        <field id="meta" type="string" />
+        <field id="plot" type="string" />
+        <field id="frac" type="float" />
+        <field id="icon" type="string" />
+        <field id="count" type="string" />
+        <field id="selected" type="boolean" />
+        <field id="info" type="assocarray" />
+    </interface>
+</component>

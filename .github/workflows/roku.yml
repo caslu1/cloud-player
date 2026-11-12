@@ -32,7 +32,7 @@ jobs:
         run: |
           cd roku
           sed -i "s/^build_version=.*/build_version=${{ github.run_number }}/" manifest
-          zip -r ../Orbita-Play-Roku.zip manifest source components images
+          zip -r ../Orbita-Play-Roku.zip manifest source components images fonts
           ls -la ../Orbita-Play-Roku.zip
       - name: Publicar
         env:
