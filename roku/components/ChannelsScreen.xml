@@ -20,6 +20,7 @@
         <Poster uri="pkg:/images/panel_epg.png" translation="[1110,482]" width="760" height="564" />
         <Group id="epg" />
         <Timer id="epgTimer" duration="0.6" />
+        <Timer id="rowEpgTimer" duration="0.5" />
     </children>
     <script type="text/brightscript" uri="pkg:/components/common.brs" />
     <script type="text/brightscript" uri="pkg:/components/ChannelsScreen.brs" />

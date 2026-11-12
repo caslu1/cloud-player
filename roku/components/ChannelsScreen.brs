@@ -8,7 +8,11 @@ sub init()
     addLabel(lb, "CATEGORIAS", 72, 60, ISEM(), 17, "0x9D9ABBFF")
     m.catCount = addLabel(lb, "", 300, 60, ISEM(), 17, "0x9D9ABBFF", 116, "right")
     m.chTitle = addLabel(lb, "", 482, 60, ISEM(), 17, "0x9D9ABBFF", 420)
-    addLabel(lb, "✱ favoritar", 900, 60, IMED(), 15, "0x6E6B8CFF", 170, "right")
+    ' botão de ordem (Nº / A–Z), igual ao do Android
+    m.sortBg = addPoster(lb, "pkg:/images/sort_chip.9.png", 1000, 50, 70, 40)
+    m.sortLbl = addLabel(lb, "Nº", 1000, 59, ISEM(), 17, "0xFFFFFFFF", 70, "center")
+    m.sortAZ = (regRead("sortaz").Count() > 0)
+    if m.sortAZ then m.sortLbl.text = "A–Z"
     m.status = addLabel(lb, "Carregando canais…", 466, 500, IMED(), 22, "0x9D9ABBFF", 616, "center")
     ' prévia
     info = m.top.findNode("pvInfo")
@@ -35,6 +39,10 @@ sub init()
     m.top.findNode("epgTimer").observeField("fire", "loadEpg")
     m.top.observeField("focusedChild", "onFocus")
     m.focusList = m.cats
+    m.zone = "cats"
+    m.starMode = false
+    m.epgCache = {}
+    m.top.findNode("rowEpgTimer").observeField("fire", "loadRowEpg")
     m.items = []
     m.shown = []
     m.catId = "__all"
@@ -51,7 +59,7 @@ sub cleanup(p = invalid as dynamic)
 end sub
 
 sub onFocus()
-    if m.top.hasFocus() then m.focusList.setFocus(true)
+    if m.top.hasFocus() and m.zone <> "sort" then m.focusList.setFocus(true)
 end sub
 
 sub onLive(event as object)
@@ -114,6 +122,17 @@ sub choose(id as string, focusList as boolean)
             if id = "__all" or it.cat = id then src.Push(it)
         end for
     end if
+    if m.sortAZ
+        tmp = []
+        for each it in src
+            tmp.Push({ k: LCase(it.name), v: it })
+        end for
+        tmp.SortBy("k")
+        src = []
+        for each t in tmp
+            src.Push(t.v)
+        end for
+    end if
     m.shown = []
     root = CreateObject("roSGNode", "ContentNode")
     for each it in src
@@ -125,6 +144,8 @@ sub choose(id as string, focusList as boolean)
         n.num = asText(it.num)
         n.logo = asText(it.logo)
         n.fav = favs.DoesExist(k)
+        n.playing = (k = m.playingId)
+        if m.epgCache.DoesExist(k) then n.prog = progText(m.epgCache[k])
         m.shown.Push({ id: k, name: it.name, num: asText(it.num), logo: asText(it.logo) })
     end for
     m.list.content = root
@@ -140,6 +161,9 @@ sub choose(id as string, focusList as boolean)
         m.list.setFocus(true)
     end if
     if m.shown.Count() > 0 then showChannel(0)
+    t = m.top.findNode("rowEpgTimer")
+    t.control = "stop"
+    t.control = "start"
 end sub
 
 sub onCat()
@@ -149,6 +173,73 @@ end sub
 
 sub onChFocus()
     showChannel(m.list.itemFocused)
+    if m.starMode then setStar(true)
+    t = m.top.findNode("rowEpgTimer")
+    t.control = "stop"
+    t.control = "start"
+end sub
+
+function progText(e as object) as string
+    if e = invalid or e.title = "" then return ""
+    return e.title + " · " + hhmmOf(e.start)
+end function
+
+' Programa de agora das linhas visíveis (pede só os que ainda não vieram).
+sub loadRowEpg()
+    if m.shown.Count() = 0 then return
+    i0 = m.list.itemFocused - 3
+    if i0 < 0 then i0 = 0
+    ids = []
+    for i = i0 to i0 + 11
+        if i < m.shown.Count()
+            id = m.shown[i].id
+            if not m.epgCache.DoesExist(id) then ids.Push(id)
+        end if
+    end for
+    if ids.Count() = 0 then return
+    t = CreateObject("roSGNode", "EpgTask")
+    t.ids = ids
+    t.observeField("response", "onRowEpg")
+    t.control = "RUN"
+    m.epgTask = t
+end sub
+
+sub onRowEpg(event as object)
+    r = event.getData()
+    for each id in r
+        m.epgCache[id] = r[id]
+    end for
+    root = m.list.content
+    if root = invalid then return
+    for i = 0 to m.shown.Count() - 1
+        id = m.shown[i].id
+        if r.DoesExist(id) then root.getChild(i).prog = progText(r[id])
+    end for
+end sub
+
+sub setStar(on as boolean)
+    root = m.list.content
+    if root = invalid then return
+    for i = 0 to root.getChildCount() - 1
+        n = root.getChild(i)
+        want = on and i = m.list.itemFocused
+        if n.starFocus <> want then n.starFocus = want
+    end for
+end sub
+
+sub markPlaying()
+    root = m.list.content
+    if root = invalid then return
+    for i = 0 to m.shown.Count() - 1
+        want = (m.shown[i].id = m.playingId)
+        n = root.getChild(i)
+        if n.playing <> want then n.playing = want
+    end for
+end sub
+
+sub paintSort()
+    if m.zone = "sort" then m.sortBg.uri = "pkg:/images/sort_chip_f.9.png" else m.sortBg.uri = "pkg:/images/sort_chip.9.png"
+    if m.sortAZ then m.sortLbl.text = "A–Z" else m.sortLbl.text = "Nº"
 end sub
 
 sub showChannel(i as integer)
@@ -164,6 +255,8 @@ sub showChannel(i as integer)
     m.pvNow.text = ""
     m.pvNext.text = ""
     m.pvBar.width = 0
+    m.pvBar.visible = false
+    m.pvTrack.visible = false
     m.epgBox.removeChildrenIndex(m.epgBox.getChildCount(), 0)
     t = m.top.findNode("epgTimer")
     t.control = "stop"
@@ -198,6 +291,8 @@ sub onApi(event as object)
             addLabel(m.epgBox, "AGORA", 1764, y + 25, ISEM(), 14, "0x22D3EEFF", 76, "center")
             m.pvNow.text = p.title + " · " + hhmmOf(p.start) + " – " + hhmmOf(p.stop)
             m.pvBar.width = Int(708 * (now - p.start) / (p.stop - p.start))
+            m.pvBar.visible = true
+            m.pvTrack.visible = true
         else
             addPoster(m.epgBox, "pkg:/images/epg_row.png", 1124, y + 4, 732, 68)
             addPoster(m.epgBox, "pkg:/images/dot_white.png", 1146, y + 30, 16, 16)
@@ -218,12 +313,17 @@ end sub
 
 ' 1º OK: toca na prévia. 2º OK no mesmo canal: tela cheia.
 sub onChannel()
+    if m.starMode
+        toggleFav()
+        return
+    end if
     c = m.shown[m.list.itemSelected]
     if m.playingId = c.id
         m.pv.control = "stop"
         m.pv.visible = false
         m.live.visible = false
         m.playingId = ""
+        markPlaying()
         m.top.action = { type: "play", streamId: c.id, title: c.name, live: true }
         return
     end if
@@ -235,6 +335,7 @@ sub onChannel()
     m.pvLogo.visible = false
     m.live.visible = true
     m.playingId = c.id
+    markPlaying()
     m.list.setFocus(true)
 end sub
 
@@ -276,14 +377,53 @@ end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
+    if m.zone = "sort"
+        if key = "OK"
+            m.sortAZ = not m.sortAZ
+            if m.sortAZ then regWrite("sortaz", [1]) else regWrite("sortaz", [])
+            paintSort()
+            choose(m.catId, false)
+            return true
+        else if key = "down"
+            m.zone = "list"
+            paintSort()
+            m.list.setFocus(true)
+            return true
+        else if key = "left"
+            m.zone = "cats"
+            paintSort()
+            m.focusList = m.cats
+            m.cats.setFocus(true)
+            return true
+        end if
+        return true
+    end if
     if key = "right" and m.cats.hasFocus() and m.shown.Count() > 0
         m.focusList = m.list
+        m.zone = "list"
         m.list.jumpToItem = 0
         m.list.setFocus(true)
         return true
+    else if key = "right" and m.list.hasFocus() and not m.starMode
+        ' vai para a estrela do canal (como no Android)
+        m.starMode = true
+        setStar(true)
+        return true
+    else if key = "left" and m.list.hasFocus() and m.starMode
+        m.starMode = false
+        setStar(false)
+        return true
     else if key = "left" and m.list.hasFocus()
         m.focusList = m.cats
+        m.zone = "cats"
         m.cats.setFocus(true)
+        return true
+    else if key = "up" and m.list.hasFocus() and m.list.itemFocused = 0
+        m.zone = "sort"
+        m.starMode = false
+        setStar(false)
+        paintSort()
+        m.top.setFocus(true)
         return true
     else if key = "options" and m.list.hasFocus()
         toggleFav()

@@ -14,5 +14,7 @@
         <field id="count" type="string" />
         <field id="selected" type="boolean" />
         <field id="info" type="assocarray" />
+        <field id="starFocus" type="boolean" />
+        <field id="playing" type="boolean" />
     </interface>
 </component>
