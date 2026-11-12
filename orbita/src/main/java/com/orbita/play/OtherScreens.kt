@@ -44,6 +44,15 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
@@ -93,62 +102,66 @@ fun LoginScreen(vm: Vm) {
         }
     }
 
-    Box(Modifier.fillMaxSize().background(Color(0xFF050409))) {
+    // Login padrão (igual na Roku): "Pelo celular" (QR, MAC e chave) | ou | "Na TV" (lista Xtream/M3U)
+    val site = Activation.enabled()
+    Box(Modifier.fillMaxSize().background(C.bg)) {
+        ScreenBackground()
         Orbits()
-        Row(Modifier.fillMaxSize().padding(horizontal = 50.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Logo(size = 22f)
-                Spacer(Modifier.height(14.dp))
-                Txt("Toda a sua TV,", F.s(17.sp, C.white, FontWeight.Medium, F.outfit))
-                Txt("em uma só órbita.", F.s(17.sp, C.white, FontWeight.Medium, F.outfit))
-                Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    listOf("Canais ao vivo", "Filmes e séries", "Guia EPG", "Futebol").forEach { Txt("•  $it", F.s(8.5.sp, C.dim)) }
-                }
-                if (Activation.enabled()) {
-                    Spacer(Modifier.height(22.dp))
-                    ActivationPolling(vm)
-                    ActivationCard(vm)
-                }
-            }
-            Column(
-                Modifier.width(330.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF0E0B1A)).border(1.dp, Color(0xFF221A3A), RoundedCornerShape(12.dp))
-                    .padding(20.dp)
-            ) {
-                Txt("Conectar lista", F.s(14.sp, C.white, FontWeight.Bold, F.outfit))
-                Txt("Use os dados enviados pelo seu provedor.", F.s(8.sp, C.dim))
-                Spacer(Modifier.height(12.dp))
-                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(7.dp)).background(Color(0xFF08060F)).padding(3.dp)) {
-                    LoginTab("Xtream Codes", xtream, Modifier.weight(1f), tabReq) { xtream = true }
-                    LoginTab("Lista M3U", !xtream, Modifier.weight(1f)) { xtream = false }
-                }
-                Spacer(Modifier.height(12.dp))
-                if (xtream) {
-                    FormField("Servidor", server, { server = it }, "http://servidor.exemplo:8080", keyboard = KeyboardType.Uri, requester = serverReq) { runCatching { userReq.requestFocus() } }
-                    Spacer(Modifier.height(8.dp))
-                    FormField("Usuário", user, { user = it }, "seu usuário", requester = userReq) { runCatching { passReq.requestFocus() } }
-                    Spacer(Modifier.height(8.dp))
-                    FormField("Senha", pass, { pass = it }, "••••••••", password = true, requester = passReq) { runCatching { enterReq.requestFocus() } }
-                } else {
-                    FormField("Endereço da lista (URL)", m3u, { m3u = it }, "http://servidor/get.php?username=…", keyboard = KeyboardType.Uri, requester = m3uReq) { runCatching { enterReq.requestFocus() } }
-                    Spacer(Modifier.height(6.dp))
-                    Txt("Listas get.php do Xtream são convertidas automaticamente para login com guia (EPG).", F.s(7.sp, C.faint), maxLines = 2)
-                }
-                Spacer(Modifier.height(14.dp))
-                Focus(Modifier.fillMaxWidth(), onClick = { submit() }, requester = enterReq) { f ->
-                    Box(
-                        Modifier.fillMaxWidth().height(30.dp).clip(RoundedCornerShape(7.dp)).background(if (f) Color(0xFFA5E6FF) else Color(0xFF6CD4FF))
-                            .then(if (f) Modifier.border(2.dp, C.white, RoundedCornerShape(7.dp)) else Modifier),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (busy) Txt("Conectando…", F.s(9.5.sp, Color(0xFF06223A), FontWeight.Bold))
-                        else Txt("Entrar  →", F.s(9.5.sp, Color(0xFF06223A), FontWeight.Bold))
+        Column(Modifier.fillMaxSize().padding(start = 48.dp, end = 48.dp, top = 30.dp, bottom = 24.dp)) {
+            Logo(size = 15f)
+            Spacer(Modifier.height(18.dp))
+            Txt("Bem-vindo ao Orbita Play", F.s(27.sp, C.white, FontWeight.Bold, F.outfit))
+            Spacer(Modifier.height(3.dp))
+            Txt(if (site) "Ative pelo celular em segundos ou conecte sua lista direto na TV." else "Conecte sua lista para começar.", F.s(11.sp, C.dim))
+            Spacer(Modifier.height(20.dp))
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = if (site) Arrangement.Start else Arrangement.Center) {
+                if (site) {
+                    ActivationPanel(vm, Modifier.width(350.dp).fillMaxHeight())
+                    Box(Modifier.width(62.dp).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(30.dp).clip(RoundedCornerShape(15.dp)).background(C.item).border(1.dp, Color(0xFF2A2440), RoundedCornerShape(15.dp)), contentAlignment = Alignment.Center) {
+                            Txt("ou", F.s(9.sp, C.dim, FontWeight.SemiBold))
+                        }
                     }
                 }
-                error?.let { Spacer(Modifier.height(8.dp)); Txt(it, F.s(8.sp, C.live, FontWeight.Medium), maxLines = 3) }
-                Spacer(Modifier.height(10.dp))
-                Row {
-                    Txt("Sem conta? Fale com seu provedor.", F.s(7.5.sp, C.dim), Modifier.weight(1f))
+                Column(
+                    Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(14.dp)).background(Color(0xE60C0A16))
+                        .border(1.dp, C.panelBorder, RoundedCornerShape(14.dp)).padding(20.dp)
+                ) {
+                    Txt("NA TV", F.s(8.sp, C.accentText, FontWeight.SemiBold, spacing = 1.2.sp))
+                    Spacer(Modifier.height(5.dp))
+                    Txt("Conectar lista", F.s(19.sp, C.white, FontWeight.Bold, F.outfit))
+                    Txt("Use os dados enviados pelo seu provedor.", F.s(10.sp, C.dim))
+                    Spacer(Modifier.height(12.dp))
+                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(7.dp)).background(C.field).border(1.dp, C.panelBorder, RoundedCornerShape(7.dp)).padding(3.dp)) {
+                        LoginTab("Xtream Codes", xtream, Modifier.weight(1f), tabReq) { xtream = true }
+                        LoginTab("Lista M3U", !xtream, Modifier.weight(1f)) { xtream = false }
+                    }
+                    if (xtream) {
+                        LoginField("SERVIDOR", server, { server = it }, "http://servidor.exemplo:8080", keyboard = KeyboardType.Uri, requester = serverReq) { runCatching { userReq.requestFocus() } }
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(1f)) { LoginField("USUÁRIO", user, { user = it }, "seu usuário", requester = userReq) { runCatching { passReq.requestFocus() } } }
+                            Box(Modifier.weight(1f)) { LoginField("SENHA", pass, { pass = it }, "••••••••", password = true, requester = passReq) { runCatching { enterReq.requestFocus() } } }
+                        }
+                    } else {
+                        LoginField("ENDEREÇO DA LISTA (URL)", m3u, { m3u = it }, "http://servidor/get.php?username=…", keyboard = KeyboardType.Uri, requester = m3uReq) { runCatching { enterReq.requestFocus() } }
+                        Spacer(Modifier.height(6.dp))
+                        Txt("Listas get.php do Xtream são convertidas automaticamente para login com guia (EPG).", F.s(8.sp, C.faint), maxLines = 2)
+                    }
+                    Spacer(Modifier.height(15.dp))
+                    Focus(Modifier.fillMaxWidth(), onClick = { submit() }, requester = enterReq) { f ->
+                        Row(
+                            Modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(8.dp)).background(C.accent)
+                                .then(if (f) Modifier.border(2.dp, C.white, RoundedCornerShape(8.dp)) else Modifier),
+                            horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Ic.Play, 12.dp)
+                            Spacer(Modifier.width(6.dp))
+                            Txt(if (busy) "Conectando…" else "Entrar", F.s(12.sp, C.white, FontWeight.SemiBold))
+                        }
+                    }
+                    error?.let { Spacer(Modifier.height(8.dp)); Txt(it, F.s(8.5.sp, C.live, FontWeight.Medium), maxLines = 3) }
+                    Spacer(Modifier.weight(1f))
+                    Txt("Sem lista? Fale com o seu provedor.", F.s(8.5.sp, C.faint))
                 }
             }
         }
@@ -156,15 +169,51 @@ fun LoginScreen(vm: Vm) {
     }
 }
 
+/** Campo do login: rótulo em maiúsculas e caixa maior, com borda roxa no foco. */
+@Composable
+private fun LoginField(
+    label: String, value: String, onChange: (String) -> Unit, placeholder: String, password: Boolean = false,
+    keyboard: KeyboardType = KeyboardType.Text, requester: FocusRequester? = null, onNext: () -> Unit = {},
+) {
+    var focused by remember { mutableStateOf(false) }
+    Column(Modifier.padding(top = 11.dp)) {
+        Txt(label, F.s(7.5.sp, C.faint, FontWeight.SemiBold, spacing = 1.sp))
+        Spacer(Modifier.height(5.dp))
+        val shape = RoundedCornerShape(8.dp)
+        BasicTextField(
+            value, onChange,
+            Modifier.fillMaxWidth().height(38.dp)
+                .then(if (focused) Modifier.border(4.dp, Color(0x2E7C5CFF), RoundedCornerShape(10.dp)).padding(2.dp) else Modifier)
+                .clip(shape).background(C.field)
+                .border(if (focused) 1.5.dp else 1.dp, if (focused) C.accent else C.panelBorder, shape)
+                .then(if (requester != null) Modifier.focusRequester(requester) else Modifier)
+                .onFocusChanged { focused = it.isFocused }
+                .padding(horizontal = 12.dp),
+            singleLine = true,
+            textStyle = F.s(11.sp, C.white),
+            cursorBrush = SolidColor(C.accentText),
+            visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
+            keyboardOptions = KeyboardOptions(keyboardType = if (password) KeyboardType.Password else keyboard, imeAction = ImeAction.Next, autoCorrectEnabled = false),
+            keyboardActions = KeyboardActions(onNext = { onNext() }, onDone = { onNext() }),
+            decorationBox = { inner ->
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+                    if (value.isEmpty()) Txt(placeholder, F.s(11.sp, C.faint))
+                    inner()
+                }
+            }
+        )
+    }
+}
+
 @Composable
 private fun LoginTab(text: String, selected: Boolean, modifier: Modifier, requester: FocusRequester? = null, onClick: () -> Unit) {
     Focus(modifier, onClick = onClick, onFocus = onClick, requester = requester) { f ->
         Box(
-            Modifier.fillMaxWidth().height(24.dp).clip(RoundedCornerShape(5.dp))
-                .background(if (selected) Color(0xFF2A1D5E) else Color.Transparent)
-                .then(if (f) Modifier.border(1.5.dp, Color(0xFF6CD4FF), RoundedCornerShape(5.dp)) else Modifier),
+            Modifier.fillMaxWidth().height(26.dp).clip(RoundedCornerShape(5.dp))
+                .background(if (selected) C.accent else Color.Transparent)
+                .then(if (f) Modifier.border(1.5.dp, C.white, RoundedCornerShape(5.dp)) else Modifier),
             contentAlignment = Alignment.Center
-        ) { Txt(text, F.s(8.5.sp, if (selected) C.white else C.dim, FontWeight.SemiBold)) }
+        ) { Txt(text, F.s(10.sp, if (selected || f) C.white else C.dim, FontWeight.SemiBold)) }
     }
 }
 

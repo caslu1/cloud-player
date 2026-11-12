@@ -155,6 +155,57 @@ fun ActivationCard(vm: Vm) {
     }
 }
 
+/** Cartão "Pelo celular" do login padrão: QR code grande, MAC, chave e situação. */
+@Composable
+fun ActivationPanel(vm: Vm, modifier: Modifier) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val mac = remember { Activation.mac(ctx) }
+    val key = remember { Activation.key(ctx) }
+    ActivationPolling(vm)
+    val a = vm.act
+    val url = a?.activateUrl?.takeIf { it.isNotBlank() } ?: "${Activation.site}/ativar?mac=$mac&key=$key"
+    Column(
+        modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xE60C0A16)).border(1.dp, C.panelBorder, RoundedCornerShape(14.dp)).padding(20.dp)
+    ) {
+        Txt("PELO CELULAR", F.s(8.sp, C.accentText, FontWeight.SemiBold, spacing = 1.2.sp))
+        Spacer(Modifier.height(5.dp))
+        Txt("Ative com o QR code", F.s(19.sp, C.white, FontWeight.Bold, F.outfit))
+        Row {
+            Txt("Aponte a câmera do celular ou acesse ", F.s(10.sp, C.dim))
+            Txt(Activation.site.removePrefix("https://").removePrefix("http://"), F.s(10.sp, C.accentText, FontWeight.SemiBold))
+        }
+        Spacer(Modifier.height(15.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            QrCode(url, Modifier.size(150.dp))
+            Spacer(Modifier.width(15.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                InfoBox("MAC", mac, 13f, 0.5f)
+                InfoBox("CHAVE", key, 15f, 3f)
+                val (t, c) = statusLine(a)
+                Row(
+                    Modifier.clip(RoundedCornerShape(15.dp)).background(c.copy(alpha = 0.16f)).padding(horizontal = 9.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(Modifier.size(5.dp).clip(RoundedCornerShape(3.dp)).background(c))
+                    Spacer(Modifier.width(5.dp))
+                    Txt(t, F.s(9.5.sp, c, FontWeight.SemiBold))
+                }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        Txt("Cadastre sua lista no site e a TV entra sozinha.", F.s(9.sp, C.dim))
+    }
+}
+
+@Composable
+private fun InfoBox(label: String, value: String, size: Float, spacing: Float) {
+    Column(Modifier.width(142.dp).clip(RoundedCornerShape(8.dp)).background(C.field).border(1.dp, C.panelBorder, RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 7.dp)) {
+        Txt(label, F.s(7.sp, C.faint, FontWeight.SemiBold, spacing = 0.8.sp))
+        Spacer(Modifier.height(2.dp))
+        Txt(value, F.s(size.sp, C.white, FontWeight.Bold, F.outfit, spacing.sp))
+    }
+}
+
 /** Consulta o site de tempos em tempos (lista nova, pagamento confirmado…). */
 @Composable
 fun ActivationPolling(vm: Vm, everyMs: Long = 5_000) {
