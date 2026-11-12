@@ -73,140 +73,74 @@ private fun RoundAction(icon: ImageVector, desc: String, key: String, onClick: (
     }
 }
 
-private class HomeTile(val key: String, val label: String, val icon: ImageVector, val c1: Color, val c2: Color, val onClick: () -> Unit)
+private class HomeTile(val tab: Tab, val label: String, val icon: ImageVector, val sub: String)
 
-/**
- * Tela inicial: logo no centro, fundo com capas do seu catálogo, uma fileira de blocos quadrados,
- * Buscar/Recarregar e o rodapé com versão, status e ID do aparelho.
- */
+/** Tela inicial: papel de parede escolhido, saudação, 4 blocos grandes e "Continuar assistindo". */
 @Composable
 fun HomeScreen(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit) {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(10_000) } }
     Box(Modifier.fillMaxSize()) {
         ScreenBackground()
-        PosterWall(vm)
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x99050409), 0.45f to Color(0xC7050409), 1f to Color(0xF2050409))))
-
-        // relógio no canto
-        Column(Modifier.align(Alignment.TopEnd).padding(top = 18.dp, end = 30.dp), horizontalAlignment = Alignment.End) {
-            Txt(hhmm(now), F.s(15.sp, C.white, FontWeight.Bold, F.outfit))
-            Txt(remember(now / 3_600_000) { SimpleDateFormat("EEE, d MMM", Locale("pt", "BR")).format(Date(now)) }, F.s(7.5.sp, C.dim))
+        Column(Modifier.padding(start = 28.dp, top = 62.dp)) {
+            val h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+            Txt(if (h < 5) "Boa noite" else if (h < 12) "Bom dia" else if (h < 18) "Boa tarde" else "Boa noite", F.s(22.sp, C.white, FontWeight.Bold, F.outfit))
+            Spacer(Modifier.height(2.dp))
+            Txt("O que vamos assistir hoje?", F.s(10.sp, C.dim))
         }
 
-        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.height(30.dp))
-            Logo(size = 22f)
-            Spacer(Modifier.height(34.dp))
+        // topo: logo + ações
+        Row(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 28.dp), verticalAlignment = Alignment.CenterVertically) {
+            Logo()
+            Spacer(Modifier.weight(1f))
+            TopActions(onSearch, onReload, onSettings, showDate = true)
+        }
+
+        Column(Modifier.fillMaxSize().padding(top = 134.dp)) {
             val tiles = listOf(
-                HomeTile("CANAIS", "Canais", Ic.LiveTv, Color(0xFF8E73FF), Color(0xFF4B2BD0)) { ui.openSection(Tab.CANAIS) },
-                HomeTile("FILMES", "Filmes", Ic.Movie, Color(0xFFFF6FA8), Color(0xFF9A2A86)) { ui.openSection(Tab.FILMES) },
-                HomeTile("SERIES", "Séries", Ic.Series, Color(0xFF5FB0FF), Color(0xFF2346C8)) { ui.openSection(Tab.SERIES) },
-                HomeTile("FUTEBOL", "Futebol", Ic.Soccer, Color(0xFF5FE0A0), Color(0xFF13804F)) { ui.openSection(Tab.FUTEBOL) },
-                HomeTile("settings", "Configurações", Ic.Settings, Color(0xFFB9B4CC), Color(0xFF5A5570), onSettings),
+                HomeTile(Tab.CANAIS, "CANAIS", Ic.LiveTv, countLabel(vm.allowedChannels().size, "canal", "canais", vm.liveState == LoadState.READY)),
+                HomeTile(Tab.FILMES, "FILMES", Ic.Movie, countLabel(vm.movies.size, "título", "títulos", vm.movieState == LoadState.READY)),
+                HomeTile(Tab.SERIES, "SÉRIES", Ic.Series, countLabel(vm.series.size, "título", "títulos", vm.seriesState == LoadState.READY)),
+                HomeTile(Tab.FUTEBOL, "FUTEBOL", Ic.Soccer, "Ao vivo, hoje e amanhã"),
             )
             val first = remember { FocusRequester() }
             InitialFocus(first)
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                tiles.forEach { t -> SquareTile(t, if (t.key == ui.tab.name) first else null) }
-            }
-            Spacer(Modifier.height(18.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                WideButton(Ic.Search, "Buscar", "home:search", onSearch)
-                WideButton(Ic.Refresh, "Recarregar", "home:reload", onReload)
-            }
-            Spacer(Modifier.height(22.dp))
-            ContinueRow(vm, pb, ui)
-        }
-
-        // rodapé
-        val ver = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: "1.0" }
-        val st = vm.status
-        val status = buildString {
-            append(if (st?.status == null || st.status.equals("Active", true)) "Ativa" else st.status)
-            st?.expires?.let { append(" · vence " + SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")).format(Date(it))) }
-        }
-        val deviceId = remember {
-            runCatching { android.provider.Settings.Secure.getString(ctx.contentResolver, android.provider.Settings.Secure.ANDROID_ID) }
-                .getOrNull().orEmpty().uppercase().take(8).ifEmpty { "—" }
-        }
-        Row(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 30.dp, vertical = 14.dp)) {
-            Column {
-                Txt("Versão: $ver", F.s(8.sp, C.dim))
-                Txt("Status: $status", F.s(8.sp, C.dim))
-            }
-            Spacer(Modifier.weight(1f))
-            Column(horizontalAlignment = Alignment.End) {
-                Txt("ID do aparelho: $deviceId", F.s(8.sp, C.dim))
-                vm.account?.takeIf { it.type == "xtream" }?.let { Txt("Usuário: ${it.user}", F.s(8.sp, C.dim)) }
-            }
-        }
-    }
-}
-
-/** Fundo com capas inclinadas do próprio catálogo (bem apagadas). */
-@Composable
-private fun PosterWall(vm: Vm) {
-    val posters = remember(vm.movies, vm.series) {
-        (vm.movies.sortedByDescending { it.added }.take(18).mapNotNull { it.poster } +
-            vm.series.sortedByDescending { it.added }.take(14).mapNotNull { it.cover }).filter { it.isNotBlank() }
-    }
-    if (posters.isEmpty()) return
-    Box(Modifier.fillMaxSize().clip(RoundedCornerShape(0.dp))) {
-        Column(
-            Modifier.align(Alignment.Center).graphicsLayer { rotationZ = -10f; scaleX = 1.25f; scaleY = 1.25f; alpha = 0.32f },
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            for (r in 0 until 4) Row(Modifier.graphicsLayer { translationX = if (r % 2 == 0) 0f else 60f }, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                for (c in 0 until 9) {
-                    val url = posters[(r * 9 + c) % posters.size]
-                    AsyncImage(url, null, Modifier.size(100.dp, 150.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF15121F)), contentScale = ContentScale.Crop)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)) {
+                tiles.forEach { t ->
+                    BigTile(t, if (t.tab == ui.tab) first else null) { ui.openSection(t.tab) }
                 }
             }
+            Spacer(Modifier.height(26.dp))
+            ContinueRow(vm, pb, ui)
         }
     }
 }
 
+private fun countLabel(n: Int, one: String, many: String, ready: Boolean) =
+    if (!ready) "Carregando…" else if (n == 1) "1 $one" else "${fmtCount(n)} $many"
+
 @Composable
-private fun SquareTile(t: HomeTile, requester: FocusRequester?) {
-    Focus(Modifier.size(124.dp), onClick = t.onClick, requester = requester, memKey = "home:${t.key}") { f ->
-        val sc by animateFloatAsState(if (f) 1.08f else 1f, tween(120), label = "s")
-        val shape = RoundedCornerShape(12.dp)
-        Column(
-            Modifier.graphicsLayer { scaleX = sc; scaleY = sc }.fillMaxSize().clip(shape)
-                .background(if (f) Color(0xF2221A4A) else Color(0xCC110E22))
-                .border(if (f) 2.dp else 1.dp, if (f) C.white else Color(0x33FFFFFF), shape),
-            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
+private fun BigTile(t: HomeTile, requester: FocusRequester?, onClick: () -> Unit) {
+    Focus(Modifier.width(194.dp), onClick = onClick, requester = requester, memKey = "home:${t.tab.name}") { f ->
+        val sc by animateFloatAsState(if (f) 1.07f else 1f, tween(140), label = "s")
+        val shape = RoundedCornerShape(16.dp)
+        Box(
+            Modifier.graphicsLayer { scaleX = sc; scaleY = sc }.fillMaxWidth().height(138.dp).clip(shape)
+                .background(
+                    if (f) Brush.linearGradient(listOf(Color(0xFF9378FF), Color(0xFF5A36E0)))
+                    else Brush.linearGradient(listOf(Color(0xCC1A1530), Color(0xCC0E0B1A)))
+                )
+                .border(if (f) 2.dp else 1.dp, if (f) C.white else Color(0x1FFFFFFF), shape)
         ) {
-            // ícone num quadrado com brilho (estilo "app")
-            Box(
-                Modifier.size(54.dp).clip(RoundedCornerShape(14.dp))
-                    .background(Brush.linearGradient(listOf(t.c1, t.c2)))
-                    .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(14.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0x33FFFFFF), Color.Transparent))))
-                Icon(t.icon, 28.dp)
+            // ícone grande e apagado no canto, só decoração
+            Icon(t.icon, 96.dp, Color.White.copy(alpha = if (f) 0.16f else 0.06f), Modifier.align(Alignment.TopEnd).padding(top = 0.dp).graphicsLayer { translationX = 22f; translationY = -14f })
+            Column(Modifier.align(Alignment.BottomStart).padding(start = 14.dp, bottom = 12.dp)) {
+                Box(
+                    Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(if (f) Color(0x33FFFFFF) else C.accentSoft),
+                    contentAlignment = Alignment.Center
+                ) { Icon(t.icon, 20.dp, if (f) C.white else C.accentText) }
+                Spacer(Modifier.height(10.dp))
+                Txt(t.label, F.s(15.sp, C.white, FontWeight.Bold, F.outfit, 0.8.sp))
+                Txt(t.sub, F.s(8.sp, if (f) Color(0xE6FFFFFF) else C.dim))
             }
-            Spacer(Modifier.height(12.dp))
-            Txt(t.label, F.s(10.5.sp, C.white, FontWeight.SemiBold))
-        }
-    }
-}
-
-@Composable
-private fun WideButton(icon: ImageVector, label: String, key: String, onClick: () -> Unit) {
-    Focus(onClick = onClick, memKey = key) { f ->
-        val shape = RoundedCornerShape(8.dp)
-        Row(
-            Modifier.width(170.dp).height(32.dp).clip(shape).background(if (f) C.white else Color(0xCC110E22))
-                .border(1.dp, if (f) C.white else Color(0x33FFFFFF), shape),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(icon, 14.dp, if (f) Color(0xFF0B0A12) else C.white)
-            Spacer(Modifier.width(8.dp))
-            Txt(label, F.s(10.sp, if (f) Color(0xFF0B0A12) else C.white, FontWeight.SemiBold))
         }
     }
 }
@@ -214,10 +148,18 @@ private fun WideButton(icon: ImageVector, label: String, key: String, onClick: (
 @Composable
 private fun ContinueRow(vm: Vm, pb: Playback, ui: Ui) {
     val items = vm.store.continueWatching().take(12)
-    if (items.isEmpty()) return
     Column(Modifier.fillMaxWidth()) {
-        Txt("Continuar assistindo", F.s(11.sp, C.white, FontWeight.Bold, F.outfit), Modifier.padding(start = 30.dp, bottom = 8.dp))
-        LazyRow(contentPadding = PaddingValues(horizontal = 30.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.padding(start = 28.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Ic.Resume, 13.dp, C.accentText)
+            Spacer(Modifier.width(6.dp))
+            Txt("Continuar assistindo", F.s(12.sp, C.white, FontWeight.Bold, F.outfit))
+            if (items.isNotEmpty()) Txt("  ${items.size} ${if (items.size == 1) "TÍTULO" else "TÍTULOS"}", F.s(8.sp, C.dim, FontWeight.Medium))
+        }
+        if (items.isEmpty()) {
+            Txt("Comece um filme ou episódio e ele aparece aqui para você continuar de onde parou.", F.s(9.sp, C.dim), Modifier.padding(start = 28.dp))
+            return
+        }
+        LazyRow(contentPadding = PaddingValues(horizontal = 28.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(items, key = { it.key }) { p -> HomeContinueCard(vm, pb, ui, p) }
         }
     }
@@ -232,7 +174,7 @@ private fun HomeContinueCard(vm: Vm, pb: Playback, ui: Ui, p: Progress) {
     LaunchedEffect(p.key) { movie?.let { vm.requestMeta(it) }; series?.let { vm.requestMeta(it) } }
     val image = meta?.backdropUrl() ?: p.image
     Focus(
-        Modifier.width(150.dp), memKey = "home:cont:${p.key}",
+        Modifier.width(168.dp), memKey = "home:cont:${p.key}",
         onClick = {
             val item = when {
                 movie != null -> movieItem(movie)
@@ -247,25 +189,26 @@ private fun HomeContinueCard(vm: Vm, pb: Playback, ui: Ui, p: Progress) {
             else if (series != null) ui.push(Route.SeriesDetail(series, FocusMem.last))
         },
     ) { f ->
-        val sc by animateFloatAsState(if (f) 1.05f else 1f, tween(120), label = "s")
+        val sc by animateFloatAsState(if (f) 1.06f else 1f, tween(140), label = "s")
         Column {
-            val shape = RoundedCornerShape(8.dp)
+            val shape = RoundedCornerShape(9.dp)
             Box(
-                Modifier.graphicsLayer { scaleX = sc; scaleY = sc }.fillMaxWidth().height(84.dp).clip(shape)
-                    .background(Color(0xFF15121F))
+                Modifier.graphicsLayer { scaleX = sc; scaleY = sc }.fillMaxWidth().height(94.dp).clip(shape)
                     .then(if (f) Modifier.border(2.dp, C.white, shape) else Modifier)
             ) {
+                Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF0E1530), C.hash(p.title)))))
                 if (image != null) AsyncImage(image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                if (f) Box(
-                    Modifier.align(Alignment.Center).size(30.dp).clip(CircleShape).background(C.white),
+                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0x99000000)))))
+                Box(
+                    Modifier.align(Alignment.Center).size(28.dp).clip(CircleShape).background(if (f) C.accent else Color(0x8C000000)),
                     contentAlignment = Alignment.Center
-                ) { Icon(Ic.Play, 16.dp, Color(0xFF0B0A12)) }
-                ProgressBar(p.fraction, Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(3.dp), C.accent, Color(0x66000000))
+                ) { Icon(Ic.Play, 15.dp) }
+                ProgressBar(p.fraction, Modifier.align(Alignment.BottomCenter).padding(horizontal = 6.dp, vertical = 6.dp).fillMaxWidth().height(3.dp), C.accent, Color(0x55FFFFFF))
             }
-            Spacer(Modifier.height(7.dp))
-            Txt(meta?.title ?: p.title, F.s(9.5.sp, if (f) C.white else C.text, FontWeight.SemiBold), maxLines = 1)
+            Spacer(Modifier.height(5.dp))
+            Txt(meta?.title ?: p.title, F.s(9.5.sp, C.white, FontWeight.SemiBold), maxLines = 1)
             Txt(
-                if (p.kind == Kind.EPISODE) "${p.subtitle.substringBefore(" — ")} · ${p.remainingMin} min restantes" else "${p.remainingMin} min restantes",
+                if (p.kind == Kind.EPISODE) "${p.subtitle.substringBefore(" — ")} · faltam ${p.remainingMin} min" else "Faltam ${p.remainingMin} min",
                 F.s(8.sp, C.dim), maxLines = 1
             )
         }

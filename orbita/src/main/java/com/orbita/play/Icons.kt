@@ -7,6 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -55,4 +57,19 @@ object Ic {
 @Composable
 fun Icon(v: ImageVector, size: Dp, tint: Color = C.white, modifier: Modifier = Modifier, desc: String? = null) {
     Image(rememberVectorPainter(v), desc, modifier.size(size), colorFilter = ColorFilter.tint(tint))
+}
+
+/** Ícones de linha (traço fino uniforme) usados na tela inicial Lite. */
+object LineIc {
+    private fun line(name: String, path: String): ImageVector =
+        ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).addPath(
+            addPathNodes(path), fill = null, stroke = SolidColor(Color.White), strokeLineWidth = 1.5f,
+            strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round,
+        ).build()
+
+    val Tv by lazy { line("tv", "M5.5,7 H18.5 A2.5,2.5 0 0 1 21,9.5 V16.5 A2.5,2.5 0 0 1 18.5,19 H5.5 A2.5,2.5 0 0 1 3,16.5 V9.5 A2.5,2.5 0 0 1 5.5,7 Z M8.5,3 L12,6.5 L15.5,3 M9,22 H15") }
+    val Film by lazy { line("film", "M5.5,4 H18.5 A2.5,2.5 0 0 1 21,6.5 V17.5 A2.5,2.5 0 0 1 18.5,20 H5.5 A2.5,2.5 0 0 1 3,17.5 V6.5 A2.5,2.5 0 0 1 5.5,4 Z M7,4 V20 M17,4 V20 M3,8.5 H7 M3,12 H7 M3,15.5 H7 M17,8.5 H21 M17,12 H21 M17,15.5 H21") }
+    val Series by lazy { line("series", "M5,8 H15 A2,2 0 0 1 17,10 V18 A2,2 0 0 1 15,20 H5 A2,2 0 0 1 3,18 V10 A2,2 0 0 1 5,8 Z M7,4.5 H18.5 A2.5,2.5 0 0 1 21,7 V15.5 M8.5,11.5 V16.5 L12.5,14 Z") }
+    val Ball by lazy { line("ball", "M12,3 A9,9 0 1 0 12.01,3 Z M12.00,8.70 L15.14,10.98 L13.94,14.67 L10.06,14.67 L8.86,10.98 Z M12.00,8.70 L12.00,5.60 M15.14,10.98 L18.09,10.02 M13.94,14.67 L15.76,17.18 M10.06,14.67 L8.24,17.18 M8.86,10.98 L5.91,10.02") }
+    val Sliders by lazy { line("sliders", "M4,7 H13 M19,7 H20 M4,12 H6.5 M11.5,12 H20 M4,17 H11 M16,17 H20 M16,4.8 A2.2,2.2 0 1 0 16.01,4.8 Z M9,9.8 A2.2,2.2 0 1 0 9.01,9.8 Z M13.5,14.8 A2.2,2.2 0 1 0 13.51,14.8 Z") }
 }

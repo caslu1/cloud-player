@@ -52,6 +52,7 @@ private val sections = listOf(
     Section("Reprodução", Ic.Play),
     Section("Armazenamento", Ic.Refresh),
     Section("Papel de parede", Ic.Grid),
+    Section("Layout da tela inicial", Ic.Home),
     Section("Sair da conta", Ic.Logout),
 )
 
@@ -73,12 +74,12 @@ fun SettingsScreen(vm: Vm, pb: Playback, ui: Ui) {
         }
         Spacer(Modifier.height(16.dp))
         Row(Modifier.weight(1f)) {
-            Column(Modifier.width(230.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Column(Modifier.width(230.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 sections.forEachIndexed { i, s ->
                     Focus(Modifier.fillMaxWidth(), onClick = { section = i }, requester = if (i == 0) first else null, memKey = "set:$i") { f ->
                         val sel = section == i
                         Row(
-                            Modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(9.dp))
+                            Modifier.fillMaxWidth().height(36.dp).clip(RoundedCornerShape(9.dp))
                                 .background(if (f) C.accent else if (sel) C.accentSoft else C.panel)
                                 .border(1.dp, if (sel && !f) C.accent.copy(alpha = 0.6f) else C.panelBorder, RoundedCornerShape(9.dp))
                                 .padding(horizontal = 14.dp),
@@ -105,6 +106,7 @@ fun SettingsScreen(vm: Vm, pb: Playback, ui: Ui) {
                         5 -> PlaybackPrefs(vm)
                         6 -> Storage(vm) { msg = it }
                         7 -> WallpaperPicker(vm)
+                        8 -> HomeLayoutPicker(vm)
                         else -> Logout(vm, pb, ui)
                     }
                     msg?.let { Spacer(Modifier.height(10.dp)); Txt(it, F.s(9.5.sp, C.cyan, FontWeight.Medium)) }
@@ -267,3 +269,14 @@ private fun Logout(vm: Vm, pb: Playback, ui: Ui) {
     }
 }
 
+
+@Composable
+private fun HomeLayoutPicker(vm: Vm) {
+    val cur = vm.store.homeLayout.value
+    Txt("Escolha como a tela inicial aparece.", F.s(9.5.sp, C.dim))
+    Spacer(Modifier.height(10.dp))
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Option("Padrão", "Blocos grandes e Continuar assistindo", radio = cur != "lite", memKey = "layout:default") { vm.store.setHomeLayout("default") }
+        Option("Lite", "Logo no centro, ícones de linha e capas ao fundo", radio = cur == "lite", memKey = "layout:lite") { vm.store.setHomeLayout("lite") }
+    }
+}

@@ -46,6 +46,8 @@ class Store(ctx: Context) {
     /** Categorias ocultas: "live:<id>", "vod:<id>", "series:<id>". */
     val hiddenCats = mutableStateListOf<String>()
     val sortAZ = mutableStateOf(p.getBoolean("sortAZ", false))
+    /** Layout da tela inicial: "default" (Padrão) ou "lite". */
+    val homeLayout = mutableStateOf(p.getString("homeLayout", "default") ?: "default")
 
     init { reload(); Wall.index = p.getInt("wallpaper", 1) }
 
@@ -143,6 +145,7 @@ class Store(ctx: Context) {
         save("hiddenCats", hiddenCats.toList())
     }
     fun setWallpaper(i: Int) { Wall.index = i; p.edit().putInt("wallpaper", i).apply() }
+    fun setHomeLayout(v: String) { homeLayout.value = v; p.edit().putString("homeLayout", v).apply() }
     fun setSortAZ(b: Boolean) { sortAZ.value = b; p.edit().putBoolean("sortAZ", b).apply() }
 
     fun setLiveFormat(f: String) { liveFormat.value = f; p.edit().putString("liveFormat", f).apply() }
