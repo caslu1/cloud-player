@@ -75,26 +75,19 @@ private fun RoundAction(icon: ImageVector, desc: String, key: String, onClick: (
 
 private class HomeTile(val tab: Tab, val label: String, val icon: ImageVector, val sub: String)
 
-/** Tela inicial: papel de parede escolhido, saudação, 4 blocos grandes e "Continuar assistindo". */
+/** Tela inicial: 4 seções e "Continuar assistindo", em superfícies sólidas e sóbrias. */
 @Composable
 fun HomeScreen(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit) {
     Box(Modifier.fillMaxSize()) {
         ScreenBackground()
-        Column(Modifier.padding(start = 28.dp, top = 62.dp)) {
-            val h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-            Txt(if (h < 5) "Boa noite" else if (h < 12) "Bom dia" else if (h < 18) "Boa tarde" else "Boa noite", F.s(22.sp, C.white, FontWeight.Bold, F.outfit))
-            Spacer(Modifier.height(2.dp))
-            Txt("O que vamos assistir hoje?", F.s(10.sp, C.dim))
-        }
-
-        // topo: logo + ações
-        Row(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 28.dp), verticalAlignment = Alignment.CenterVertically) {
-            Logo()
-            Spacer(Modifier.weight(1f))
-            TopActions(onSearch, onReload, onSettings, showDate = true)
-        }
-
-        Column(Modifier.fillMaxSize().padding(top = 134.dp)) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 32.dp)) {
+            // topo: logo + ações
+            Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
+                Logo()
+                Spacer(Modifier.weight(1f))
+                TopActions(onSearch, onReload, onSettings, showDate = true)
+            }
+            Spacer(Modifier.height(22.dp))
             val tiles = listOf(
                 HomeTile(Tab.CANAIS, "CANAIS", Ic.LiveTv, countLabel(vm.allowedChannels().size, "canal", "canais", vm.liveState == LoadState.READY)),
                 HomeTile(Tab.FILMES, "FILMES", Ic.Movie, countLabel(vm.movies.size, "título", "títulos", vm.movieState == LoadState.READY)),
@@ -103,12 +96,12 @@ fun HomeScreen(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () 
             )
             val first = remember { FocusRequester() }
             InitialFocus(first)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 tiles.forEach { t ->
-                    BigTile(t, if (t.tab == ui.tab) first else null) { ui.openSection(t.tab) }
+                    BigTile(t, Modifier.weight(1f), if (t.tab == ui.tab) first else null) { ui.openSection(t.tab) }
                 }
             }
-            Spacer(Modifier.height(26.dp))
+            Spacer(Modifier.height(34.dp))
             ContinueRow(vm, pb, ui)
         }
     }
@@ -118,29 +111,21 @@ private fun countLabel(n: Int, one: String, many: String, ready: Boolean) =
     if (!ready) "Carregando…" else if (n == 1) "1 $one" else "${fmtCount(n)} $many"
 
 @Composable
-private fun BigTile(t: HomeTile, requester: FocusRequester?, onClick: () -> Unit) {
-    Focus(Modifier.width(194.dp), onClick = onClick, requester = requester, memKey = "home:${t.tab.name}") { f ->
-        val sc by animateFloatAsState(if (f) 1.07f else 1f, tween(140), label = "s")
-        val shape = RoundedCornerShape(16.dp)
-        Box(
-            Modifier.graphicsLayer { scaleX = sc; scaleY = sc }.fillMaxWidth().height(138.dp).clip(shape)
-                .background(
-                    if (f) Brush.linearGradient(listOf(Color(0xFF9378FF), Color(0xFF5A36E0)))
-                    else Brush.linearGradient(listOf(Color(0xCC1A1530), Color(0xCC0E0B1A)))
-                )
-                .border(if (f) 2.dp else 1.dp, if (f) C.white else Color(0x1FFFFFFF), shape)
+private fun BigTile(t: HomeTile, modifier: Modifier, requester: FocusRequester?, onClick: () -> Unit) {
+    Focus(modifier, onClick = onClick, requester = requester, memKey = "home:${t.tab.name}") { f ->
+        val sc by animateFloatAsState(if (f) 1.04f else 1f, tween(120), label = "s")
+        val shape = RoundedCornerShape(12.dp)
+        Column(
+            Modifier.graphicsLayer { scaleX = sc; scaleY = sc }.fillMaxWidth().height(150.dp).clip(shape)
+                .background(if (f) C.white else Color(0xE6131019))
+                .border(1.dp, if (f) C.white else Color(0xFF231E33), shape)
+                .padding(18.dp)
         ) {
-            // ícone grande e apagado no canto, só decoração
-            Icon(t.icon, 96.dp, Color.White.copy(alpha = if (f) 0.16f else 0.06f), Modifier.align(Alignment.TopEnd).padding(top = 0.dp).graphicsLayer { translationX = 22f; translationY = -14f })
-            Column(Modifier.align(Alignment.BottomStart).padding(start = 14.dp, bottom = 12.dp)) {
-                Box(
-                    Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(if (f) Color(0x33FFFFFF) else C.accentSoft),
-                    contentAlignment = Alignment.Center
-                ) { Icon(t.icon, 20.dp, if (f) C.white else C.accentText) }
-                Spacer(Modifier.height(10.dp))
-                Txt(t.label, F.s(15.sp, C.white, FontWeight.Bold, F.outfit, 0.8.sp))
-                Txt(t.sub, F.s(8.sp, if (f) Color(0xE6FFFFFF) else C.dim))
-            }
+            Icon(t.icon, 28.dp, if (f) C.accent else C.accentText)
+            Spacer(Modifier.weight(1f))
+            Txt(t.label, F.s(17.sp, if (f) Color(0xFF0B0A12) else C.white, FontWeight.Bold, F.outfit, 0.6.sp))
+            Spacer(Modifier.height(2.dp))
+            Txt(t.sub, F.s(8.5.sp, if (f) Color(0xFF5B5670) else C.dim, FontWeight.Medium))
         }
     }
 }
@@ -149,17 +134,12 @@ private fun BigTile(t: HomeTile, requester: FocusRequester?, onClick: () -> Unit
 private fun ContinueRow(vm: Vm, pb: Playback, ui: Ui) {
     val items = vm.store.continueWatching().take(12)
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(start = 28.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Ic.Resume, 13.dp, C.accentText)
-            Spacer(Modifier.width(6.dp))
-            Txt("Continuar assistindo", F.s(12.sp, C.white, FontWeight.Bold, F.outfit))
-            if (items.isNotEmpty()) Txt("  ${items.size} ${if (items.size == 1) "TÍTULO" else "TÍTULOS"}", F.s(8.sp, C.dim, FontWeight.Medium))
-        }
+        Txt("Continuar assistindo", F.s(13.sp, C.white, FontWeight.Bold, F.outfit), Modifier.padding(bottom = 10.dp))
         if (items.isEmpty()) {
-            Txt("Comece um filme ou episódio e ele aparece aqui para você continuar de onde parou.", F.s(9.sp, C.dim), Modifier.padding(start = 28.dp))
+            Txt("Os filmes e episódios que você começar aparecem aqui.", F.s(9.sp, C.dim))
             return
         }
-        LazyRow(contentPadding = PaddingValues(horizontal = 28.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyRow(contentPadding = PaddingValues(end = 32.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             items(items, key = { it.key }) { p -> HomeContinueCard(vm, pb, ui, p) }
         }
     }
@@ -174,7 +154,7 @@ private fun HomeContinueCard(vm: Vm, pb: Playback, ui: Ui, p: Progress) {
     LaunchedEffect(p.key) { movie?.let { vm.requestMeta(it) }; series?.let { vm.requestMeta(it) } }
     val image = meta?.backdropUrl() ?: p.image
     Focus(
-        Modifier.width(168.dp), memKey = "home:cont:${p.key}",
+        Modifier.width(200.dp), memKey = "home:cont:${p.key}",
         onClick = {
             val item = when {
                 movie != null -> movieItem(movie)
@@ -189,26 +169,25 @@ private fun HomeContinueCard(vm: Vm, pb: Playback, ui: Ui, p: Progress) {
             else if (series != null) ui.push(Route.SeriesDetail(series, FocusMem.last))
         },
     ) { f ->
-        val sc by animateFloatAsState(if (f) 1.06f else 1f, tween(140), label = "s")
+        val sc by animateFloatAsState(if (f) 1.05f else 1f, tween(120), label = "s")
         Column {
-            val shape = RoundedCornerShape(9.dp)
+            val shape = RoundedCornerShape(8.dp)
             Box(
-                Modifier.graphicsLayer { scaleX = sc; scaleY = sc }.fillMaxWidth().height(94.dp).clip(shape)
+                Modifier.graphicsLayer { scaleX = sc; scaleY = sc }.fillMaxWidth().height(112.dp).clip(shape)
+                    .background(Color(0xFF15121F))
                     .then(if (f) Modifier.border(2.dp, C.white, shape) else Modifier)
             ) {
-                Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF0E1530), C.hash(p.title)))))
                 if (image != null) AsyncImage(image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0x99000000)))))
-                Box(
-                    Modifier.align(Alignment.Center).size(28.dp).clip(CircleShape).background(if (f) C.accent else Color(0x8C000000)),
+                if (f) Box(
+                    Modifier.align(Alignment.Center).size(30.dp).clip(CircleShape).background(C.white),
                     contentAlignment = Alignment.Center
-                ) { Icon(Ic.Play, 15.dp) }
-                ProgressBar(p.fraction, Modifier.align(Alignment.BottomCenter).padding(horizontal = 6.dp, vertical = 6.dp).fillMaxWidth().height(3.dp), C.accent, Color(0x55FFFFFF))
+                ) { Icon(Ic.Play, 16.dp, Color(0xFF0B0A12)) }
+                ProgressBar(p.fraction, Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(3.dp), C.accent, Color(0x66000000))
             }
-            Spacer(Modifier.height(5.dp))
-            Txt(meta?.title ?: p.title, F.s(9.5.sp, C.white, FontWeight.SemiBold), maxLines = 1)
+            Spacer(Modifier.height(7.dp))
+            Txt(meta?.title ?: p.title, F.s(9.5.sp, if (f) C.white else C.text, FontWeight.SemiBold), maxLines = 1)
             Txt(
-                if (p.kind == Kind.EPISODE) "${p.subtitle.substringBefore(" — ")} · faltam ${p.remainingMin} min" else "Faltam ${p.remainingMin} min",
+                if (p.kind == Kind.EPISODE) "${p.subtitle.substringBefore(" — ")} · ${p.remainingMin} min restantes" else "${p.remainingMin} min restantes",
                 F.s(8.sp, C.dim), maxLines = 1
             )
         }
