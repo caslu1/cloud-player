@@ -4,6 +4,14 @@
         <Poster id="bg" width="1920" height="1080" uri="pkg:/images/bg.png" />
         <Group id="screens" />
         <Video id="video" width="1920" height="1080" visible="false" enableUI="true" />
+        <Group id="liveOv" visible="false" />
+        <Group id="chPanel" visible="false">
+            <Poster uri="pkg:/images/player_panel.png" width="700" height="1080" />
+            <Label text="CANAIS" translation="[56,52]" color="0x9D9ABBFF"><Font role="font" uri="pkg:/fonts/inter_semibold.otf" size="18" /></Label>
+            <MarkupList id="chList" translation="[40,110]" itemComponentName="ChannelItem" itemSize="[600,88]" itemSpacing="[0,8]" numRows="10"
+                drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
+        </Group>
+        <Timer id="ovTimer" duration="5" />
         <Group id="errBox" visible="false">
             <Rectangle translation="[460,440]" width="1000" height="200" color="0x0C0A16F2" />
             <Label id="errMsg" translation="[500,470]" width="920" height="140" wrap="true" horizAlign="center" vertAlign="center" color="0xFFFFFFFF" />

@@ -324,7 +324,7 @@ sub onChannel()
         m.live.visible = false
         m.playingId = ""
         markPlaying()
-        m.top.action = { type: "play", streamId: c.id, title: c.name, live: true }
+        m.top.action = { type: "play", streamId: c.id, title: c.name, live: true, list: m.shown, index: m.list.itemSelected, epg: m.epgCache }
         return
     end if
     addRecent(c)

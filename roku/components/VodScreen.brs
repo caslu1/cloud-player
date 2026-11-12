@@ -41,7 +41,14 @@ sub onParams()
 end sub
 
 sub onFocus()
-    if m.top.hasFocus() then m.focusList.setFocus(true)
+    if m.top.hasFocus()
+        ' volta do detalhe: atualiza a contagem da Minha lista
+        if m.catNodes <> invalid and m.catNodes.DoesExist("__mine")
+            m.catNodes["__mine"].count = mineItems().Count().ToStr()
+            if m.catKey = "__mine" then showItems(mineItems())
+        end if
+        m.focusList.setFocus(true)
+    end if
 end sub
 
 sub onApi(event as object)
@@ -74,6 +81,13 @@ sub buildCats()
         n.count = cont.Count().ToStr()
         m.catNodes["__cont"] = n
     end if
+    mine = mineItems()
+    n = root.createChild("ItemData")
+    n.key = "__mine"
+    n.title = "Minha lista"
+    n.icon = "ic_bookmark"
+    n.count = mine.Count().ToStr()
+    m.catNodes["__mine"] = n
     for each c in m.catData
         n = root.createChild("ItemData")
         n.key = asText(c.category_id)
@@ -84,12 +98,33 @@ sub buildCats()
     m.catCount.text = m.catData.Count().ToStr()
     if root.getChildCount() > 0
         first = root.getChild(0).key
-        if first = "__cont" and root.getChildCount() > 1 then first = root.getChild(1).key
+        i = 0
+        while i < root.getChildCount() - 1 and (root.getChild(i).key = "__cont" or root.getChild(i).key = "__mine")
+            i = i + 1
+        end while
+        first = root.getChild(i).key
         choose(first, false)
     else
         m.status.text = "Nenhuma categoria"
     end if
 end sub
+
+' Títulos guardados com "Minha lista"
+function mineItems() as object
+    out = []
+    want = "movie"
+    if m.series then want = "series"
+    for each p in regRead("mylist")
+        if p.kind = want
+            if m.series
+                out.Push({ series_id: p.id, name: p.name, cover: p.icon, rating: p.rating })
+            else
+                out.Push({ stream_id: p.id, name: p.name, stream_icon: p.icon, container_extension: p.ext, rating: p.rating })
+            end if
+        end if
+    end for
+    return out
+end function
 
 function contItems() as object
     out = []
@@ -120,6 +155,10 @@ sub choose(key as string, focusGrid as boolean)
     m.secCount.text = ""
     if key = "__cont"
         showItems(contItems())
+        return
+    end if
+    if key = "__mine"
+        showItems(mineItems())
         return
     end if
     m.status.text = "Carregando…"
@@ -229,7 +268,7 @@ end sub
 sub onItem()
     it = m.items[m.grid.itemSelected]
     if m.series
-        m.top.action = { type: "open", screen: "SeriesScreen", params: { id: asText(it.series_id), name: asText(it.name) } }
+        m.top.action = { type: "open", screen: "SeriesScreen", params: { id: asText(it.series_id), name: asText(it.name), cover: asText(it.cover), rating: asText(it.rating) } }
     else
         m.top.action = { type: "open", screen: "MovieDetail", params: { id: asText(it.stream_id), name: asText(it.name), icon: asText(it.stream_icon), ext: asText(it.container_extension), rating: asText(it.rating) } }
     end if

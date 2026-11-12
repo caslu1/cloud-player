@@ -2,16 +2,16 @@
 sub init()
     m.root = m.top.findNode("root")
     r = m.root
-    addPoster(r, "pkg:/images/poster_big_bg.png", 180, 210, 440, 660)
-    m.poster = addRounded(r, "mask_poster_big", 180, 210, 440, 660)
-    addLabel(r, "FILME", 690, 250, ISEM(), 17, "0x22D3EEFF")
-    m.title = addLabel(r, "", 690, 276, OUTF(), 60, "0xFFFFFFFF", 1150)
-    m.title.wrap = true
-    m.title.maxLines = 2
+    addPoster(r, "pkg:/images/poster_big_bg.png", 140, 210, 440, 660)
+    m.poster = addRounded(r, "mask_poster_big", 140, 210, 440, 660)
+    addLabel(r, "F I L M E", 648, 322, ISEM(), 19, "0x22D3EEFF")
+    m.title = addLabel(r, "", 648, 360, OUTF(), 64, "0xFFFFFFFF", 1180)
+    m.title.maxLines = 1
     m.chips = r.createChild("Group")
-    m.plot = addLabel(r, "", 690, 470, IREG(), 22, "0xE7E5F7FF", 1060)
+    m.genre = addLabel(r, "", 648, 512, IMED(), 23, "0x9D9ABBFF", 1180)
+    m.plot = addLabel(r, "", 648, 562, IREG(), 23, "0xE7E5F7FF", 1140)
     m.plot.wrap = true
-    m.plot.maxLines = 5
+    m.plot.maxLines = 3
     m.btnBox = r.createChild("Group")
     m.buttons = []
     m.idx = 0
@@ -53,34 +53,31 @@ end sub
 
 sub setChips(texts as object, rating as float, genre as string)
     m.chips.removeChildrenIndex(m.chips.getChildCount(), 0)
-    x = 690
-    y = 360 + 0
-    if Len(m.title.text) > 30 then y = 430
-    m.plot.translation = [690, y + 60]
+    x = 648
+    y = 460
     for each t in texts
         if t <> "" and t <> "0"
-            w = Len(t) * 12 + 30
+            w = Len(t) * 13 + 34
             addPoster(m.chips, "pkg:/images/chip.9.png", x, y, w, 40)
-            addLabel(m.chips, t, x, y + 8, ISEM(), 19, "0xFFFFFFFF", w, "center")
-            x = x + w + 12
+            addLabel(m.chips, t, x, y + 8, ISEM(), 20, "0xFFFFFFFF", w, "center")
+            x = x + w + 14
         end if
     end for
     if rating > 0
         txt = "★ " + asText(Int(rating * 10) / 10)
-        w = Len(txt) * 12 + 30
+        w = Len(txt) * 13 + 34
         addPoster(m.chips, "pkg:/images/chip_star.9.png", x, y, w, 40)
-        addLabel(m.chips, txt, x, y + 8, ISEM(), 19, "0xFBBF24FF", w, "center")
-        x = x + w + 12
+        addLabel(m.chips, txt, x, y + 8, ISEM(), 20, "0xFBBF24FF", w, "center")
     end if
-    if genre <> "" then addLabel(m.chips, genre, x + 4, y + 8, IREG(), 19, "0x9D9ABBFF", 600)
+    m.genre.text = genre.Replace("/", "·").Replace(",", " ·")
 end sub
 
 sub buildButtons()
     m.btnBox.removeChildrenIndex(m.btnBox.getChildCount(), 0)
     m.buttons = []
     m.prog = regFind("progress", m.key)
-    x = 690
-    y = 800
+    x = 648
+    y = 690
     if m.prog <> invalid
         left = Int((m.prog.dur - m.prog.pos) / 60)
         b = addButton(m.btnBox, "Continuar · faltam " + left.ToStr() + " min", "ic_play", true, x, y)
@@ -94,7 +91,16 @@ sub buildButtons()
         b = addButton(m.btnBox, "Assistir", "ic_play", true, x, y)
         b.action = "start"
         m.buttons.Push(b)
+        x = x + b.width + 16
     end if
+    ' Minha lista (igual ao Android)
+    inList = regFind("mylist", m.key) <> invalid
+    if inList then t = "Na minha lista" else t = "Minha lista"
+    if inList then ic = "ic_check" else ic = "ic_add"
+    if m.prog <> invalid then x = x + m.buttons[m.buttons.Count() - 1].width + 16
+    b = addButton(m.btnBox, t, ic, false, x, y)
+    b.action = "list"
+    m.buttons.Push(b)
     if m.idx >= m.buttons.Count() then m.idx = 0
     paint()
 end sub
@@ -119,7 +125,14 @@ function onKeyEvent(key as string, press as boolean) as boolean
     else if key = "right" and m.idx < m.buttons.Count() - 1
         m.idx = m.idx + 1
     else if key = "OK"
-        playMovie(m.buttons[m.idx].action = "start")
+        act = m.buttons[m.idx].action
+        if act = "list"
+            p = m.top.params
+            if regFind("mylist", m.key) <> invalid then regRemove("mylist", m.key) else regPush("mylist", { key: m.key, kind: "movie", id: p.id, name: p.name, icon: p.icon, ext: m.ext, rating: p.rating }, 500)
+            buildButtons()
+        else
+            playMovie(act = "start")
+        end if
         return true
     else
         return false

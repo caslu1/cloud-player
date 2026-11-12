@@ -54,4 +54,5 @@ sub paint()
     if c.fav then st = "on"
     if f and c.starFocus then st = st + "_f"
     m.star.uri = "pkg:/images/star_btn_" + st + ".png"
+    m.star.visible = (c.icon <> "nostar")
 end sub

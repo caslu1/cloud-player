@@ -137,7 +137,16 @@ sub buildButtons()
         if first <> invalid then label = "Assistir T" + first.season + " · E" + asText(first.ep.episode_num)
         b = addButton(m.btnBox, label, "ic_play", true, 48, m.btnY)
     end if
+    b.action = "play"
     m.buttons.Push(b)
+    k = "sr:" + m.top.params.id
+    inList = regFind("mylist", k) <> invalid
+    if inList then t = "Na minha lista" else t = "Minha lista"
+    if inList then ic = "ic_check" else ic = "ic_add"
+    b2 = addButton(m.btnBox, t, ic, false, 48 + b.width + 16, m.btnY)
+    b2.action = "list"
+    m.buttons.Push(b2)
+    if m.bIdx = invalid or m.bIdx >= m.buttons.Count() then m.bIdx = 0
 end sub
 
 function firstEpisode() as object
@@ -207,8 +216,8 @@ sub paintChips()
 end sub
 
 sub applyFocus()
-    for each b in m.buttons
-        paintButton(b, m.zone = "btn")
+    for i = 0 to m.buttons.Count() - 1
+        paintButton(m.buttons[i], m.zone = "btn" and i = m.bIdx)
     end for
     if m.chipNodes <> invalid then paintChips()
     if m.zone = "eps" then m.eps.setFocus(true) else m.top.setFocus(true)
@@ -254,11 +263,25 @@ function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
     if m.data = invalid then return false
     if m.zone = "btn"
-        if key = "right" and m.cur.Count() > 0
+        if key = "right" and m.bIdx < m.buttons.Count() - 1
+            m.bIdx = m.bIdx + 1
+        else if key = "left" and m.bIdx > 0
+            m.bIdx = m.bIdx - 1
+        else if key = "right" and m.cur.Count() > 0
             m.zone = "eps"
             m.eps.jumpToItem = 0
         else if key = "OK"
-            pressButton()
+            if m.buttons[m.bIdx].action = "list"
+                k = "sr:" + m.top.params.id
+                p = m.top.params
+                cover = m.cover
+                if cover = "" and p.cover <> invalid then cover = p.cover
+                if regFind("mylist", k) <> invalid then regRemove("mylist", k) else regPush("mylist", { key: k, kind: "series", id: p.id, name: p.name, icon: cover, rating: p.rating }, 500)
+                buildButtons()
+                applyFocus()
+            else
+                pressButton()
+            end if
             return true
         else
             return false
