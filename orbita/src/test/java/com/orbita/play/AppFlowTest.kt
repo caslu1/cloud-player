@@ -184,7 +184,7 @@ class AppFlowTest {
         waitText("Duna")
         waitText("Lançamentos")
         shot("03-filmes")
-        rule.onAllNodesWithText("Oppenheimer")[rule.onAllNodesWithText("Oppenheimer").fetchSemanticsNodes().size - 1].performClick()
+        rule.onAllNodesWithText("Oppenheimer")[0].performClick()
         waitText("FILME")
         shot("04-filme-detalhe")
         back()
