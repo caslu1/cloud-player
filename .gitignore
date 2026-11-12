@@ -17,6 +17,7 @@ secrets.properties
 *.jks
 *.keystore
 !app/cloudplayer-debug.keystore
+!orbita/orbita.keystore
 keystore.properties
 
 # Full-size screenshot originals (the repository uses the smaller .jpg copies)
