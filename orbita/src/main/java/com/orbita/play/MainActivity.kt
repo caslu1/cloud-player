@@ -86,6 +86,7 @@ class Ui {
     var playerReturnKey: String? = null
     var liveCat by mutableStateOf("__all")
     var footballMenu by mutableIntStateOf(0)
+    var footballMenuChosen = false
     var footballDay by mutableIntStateOf(0)
     var query by mutableStateOf("")
     var libraryMenu by mutableIntStateOf(0)

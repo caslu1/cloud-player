@@ -43,40 +43,44 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val apiMenu = listOf("Jogos do dia", "Ao vivo agora", "Na sua lista", "Times que sigo", "Canais de futebol")
-private val apiDaysRange = (-1..5).toList()
+private val apiMenu = listOf("Ao vivo", "Hoje", "Amanhã")
 
-/** Aba Futebol com a agenda e o placar da API (quando há token). */
+/**
+ * Futebol: só os jogos que dá para assistir na lista do usuário (o canal da transmissão existe na lista M3U/Xtream),
+ * com três opções: Ao vivo, Hoje e Amanhã.
+ */
 @Composable
 fun ApiFootballScreen(vm: Vm, pb: Playback, ui: Ui) {
     ScreenBackground()
-    val day = if (ui.footballDay in apiDaysRange) ui.footballDay else 0
-    LaunchedEffect(day) {
-        vm.loadApiDay(day)
-        // placar ao vivo: atualiza hoje a cada minuto enquanto a aba está aberta
-        if (day == 0) while (true) { delay(60_000); vm.loadApiDay(0, force = true) }
+    LaunchedEffect(Unit) {
+        vm.loadApiDay(0); vm.loadApiDay(1)
+        // placar ao vivo: atualiza a cada minuto enquanto a aba está aberta
+        while (true) { delay(60_000); vm.loadApiDay(0, force = true) }
     }
-    val games = vm.apiDays[day]
-    val error = vm.apiErrors[day]
     val index = remember(vm.channels) { vm.channelIndex() }
-    val follows = vm.store.followedTeams.toList()
-    fun followed(g: FootballApi.Game) = vm.store.follows(g.home) || vm.store.follows(g.away)
     fun channelsOf(g: FootballApi.Game) = FootballApi.matchChannels(g.broadcasters, index)
+    fun watchable(g: FootballApi.Game) = !FootballApi.isOver(g) && g.status != "postponed" && !g.status.startsWith("cancel")
 
-    val all = games.orEmpty()
-    val shown = when (ui.footballMenu) {
-        1 -> all.filter { FootballApi.isLive(it) }
-        2 -> all.filter { channelsOf(it).isNotEmpty() }
-        3 -> all.filter { followed(it) }
-        else -> all
-    }.sortedWith(compareBy({ !followed(it) }, { if (FootballApi.isLive(it)) 0 else if (FootballApi.isOver(it)) 2 else 1 }, { it.start }))
+    val today = vm.apiDays[0]
+    val tomorrow = vm.apiDays[1]
+    val avToday = remember(today, index) { today.orEmpty().filter { watchable(it) && channelsOf(it).isNotEmpty() } }
+    val avTomorrow = remember(tomorrow, index) { tomorrow.orEmpty().filter { watchable(it) && channelsOf(it).isNotEmpty() } }
+    val live = avToday.filter { FootballApi.isLive(it) }
+    val counts = listOf(live.size, avToday.size, avTomorrow.size)
+
+    // sem escolha: abre em Ao vivo se houver jogo rolando, senão em Hoje
+    val menu = if (ui.footballMenuChosen) ui.footballMenu.coerceIn(0, 2) else if (live.isNotEmpty() || today == null) 0 else 1
+    val loading = (menu == 2 && tomorrow == null && vm.apiErrors[1] == null) || (menu != 2 && today == null && vm.apiErrors[0] == null)
+    val error = if (menu == 2) vm.apiErrors[1] else vm.apiErrors[0]
+    val shown = when (menu) { 0 -> live; 1 -> avToday; else -> avTomorrow }
+        .sortedWith(compareBy({ if (FootballApi.isLive(it)) 0 else 1 }, { it.start }))
 
     var selected by remember { mutableStateOf<FootballApi.Game?>(null) }
     var note by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(note) { if (note != null) { delay(3000); note = null } }
     val firstReq = remember { FocusRequester() }
     val menuReq = remember { FocusRequester() }
-    InitialFocus(if (ui.footballMenu == 4 || shown.isNotEmpty()) firstReq else menuReq, games != null)
+    InitialFocus(if (shown.isNotEmpty()) firstReq else menuReq, today != null)
 
     fun watch(c: Channel, list: List<Channel>) {
         val items = list.ifEmpty { listOf(c) }.map { liveItem(it) }
@@ -89,66 +93,39 @@ fun ApiFootballScreen(vm: Vm, pb: Playback, ui: Ui) {
                 Column {
                     PanelHeader("Futebol")
                     apiMenu.forEachIndexed { i, label ->
-                        val count = when (i) {
-                            0 -> all.size
-                            1 -> all.count { FootballApi.isLive(it) }
-                            2 -> all.count { channelsOf(it).isNotEmpty() }
-                            3 -> all.count { followed(it) }
-                            else -> vm.footballChannels.size
-                        }
-                        MenuRow(label, count, ui.footballMenu == i, "fb:menu:$i", if (i == ui.footballMenu) menuReq else null,
-                            onFocus = { ui.footballMenu = i }) { runCatching { firstReq.requestFocus() } }
-                    }
-                    Spacer(Modifier.weight(1f))
-                    Focus(Modifier.padding(10.dp).fillMaxWidth(), onClick = { vm.loadApiDay(day, force = true) }, memKey = "fb:refresh") { f ->
-                        Box(
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(if (f) C.accent else C.chip).padding(7.dp),
-                            contentAlignment = Alignment.Center
-                        ) { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Ic.Refresh, 12.dp); Spacer(Modifier.width(6.dp)); Txt("Atualizar placar", F.s(8.5.sp, C.white, FontWeight.SemiBold)) } }
+                        MenuRow(label, counts[i], menu == i, "fb:menu:$i", if (i == menu) menuReq else null,
+                            onFocus = { ui.footballMenu = i; ui.footballMenuChosen = true }) { runCatching { firstReq.requestFocus() } }
                     }
                 }
             }
             Spacer(Modifier.width(10.dp))
             Panel(Modifier.width(470.dp).fillMaxHeight()) {
                 Column {
-                    if (ui.footballMenu == 4) {
-                        PanelHeader("Canais de futebol", "${vm.footballChannels.size} canais")
-                        LazyColumn(Modifier.weight(1f).padding(horizontal = 4.dp)) {
-                            itemsIndexed(vm.footballChannels, key = { _, c -> c.id }) { i, c ->
-                                ChannelRow(vm, c, pb.current?.channel?.id == c.id, vm.store.isFav(c.id), if (i == 0) firstReq else null,
-                                    {}, { watch(c, vm.footballChannels) }, { vm.store.toggleFav(c.id) })
-                            }
-                        }
-                        return@Column
-                    }
-                    val date = SimpleDateFormat("EEE dd/MM", Locale("pt", "BR")).format(Date(System.currentTimeMillis() + day * 86_400_000L)).replace(".", "")
-                    val title = if (ui.footballMenu == 0) "Jogos de ${if (day == 0) "hoje" else dayLabel(day).lowercase()} · $date" else "${apiMenu[ui.footballMenu]} · $date"
-                    PanelHeader(title, "${shown.size} jogos")
-                    LazyRow(contentPadding = PaddingValues(horizontal = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(apiDaysRange, key = { it }) { d -> ChipPill(dayLabel(d), d == day, onFocus = { ui.footballDay = d }) { ui.footballDay = d } }
-                    }
-                    Spacer(Modifier.height(6.dp))
+                    val date = SimpleDateFormat("EEE dd/MM", Locale("pt", "BR"))
+                        .format(Date(System.currentTimeMillis() + (if (menu == 2) 1 else 0) * 86_400_000L)).replace(".", "")
+                    val title = when (menu) { 0 -> "Ao vivo agora"; 1 -> "Jogos de hoje · $date"; else -> "Jogos de amanhã · $date" }
+                    PanelHeader(title, if (shown.size == 1) "1 jogo" else "${shown.size} jogos")
                     when {
-                        games == null && error == null -> Loading("Carregando jogos…", Modifier.fillMaxSize())
-                        games == null -> Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            EmptyState("Não foi possível carregar os jogos", error.orEmpty())
-                            ActionButton("Tentar de novo", primary = true) { vm.loadApiDay(day, force = true) }
+                        loading -> Loading("Carregando jogos…", Modifier.fillMaxSize())
+                        error != null && shown.isEmpty() -> Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                            EmptyState("Não foi possível carregar os jogos", error)
+                            ActionButton("Tentar de novo", primary = true, icon = Ic.Refresh) { vm.loadApiDay(if (menu == 2) 1 else 0, force = true) }
                         }
                         shown.isEmpty() -> EmptyState(
-                            when (ui.footballMenu) { 1 -> "Nenhum jogo ao vivo agora"; 2 -> "Nenhum jogo nos canais da sua lista"; 3 -> "Nenhum jogo dos times que você segue"; else -> "Nenhum jogo neste dia" },
-                            if (ui.footballMenu == 3) "Segure OK sobre um jogo para seguir os times." else "",
+                            when (menu) { 0 -> "Nenhum jogo ao vivo nos seus canais agora"; 1 -> "Nenhum jogo hoje nos seus canais"; else -> "Nenhum jogo amanhã nos seus canais" },
+                            "Aparecem aqui só os jogos transmitidos por canais da sua lista.",
                             Modifier.fillMaxSize()
                         )
                         else -> LazyColumn(state = ui.matchList, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             itemsIndexed(shown, key = { _, g -> g.id }) { i, g ->
-                                GameRow(g, followed(g), channelsOf(g), if (i == 0) firstReq else null,
+                                GameRow(g, vm.store.follows(g.home) || vm.store.follows(g.away), channelsOf(g), if (i == 0) firstReq else null,
                                     onFocus = { selected = g },
                                     onLong = { if (vm.store.follows(g.home) && !vm.store.follows(g.away)) vm.store.toggleTeam(g.away) else vm.store.toggleTeam(g.home) }
                                 ) {
                                     selected = g
                                     val chs = channelsOf(g)
                                     if (chs.isNotEmpty()) watch(chs.first(), chs)
-                                    else note = if (g.broadcasters.isEmpty()) "Sem informação de transmissão para este jogo." else "Nenhum canal da sua lista transmite este jogo (${g.broadcasters.take(3).joinToString()})."
+                                    else note = "Nenhum canal da sua lista transmite este jogo."
                                 }
                             }
                         }
@@ -160,7 +137,7 @@ fun ApiFootballScreen(vm: Vm, pb: Playback, ui: Ui) {
                 GamePreview(vm, pb, selected, Modifier.fillMaxWidth().height(158.dp))
                 Spacer(Modifier.height(10.dp))
                 Panel(Modifier.fillMaxWidth().weight(1f)) {
-                    GameDetails(pb, selected, selected?.let { channelsOf(it) }.orEmpty(), follows, note) { c, l -> watch(c, l) }
+                    GameDetails(pb, selected, selected?.let { channelsOf(it) }.orEmpty(), vm.store.followedTeams.toList(), note) { c, l -> watch(c, l) }
                 }
             }
         }
