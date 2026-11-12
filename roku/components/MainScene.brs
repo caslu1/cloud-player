@@ -242,6 +242,17 @@ sub onAct(event as object)
     end if
 end sub
 
+sub onExitAsk()
+    res = m.exitBox.result
+    m.top.removeChild(m.exitBox)
+    m.exitBox = invalid
+    if res = "ok"
+        m.top.exitApp = true
+    else
+        m.stack.Peek().setFocus(true)
+    end if
+end sub
+
 sub showError(t as string)
     m.errMsg.text = t
     m.errBox.visible = true
@@ -291,6 +302,16 @@ function onKeyEvent(key as string, press as boolean) as boolean
         end if
         if m.stack.Count() > 1
             popScreen()
+            return true
+        end if
+        ' na tela inicial: pergunta antes de sair do app (igual ao Android)
+        if m.exitBox = invalid and m.stack.Count() = 1 and m.stack[0].subtype() = "HomeScreen"
+            d = CreateObject("roSGNode", "ConfirmBox")
+            d.setup = { title: "Sair do Orbita Play?", message: "O que estiver tocando será fechado.", confirm: "Sair", icon: "ic_logout", danger: false }
+            d.observeField("result", "onExitAsk")
+            m.top.appendChild(d)
+            m.exitBox = d
+            d.setFocus(true)
             return true
         end if
     end if

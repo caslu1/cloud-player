@@ -6,8 +6,8 @@
     </interface>
     <children>
         <Group id="root" />
-        <Poster uri="pkg:/images/panel_settings.png" translation="[568,128]" width="1280" height="900" />
         <Group id="content" />
+        <Timer id="msgTimer" duration="2.5" />
     </children>
     <script type="text/brightscript" uri="pkg:/components/common.brs" />
     <script type="text/brightscript" uri="pkg:/components/Buttons.brs" />
