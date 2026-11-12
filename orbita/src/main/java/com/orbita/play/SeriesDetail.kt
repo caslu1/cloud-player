@@ -51,6 +51,8 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
     var info by remember { mutableStateOf(vm.seriesInfos[s.id]) }
     var error by remember { mutableStateOf<String?>(null) }
     var attempt by remember { mutableIntStateOf(0) }
+    LaunchedEffect(s.id) { vm.requestMeta(s) }
+    val tm = vm.metaOf(s)
     LaunchedEffect(s.id, attempt) {
         if (info == null) runCatching { vm.seriesInfo(s) }.onSuccess { info = it; error = null }.onFailure { error = it.message ?: "Erro ao carregar episódios." }
     }
@@ -59,6 +61,12 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
     var season by remember(info) { mutableIntStateOf(last?.season?.takeIf { it in seasons } ?: seasons.firstOrNull() ?: 1) }
     val allEps = remember(info) { info?.seasons?.values?.flatten().orEmpty() }
     val eps = info?.seasons?.get(season).orEmpty()
+    // imagens e sinopses dos episódios pelo TMDB (quando o provedor não manda)
+    var tmEps by remember { mutableStateOf<Map<Int, Tmdb.Ep>>(emptyMap()) }
+    LaunchedEffect(tm?.id, season) {
+        val id = tm?.id ?: return@LaunchedEffect
+        tmEps = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { Tmdb.season(id, season) }.getOrDefault(emptyMap()) }
+    }
 
     fun play(e: Episode) {
         val p = vm.store.progress["ep:${e.id}"]
@@ -82,14 +90,14 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
     InitialFocus(playReq, info != null)
 
     Box(Modifier.fillMaxSize()) {
-        Backdrop(info?.backdrop ?: s.backdrop, s.name)
+        Backdrop(tm?.backdropUrl() ?: info?.backdrop ?: s.backdrop, s.name)
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xCC0B0A1C), Color(0x660B0A1C)))))
         Row(Modifier.fillMaxSize().padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 34.dp)) {
             // Informações
             Column(Modifier.width(360.dp).padding(top = 42.dp)) {
                 Txt("SÉRIE · ${seasons.size.coerceAtLeast(1)} TEMPORADA${if (seasons.size > 1) "S" else ""}", F.s(8.sp, C.cyan, FontWeight.SemiBold, spacing = 2.sp))
                 Spacer(Modifier.height(4.dp))
-                Txt(s.name, F.s(33.sp, C.white, FontWeight.Bold, F.outfit), maxLines = 2)
+                TitleArt(s.name, tm?.logoUrl())
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     (info?.year ?: s.year)?.let { MetaChip(it) }
@@ -98,7 +106,7 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
                     (info?.genre ?: s.genre)?.let { Txt(it, F.s(8.5.sp, C.dim)) }
                 }
                 Spacer(Modifier.height(10.dp))
-                Txt(info?.plot ?: s.plot ?: "", F.s(9.5.sp, C.text), maxLines = 4)
+                Txt(tm?.overview ?: info?.plot ?: s.plot ?: "", F.s(9.5.sp, C.text), maxLines = 4)
                 Spacer(Modifier.height(14.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     val label = when {
@@ -152,7 +160,7 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
                         LaunchedEffect(season) { listState.scrollToItem(0) }
                         LazyColumn(state = listState, contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             itemsIndexed(eps, key = { _, e -> e.id }) { _, e ->
-                                EpisodeRow(vm, s, e) { play(e) }
+                                EpisodeRow(vm, s, e, tmEps[e.num]) { play(e) }
                             }
                         }
                     }
@@ -167,7 +175,7 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
 }
 
 @Composable
-private fun EpisodeRow(vm: Vm, s: Series, e: Episode, onClick: () -> Unit) {
+private fun EpisodeRow(vm: Vm, s: Series, e: Episode, tme: Tmdb.Ep?, onClick: () -> Unit) {
     val p = vm.store.progress["ep:${e.id}"]
     Focus(Modifier.fillMaxWidth(), onClick = onClick, memKey = "ep:${e.id}") { f ->
         val shape = RoundedCornerShape(9.dp)
@@ -179,7 +187,7 @@ private fun EpisodeRow(vm: Vm, s: Series, e: Episode, onClick: () -> Unit) {
             Box(Modifier.width(120.dp).height(67.dp).clip(RoundedCornerShape(6.dp))) {
                 val c = C.hash(s.name + e.num)
                 Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(c.copy(alpha = 0.8f), Color(0xFF16142C)))))
-                if (e.img != null) AsyncImage(e.img, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                (e.img ?: tme?.still)?.let { AsyncImage(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
                 Box(Modifier.padding(5.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xCC000000)).padding(horizontal = 4.dp, vertical = 1.dp)) {
                     Txt("${e.num}", F.s(7.5.sp, C.white, FontWeight.Bold))
                 }
@@ -193,8 +201,9 @@ private fun EpisodeRow(vm: Vm, s: Series, e: Episode, onClick: () -> Unit) {
                     if (p?.finished == true) Txt(" · Assistido", F.s(7.5.sp, C.cyan, FontWeight.SemiBold))
                     else if (p != null && p.pos > 30_000) Txt(" · Faltam ${p.remainingMin} min", F.s(7.5.sp, C.cyan, FontWeight.SemiBold))
                 }
-                Txt(e.title, F.s(11.sp, C.white, FontWeight.SemiBold))
-                e.plot?.let { Txt(it, F.s(8.5.sp, C.dim), maxLines = 2) }
+                val name = tme?.name?.takeIf { e.title.startsWith("Episódio") || e.title.matches(Regex("""(?i)^(ep(isode|isódio)?\s*)?\d+$""")) } ?: e.title
+                Txt(name, F.s(11.sp, C.white, FontWeight.SemiBold))
+                (e.plot ?: tme?.overview)?.let { Txt(it, F.s(8.5.sp, C.dim), maxLines = 2) }
             }
         }
     }

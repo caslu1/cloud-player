@@ -40,15 +40,19 @@ class AppFlowTest {
 
     private val cats = listOf("Futebol", "Esportes", "Abertos", "Notícias", "Filmes 24h", "Séries 24h", "Infantil", "Documentários", "Música")
     private val channels = listOf("Futebol 1 HD", "Futebol 2 FHD", "Arena Esporte HD", "Gol TV FHD", "Campo 4K", "Placar HD", "Torcida SD", "Futebol+ HD", "Bola Rolando", "Esporte Total 1")
-    private val movies = listOf("Sertão Vermelho", "Rota 116", "Céu de Chumbo", "O Último Farol", "Pequenos Gigantes", "Ponto Cego", "Dez Segundos", "Verão de 98", "Linha Vermelha")
-    private val series = listOf("Plantão Noturno", "Cidade de Vidro", "Maré Alta", "Código Zero", "A Casa da Serra", "Noite em Lisboa")
+    // nomes reais: o teste no GitHub busca logo, fundo e sinopse no TMDB de verdade (para as fotos)
+    private val movies = listOf("Duna: Parte Dois (2024)", "Oppenheimer", "Divertida Mente 2", "Deadpool & Wolverine", "Gladiador II", "Wicked", "Ainda Estou Aqui", "Moana 2", "Interestelar")
+    private val series = listOf("The Last of Us", "Round 6", "Stranger Things", "The Bear", "Arcane", "Sintonia")
     private val matches = listOf(
         "Série A: Atlético Serrano x Ribeirense", "Série A: União Vale x Porto Alegre", "Série B: Real Cerrado x Operário Sul",
         "Copa Continental: Náutico Mar x Estrela do Norte", "Copa Continental: Vila Nova Paz x Cruzeiro do Leste"
     )
 
+    /** Espera rede/imagens (TMDB) com o relógio andando. */
+    private fun settle(ms: Long) { val end = System.currentTimeMillis() + ms; while (System.currentTimeMillis() < end) { pump(); Thread.sleep(40) } }
+
     private fun shot(name: String) {
-        repeat(8) { pump() }
+        settle(2500)
         val dir = File(System.getProperty("user.dir"), "build/screens").apply { mkdirs() }
         val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
         File(dir, "$name.png").outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
@@ -177,19 +181,17 @@ class AppFlowTest {
 
         // Filmes
         click("Filmes", exact = true)
-        waitText("Sertão Vermelho")
+        waitText("Duna")
         waitText("Lançamentos")
-        waitText("Uma engenheira")
         shot("03-filmes")
-        rule.onAllNodesWithText("Sertão Vermelho")[rule.onAllNodesWithText("Sertão Vermelho").fetchSemanticsNodes().size - 1].performClick()
+        rule.onAllNodesWithText("Oppenheimer")[rule.onAllNodesWithText("Oppenheimer").fetchSemanticsNodes().size - 1].performClick()
         waitText("FILME")
-        waitText("Uma engenheira")
         shot("04-filme-detalhe")
         back()
 
         // Séries
         click("Séries", exact = true)
-        waitText("Plantão Noturno")
+        waitText("The Last of Us")
         shot("05-series")
         rule.onAllNodesWithText("Ver episódios")[0].performClick()
         waitText("O Plantão")

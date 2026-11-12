@@ -59,7 +59,10 @@ class OrbitaApp : Application(), ImageLoaderFactory {
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
         .okHttpClient { Net.client }
-        .memoryCache { MemoryCache.Builder(this).maxSizePercent(0.2).build() }
+        .memoryCache { MemoryCache.Builder(this).maxSizePercent(0.25).build() }
+        // pôsteres e logos ficam no aparelho: abrir de novo é instantâneo
+        .diskCache { coil.disk.DiskCache.Builder().directory(cacheDir.resolve("images")).maxSizeBytes(250L * 1024 * 1024).build() }
+        .respectCacheHeaders(false)
         .allowRgb565(true)
         .crossfade(false)
         .build()

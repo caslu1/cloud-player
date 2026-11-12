@@ -165,7 +165,8 @@ class XtreamSource(private val a: Account, private val liveExt: () -> String) : 
             val ext = m["container_extension"]?.takeIf { it.isNotBlank() } ?: "mp4"
             out += Movie(
                 id, m["name"]?.trim().orEmpty(), m["stream_icon"]?.takeIf { it.startsWith("http") }, m["category_id"].orEmpty(),
-                rating(m), m["added"]?.toLongOrNull() ?: 0L, "$server/movie/${a.user}/${a.pass}/$id.$ext"
+                rating(m), m["added"]?.toLongOrNull() ?: 0L, "$server/movie/${a.user}/${a.pass}/$id.$ext",
+                (m["tmdb"] ?: m["tmdb_id"])?.takeIf { it.isNotBlank() && it != "0" }
             )
         }
         return cats to out
@@ -180,7 +181,8 @@ class XtreamSource(private val a: Account, private val liveExt: () -> String) : 
                 id, m["name"]?.trim().orEmpty(), m["cover"]?.takeIf { it.startsWith("http") }, m["category_id"].orEmpty(), rating(m),
                 m["last_modified"]?.toLongOrNull() ?: 0L, m["plot"]?.takeIf { it.isNotBlank() }, m["genre"]?.takeIf { it.isNotBlank() },
                 (m["releaseDate"] ?: m["release_date"] ?: m["year"])?.take(4)?.takeIf { it.isNotBlank() },
-                m["backdrop_path"]?.takeIf { it.startsWith("http") }
+                m["backdrop_path"]?.takeIf { it.startsWith("http") },
+                (m["tmdb"] ?: m["tmdb_id"])?.takeIf { it.isNotBlank() && it != "0" }
             )
         }
         return cats to out

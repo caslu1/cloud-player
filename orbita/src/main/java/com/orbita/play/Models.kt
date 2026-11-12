@@ -20,6 +20,7 @@ class Movie(
     val rating: Float,
     val added: Long,
     val url: String,
+    val tmdb: String? = null,
 )
 
 class Series(
@@ -33,6 +34,7 @@ class Series(
     val genre: String?,
     val year: String?,
     val backdrop: String?,
+    val tmdb: String? = null,
 )
 
 class Episode(

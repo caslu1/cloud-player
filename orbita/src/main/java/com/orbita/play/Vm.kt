@@ -11,6 +11,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -30,6 +31,8 @@ class Match(
 /** Estado do app: conta, catálogo (canais, filmes, séries), guia e jogos. */
 class Vm(ctx: Context) {
     val store = Store(ctx.applicationContext)
+
+    init { Tmdb.init(ctx.applicationContext) }
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     var source: Source? = null; private set
@@ -113,55 +116,62 @@ class Vm(ctx: Context) {
         }
     }
 
+    private class LiveData(val cats: List<Cat>, val list: List<Channel>, val byId: Map<String, Channel>, val byCat: Map<String, List<Channel>>, val football: List<Channel>)
+
     fun loadLive(): Job = scope.launch {
         val src = source ?: return@launch
         liveState = LoadState.LOADING; liveError = null
-        runCatching { withContext(Dispatchers.IO) { src.loadLive() } }
-            .onSuccess { (rawCats, raw) ->
-                val cats = rawCats.distinctBy { it.id }; val list = raw.distinctBy { it.id }
-                channelById = list.associateBy { it.id }
-                channelsByCat = list.groupBy { it.catId }
-                liveCats = cats.filter { channelsByCat.containsKey(it.id) } +
-                    channelsByCat.keys.filter { k -> cats.none { it.id == k } }.map { Cat(it, if (it.isBlank()) "Outros" else it) }
-                channels = list
-                liveState = LoadState.READY
-                footballChannels = list.filter { c ->
-                    MatchLogic.isSportsName(c.name) || MatchLogic.isSportsName(liveCats.firstOrNull { it.id == c.catId }?.name.orEmpty())
-                }
+        // tudo o que é pesado (agrupar dezenas de milhares de itens) roda fora da thread da tela
+        runCatching {
+            withContext(Dispatchers.Default) {
+                val (rawCats, raw) = withContext(Dispatchers.IO) { src.loadLive() }
+                val list = raw.distinctBy { it.id }
+                val byCat = list.groupBy { it.catId }
+                val cats0 = rawCats.distinctBy { it.id }
+                val cats = cats0.filter { byCat.containsKey(it.id) } +
+                    byCat.keys.filter { k -> cats0.none { it.id == k } }.map { Cat(it, if (it.isBlank()) "Outros" else it) }
+                val catNames = cats.associate { it.id to it.name }
+                val football = list.filter { c -> MatchLogic.isSportsName(c.name) || MatchLogic.isSportsName(catNames[c.catId].orEmpty()) }
+                LiveData(cats, list, list.associateBy { it.id }, byCat, football)
             }
-            .onFailure { liveError = it.message ?: "Falha ao carregar os canais."; liveState = LoadState.ERROR }
+        }.onSuccess { d ->
+            channelById = d.byId; channelsByCat = d.byCat; liveCats = d.cats; channels = d.list; footballChannels = d.football
+            liveState = LoadState.READY
+        }.onFailure { liveError = it.message ?: "Falha ao carregar os canais."; liveState = LoadState.ERROR }
     }
 
     fun loadMovies(): Job = scope.launch {
         val src = source ?: return@launch
         if (movieState == LoadState.LOADING) return@launch
         movieState = LoadState.LOADING
-        runCatching { withContext(Dispatchers.IO) { src.loadMovies() } }
-            .onSuccess { (rawCats, raw) ->
-                val cats = rawCats.distinctBy { it.id }; val list = raw.distinctBy { it.id }
-                movieById = list.associateBy { it.id }
-                moviesByCat = list.groupBy { it.catId }
-                movieCats = cats.filter { moviesByCat.containsKey(it.id) }
-                movies = list
-                movieState = LoadState.READY
+        runCatching {
+            withContext(Dispatchers.Default) {
+                val (rawCats, raw) = withContext(Dispatchers.IO) { src.loadMovies() }
+                val list = raw.distinctBy { it.id }
+                val byCat = list.groupBy { it.catId }
+                Triple(rawCats.distinctBy { it.id }.filter { byCat.containsKey(it.id) }, list, byCat) to list.associateBy { it.id }
             }
-            .onFailure { movieState = LoadState.ERROR }
+        }.onSuccess { (t, byId) ->
+            movieById = byId; moviesByCat = t.third; movieCats = t.first; movies = t.second
+            movieState = LoadState.READY
+        }.onFailure { movieState = LoadState.ERROR }
     }
 
     fun loadSeries(): Job = scope.launch {
         val src = source ?: return@launch
         if (seriesState == LoadState.LOADING) return@launch
         seriesState = LoadState.LOADING
-        runCatching { withContext(Dispatchers.IO) { src.loadSeries() } }
-            .onSuccess { (rawCats, raw) ->
-                val cats = rawCats.distinctBy { it.id }; val list = raw.distinctBy { it.id }
-                seriesById = list.associateBy { it.id }
-                seriesByCat = list.groupBy { it.catId }
-                seriesCats = cats.filter { seriesByCat.containsKey(it.id) }
-                series = list
-                seriesState = LoadState.READY
+        runCatching {
+            withContext(Dispatchers.Default) {
+                val (rawCats, raw) = withContext(Dispatchers.IO) { src.loadSeries() }
+                val list = raw.distinctBy { it.id }
+                val byCat = list.groupBy { it.catId }
+                Triple(rawCats.distinctBy { it.id }.filter { byCat.containsKey(it.id) }, list, byCat) to list.associateBy { it.id }
             }
-            .onFailure { seriesState = LoadState.ERROR }
+        }.onSuccess { (t, byId) ->
+            seriesById = byId; seriesByCat = t.third; seriesCats = t.first; series = t.second
+            seriesState = LoadState.READY
+        }.onFailure { seriesState = LoadState.ERROR }
     }
 
     fun reloadAll() {
@@ -238,6 +248,29 @@ class Vm(ctx: Context) {
             }.awaitAll()
             matches = found.values.sortedWith(compareBy({ it.start }, { it.home }))
             matchState = LoadState.READY
+        }
+    }
+
+    // ---- TMDB (logo, fundo, sinopse)
+    val meta = mutableStateMapOf<String, Tmdb.Meta>()
+    private val metaMiss = ConcurrentHashMap.newKeySet<String>()
+    private val metaRunning = ConcurrentHashMap.newKeySet<String>()
+    private val metaGate = Semaphore(4)
+    private var flushJob: Job? = null
+
+    fun metaOf(m: Movie) = meta["m:${m.id}"]
+    fun metaOf(s: Series) = meta["s:${s.id}"]
+    fun requestMeta(m: Movie) = requestMeta("m:${m.id}", m.name, false, m.tmdb)
+    fun requestMeta(s: Series) = requestMeta("s:${s.id}", s.name, true, s.tmdb)
+
+    private fun requestMeta(key: String, name: String, tv: Boolean, hint: String?) {
+        if (!Tmdb.enabled || meta.containsKey(key) || metaMiss.contains(key) || !metaRunning.add(key)) return
+        scope.launch {
+            try {
+                val r = metaGate.withPermit { withContext(Dispatchers.IO) { runCatching { Tmdb.find(name, tv, hint) }.getOrNull() } }
+                if (r != null) meta[key] = r else metaMiss.add(key)
+            } finally { metaRunning.remove(key) }
+            if (flushJob?.isActive != true) flushJob = scope.launch { delay(4_000); withContext(Dispatchers.IO) { Tmdb.flush() } }
         }
     }
 

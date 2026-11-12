@@ -71,4 +71,11 @@ class LogicTest {
         assertEquals(listOf("5"), FootballApi.matchChannels(listOf("Disney+ Brazil"), index).map { it.id })
         assertEquals(emptyList<String>(), FootballApi.matchChannels(listOf("Prime Video"), index).map { it.id })
     }
+
+    @Test fun cleansProviderTitlesForTmdb() {
+        assertEquals("Duna: Parte Dois" to "2024", Tmdb.clean("PT | Duna: Parte Dois (2024) [4K] Dublado"))
+        assertEquals("Oppenheimer" to null, Tmdb.clean("Oppenheimer"))
+        assertEquals("Up: Altas Aventuras" to "2009", Tmdb.clean("Up: Altas Aventuras 2009 FHD"))
+        assertEquals("The Last of Us" to null, Tmdb.clean("BR: The Last of Us [L]"))
+    }
 }
