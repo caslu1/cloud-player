@@ -588,7 +588,7 @@ private fun VodOverlay(item: PlayItem, pos: Long, dur: Long, playing: Boolean, s
                 Txt(fmtTime(pos), F.s(10.sp, if (seeking) C.accentText else C.white, FontWeight.SemiBold), Modifier.width(62.dp))
                 SeekBar(if (dur > 0) pos.toFloat() / dur else 0f, seeking, Modifier.weight(1f))
                 Spacer(Modifier.width(14.dp))
-                Txt("-" + fmtTime((dur - pos).coerceAtLeast(0)), F.s(10.sp, C.dim, FontWeight.Medium))
+                if (dur > 0) Txt("-" + fmtTime((dur - pos).coerceAtLeast(0)), F.s(10.sp, C.dim, FontWeight.Medium))
             }
         }
     }
