@@ -91,7 +91,7 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
 
     Box(Modifier.fillMaxSize()) {
         Backdrop(tm?.backdropUrl() ?: info?.backdrop ?: s.backdrop, s.name)
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xCC0B0A1C), Color(0x660B0A1C)))))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xCC050409), Color(0x66050409)))))
         Row(Modifier.fillMaxSize().padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 34.dp)) {
             // Informações
             Column(Modifier.width(360.dp).padding(top = 42.dp)) {

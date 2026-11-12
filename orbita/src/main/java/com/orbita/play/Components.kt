@@ -204,7 +204,7 @@ fun ActionButton(
             Modifier.scale(if (f) 1.05f else 1f)
                 .then(if (f) Modifier.border(2.dp, C.white, shape) else Modifier.border(1.dp, if (primary) C.accent else C.panelBorder, shape))
                 .clip(shape)
-                .background(if (primary) C.accent else if (f) C.focusBg else Color(0xCC1E1C34))
+                .background(if (primary) C.accent else if (f) C.focusBg else Color(0xCC15121F))
                 .padding(horizontal = 18.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

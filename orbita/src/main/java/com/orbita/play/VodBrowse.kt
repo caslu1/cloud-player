@@ -117,7 +117,7 @@ fun VodBrowse(
                     EmptyState(empty, "", Modifier.fillMaxWidth().padding(top = 40.dp))
                 } else TvScroll {
                     LazyVerticalGrid(
-                        GridCells.Fixed(6), Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0x330B0A1C)))),
+                        GridCells.Fixed(6), Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0x33050409)))),
                         state = gridState,
                         contentPadding = PaddingValues(start = 4.dp, end = 28.dp, top = 8.dp, bottom = 60.dp),
                         horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)

@@ -93,7 +93,7 @@ fun LoginScreen(vm: Vm) {
         }
     }
 
-    Box(Modifier.fillMaxSize().background(Color(0xFF0B1020))) {
+    Box(Modifier.fillMaxSize().background(Color(0xFF050409))) {
         Orbits()
         Row(Modifier.fillMaxSize().padding(horizontal = 50.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -107,13 +107,13 @@ fun LoginScreen(vm: Vm) {
                 }
             }
             Column(
-                Modifier.width(330.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF121A2E)).border(1.dp, Color(0xFF1F2A44), RoundedCornerShape(12.dp))
+                Modifier.width(330.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF0E0B1A)).border(1.dp, Color(0xFF221A3A), RoundedCornerShape(12.dp))
                     .padding(20.dp)
             ) {
                 Txt("Conectar lista", F.s(14.sp, C.white, FontWeight.Bold, F.outfit))
                 Txt("Use os dados enviados pelo seu provedor.", F.s(8.sp, C.dim))
                 Spacer(Modifier.height(12.dp))
-                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(7.dp)).background(Color(0xFF0B1222)).padding(3.dp)) {
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(7.dp)).background(Color(0xFF08060F)).padding(3.dp)) {
                     LoginTab("Xtream Codes", xtream, Modifier.weight(1f), tabReq) { xtream = true }
                     LoginTab("Lista M3U", !xtream, Modifier.weight(1f)) { xtream = false }
                 }
@@ -157,7 +157,7 @@ private fun LoginTab(text: String, selected: Boolean, modifier: Modifier, reques
     Focus(modifier, onClick = onClick, onFocus = onClick, requester = requester) { f ->
         Box(
             Modifier.fillMaxWidth().height(24.dp).clip(RoundedCornerShape(5.dp))
-                .background(if (selected) Color(0xFF1E2B4A) else Color.Transparent)
+                .background(if (selected) Color(0xFF2A1D5E) else Color.Transparent)
                 .then(if (f) Modifier.border(1.5.dp, Color(0xFF6CD4FF), RoundedCornerShape(5.dp)) else Modifier),
             contentAlignment = Alignment.Center
         ) { Txt(text, F.s(8.5.sp, if (selected) C.white else C.dim, FontWeight.SemiBold)) }
@@ -169,7 +169,7 @@ private fun LoginTab(text: String, selected: Boolean, modifier: Modifier, reques
 private fun Orbits() {
     Canvas(Modifier.fillMaxSize()) {
         val c = Offset(size.width * 0.28f, size.height * 0.55f)
-        val line = Color(0x2E6CD4FF)
+        val line = Color(0x337C5CFF)
         for (i in 0 until 4) {
             val w = size.width * (0.55f + i * 0.22f); val h = size.height * (0.32f + i * 0.14f)
             rotate(-18f, c) { drawOval(line, Offset(c.x - w / 2, c.y - h / 2), Size(w, h), style = Stroke(1.dp.toPx())) }

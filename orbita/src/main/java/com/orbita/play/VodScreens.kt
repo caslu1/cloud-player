@@ -103,10 +103,10 @@ fun TvScroll(content: @Composable () -> Unit) = CompositionLocalProvider(LocalBr
 fun Backdrop(image: String?, seed: String) {
     Box(Modifier.fillMaxSize().background(C.bg)) {
         val c = C.hash(seed)
-        Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF120E2E), c.copy(alpha = 0.45f), Color(0xFF1A0F2A)))))
+        Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF0A0717), c.copy(alpha = 0.45f), Color(0xFF0B0614)))))
         if (image != null) AsyncImage(image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop, alpha = 0.9f)
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF50B0A1C), 0.42f to Color(0xB00B0A1C), 0.75f to Color(0x330B0A1C), 1f to Color(0x100B0A1C))))
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x990B0A1C), 0.2f to Color.Transparent, 0.45f to Color(0x550B0A1C), 0.62f to Color(0xEE0B0A1C), 1f to C.bg)))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF5050409), 0.42f to Color(0xB0050409), 0.75f to Color(0x33050409), 1f to Color(0x10050409))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x99050409), 0.2f to Color.Transparent, 0.45f to Color(0x55050409), 0.62f to Color(0xEE050409), 1f to C.bg)))
     }
 }
 

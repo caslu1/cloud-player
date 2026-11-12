@@ -219,7 +219,7 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
             }
         }
         toast?.let {
-            Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 36.dp).background(Color(0xEE1C1A36), androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).padding(horizontal = 14.dp, vertical = 8.dp)) {
+            Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 36.dp).background(Color(0xEE15121F), androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).padding(horizontal = 14.dp, vertical = 8.dp)) {
                 Txt(it, F.s(9.sp, C.white, FontWeight.Medium))
             }
         }
@@ -260,7 +260,7 @@ fun TopBar(ui: Ui, tabReq: FocusRequester, onSettings: () -> Unit) {
 fun ScreenBackground() {
     Box(
         Modifier.fillMaxSize().background(
-            Brush.radialGradient(listOf(Color(0xFF2A1C6B), Color(0xFF120F30), Color(0xFF0A0A18)), radius = 1400f, center = androidx.compose.ui.geometry.Offset(200f, 0f))
+            Brush.radialGradient(listOf(Color(0xFF1F1150), Color(0xFF0A0716), Color(0xFF040308)), radius = 1400f, center = androidx.compose.ui.geometry.Offset(200f, 0f))
         )
     )
 }

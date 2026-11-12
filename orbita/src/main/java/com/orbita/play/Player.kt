@@ -370,7 +370,7 @@ fun FullPlayer(vm: Vm, pb: Playback) {
         if (pb.buffering && pb.error == null) Spinner(Modifier.align(Alignment.Center), 36.dp)
         pb.error?.let { msg ->
             Column(
-                Modifier.align(Alignment.Center).clip(RoundedCornerShape(10.dp)).background(Color(0xE6131229)).padding(18.dp),
+                Modifier.align(Alignment.Center).clip(RoundedCornerShape(10.dp)).background(Color(0xE60C0A16)).padding(18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Txt(msg, F.s(10.sp, C.white, FontWeight.SemiBold), maxLines = 3)
@@ -380,7 +380,7 @@ fun FullPlayer(vm: Vm, pb: Playback) {
         }
 
         if (digits.isNotEmpty()) {
-            Box(Modifier.align(Alignment.TopEnd).padding(24.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xE6131229)).padding(horizontal = 14.dp, vertical = 8.dp)) {
+            Box(Modifier.align(Alignment.TopEnd).padding(24.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xE60C0A16)).padding(horizontal = 14.dp, vertical = 8.dp)) {
                 Txt(digits, F.s(22.sp, C.white, FontWeight.Bold, F.outfit))
             }
         }
@@ -558,7 +558,7 @@ private fun QualityPill(label: String, selected: Boolean, available: Boolean, re
 
 @Composable
 private fun VodOverlay(item: PlayItem, pos: Long, dur: Long, playing: Boolean, modifier: Modifier) {
-    Box(modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xF00B0A1C)))).padding(horizontal = 28.dp, vertical = 22.dp)) {
+    Box(modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xF0050409)))).padding(horizontal = 28.dp, vertical = 22.dp)) {
         Column {
             Txt(item.title, F.s(16.sp, C.white, FontWeight.Bold, F.outfit))
             if (item.subtitle.isNotEmpty()) Txt(item.subtitle, F.s(9.sp, C.dim))
@@ -613,7 +613,7 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
 
     Box(
         Modifier.fillMaxHeight().width(640.dp)
-            .background(Brush.horizontalGradient(0f to Color(0xF5080A18), 0.8f to Color(0xEB0B0A1C), 1f to Color.Transparent))
+            .background(Brush.horizontalGradient(0f to Color(0xF5080A18), 0.8f to Color(0xEB050409), 1f to Color.Transparent))
     ) {
         Row(Modifier.fillMaxSize().padding(start = 22.dp, top = 22.dp, bottom = 18.dp, end = 50.dp)) {
             Column(Modifier.width(190.dp).fillMaxHeight()) {
@@ -721,7 +721,7 @@ private fun OptionsPanel(pb: Playback, modifier: Modifier, onClose: () -> Unit) 
     val modes = listOf(AspectRatioFrameLayout.RESIZE_MODE_FIT to "Original", AspectRatioFrameLayout.RESIZE_MODE_FILL to "Esticar", AspectRatioFrameLayout.RESIZE_MODE_ZOOM to "Zoom")
     val mIdx = modes.indexOfFirst { it.first == pb.resize }.coerceAtLeast(0)
     Column(
-        modifier.padding(24.dp).width(250.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xF2131229)).border(1.dp, C.panelBorder, RoundedCornerShape(10.dp))
+        modifier.padding(24.dp).width(250.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xF20C0A16)).border(1.dp, C.panelBorder, RoundedCornerShape(10.dp))
             .padding(10.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
