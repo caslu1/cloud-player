@@ -63,6 +63,10 @@ sub render()
             line("Conexões", asText(u.active_cons) + " de " + asText(u.max_connections) + " em uso", y)
             y = y + 40
         end if
+        line("MAC", deviceMac(), y)
+        y = y + 40
+        line("Chave", deviceKey(), y)
+        y = y + 40
         line("Versão", "Orbita Play para Roku 1.0", y)
         addLabel(m.content, "O app não fornece conteúdo: use apenas listas que você tem direito de usar.", 604, y + 70, IREG(), 17, "0x6E6B8CFF", 1200)
     else

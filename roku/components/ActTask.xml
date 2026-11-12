@@ -5,4 +5,5 @@
         <field id="response" type="assocarray" />
     </interface>
     <script type="text/brightscript" uri="pkg:/components/ActTask.brs" />
+    <script type="text/brightscript" uri="pkg:/components/DeviceId.brs" />
 </component>

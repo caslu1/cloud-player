@@ -42,6 +42,8 @@ sub init()
     addPoster(r, "pkg:/images/ic_resume.png", 56, 600, 26, 26)
     addLabel(r, "Continuar assistindo", 94, 594, OUTF(), 24, "0xFFFFFFFF")
     m.contCount = addLabel(r, "", 360, 600, ISEM(), 16, "0x6E6B8CFF")
+    ' rodapé: MAC e chave do aparelho (usados no site de ativação)
+    addLabel(r, "MAC: " + deviceMac() + "     Chave: " + deviceKey(), 1100, 1030, IREG(), 17, "0x6E6B8CFF", 760, "right")
     m.contBox = r.createChild("Group")
     m.contBox.translation = [56, 644]
     m.zone = "tiles"

@@ -11,5 +11,6 @@
     </children>
     <script type="text/brightscript" uri="pkg:/components/common.brs" />
     <script type="text/brightscript" uri="pkg:/components/Buttons.brs" />
+    <script type="text/brightscript" uri="pkg:/components/DeviceId.brs" />
     <script type="text/brightscript" uri="pkg:/components/SettingsScreen.brs" />
 </component>
