@@ -54,8 +54,8 @@ class AppFlowTest {
     /** Espera rede/imagens (TMDB) com o relógio andando. */
     private fun settle(ms: Long) { val end = System.currentTimeMillis() + ms; while (System.currentTimeMillis() < end) { pump(); Thread.sleep(40) } }
 
-    private fun shot(name: String) {
-        settle(2500)
+    private fun shot(name: String, wait: Boolean = true) {
+        if (wait) settle(2500)
         val dir = File(System.getProperty("user.dir"), "build/screens").apply { mkdirs() }
         val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
         File(dir, "$name.png").outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
@@ -159,9 +159,12 @@ class AppFlowTest {
     }
 
     @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
-    private fun pressLeft() {
-        rule.onRoot().performKeyInput { pressKey(androidx.compose.ui.input.key.Key.DirectionLeft) }
-        repeat(5) { pump() }
+    private fun pressLeft() = pressKey(androidx.compose.ui.input.key.Key.DirectionLeft)
+
+    @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
+    private fun pressKey(k: androidx.compose.ui.input.key.Key) {
+        rule.onRoot().performKeyInput { pressKey(k) }
+        repeat(3) { pump() }
     }
 
     private fun back() {
@@ -196,6 +199,15 @@ class AppFlowTest {
         rule.onAllNodesWithText("Oppenheimer")[0].performClick()
         waitText("FILME")
         shot("04-filme-detalhe")
+        click("Assistir")
+        settle(800)
+        repeat(4) { pressKey(androidx.compose.ui.input.key.Key.DirectionRight) }
+        repeat(3) { pump(50) }
+        shot("12-filme-avancar", wait = false)
+        settle(1500)
+        back() // esconde os controles
+        back() // fecha o player
+        settle(400)
         back()
 
         // Séries
