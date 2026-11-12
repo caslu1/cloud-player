@@ -105,7 +105,7 @@ fun HomeScreen(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () 
             InitialFocus(first)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)) {
                 tiles.forEach { t ->
-                    BigTile(t, if (t.tab == ui.tab) first else null) { ui.tab = t.tab; ui.home = false }
+                    BigTile(t, if (t.tab == ui.tab) first else null) { ui.openSection(t.tab) }
                 }
             }
             Spacer(Modifier.height(26.dp))

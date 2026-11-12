@@ -94,7 +94,7 @@ fun VodBrowse(
     val h = hero(heroEntry)
     Box(Modifier.fillMaxSize()) {
         Backdrop(h.backdrop, h.title)
-        Row(Modifier.fillMaxSize().padding(top = 50.dp, start = 24.dp, end = 0.dp)) {
+        Row(Modifier.fillMaxSize().padding(top = 18.dp, start = 24.dp, end = 0.dp)) {
             // categorias
             Panel(Modifier.width(206.dp).fillMaxHeight().padding(bottom = 14.dp)) {
                 Column {
@@ -138,15 +138,15 @@ fun VodBrowse(
                         Modifier.fillMaxWidth().padding(top = 40.dp))
                 } else TvScroll {
                     LazyVerticalGrid(
-                        GridCells.Fixed(6), Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0x33050409)))),
+                        GridCells.Fixed(4), Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0x33050409)))),
                         state = gridState,
                         contentPadding = PaddingValues(start = 4.dp, end = 28.dp, top = 8.dp, bottom = 60.dp),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         itemsIndexed(entries, key = { _, e -> e.key }) { i, e ->
                             LaunchedEffect(e.key) { delay(200); e.movie?.let { vm.requestMeta(it) }; e.series?.let { vm.requestMeta(it) } }
                             val img = (e.movie?.let { vm.metaOf(it) } ?: e.series?.let { vm.metaOf(it) })?.posterUrl() ?: e.image
-                            BigPoster(e, img, 100.dp, if (searching) "vsearch:${e.key}" else "vgrid:$cat:${e.key}", if (i == 0) gridReq else null, onFocus = { focused = e })
+                            BigPoster(e, img, 152.dp, if (searching) "vsearch:${e.key}" else "vgrid:$cat:${e.key}", if (i == 0) gridReq else null, onFocus = { focused = e })
                         }
                     }
                 }

@@ -121,7 +121,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
         if (vm.store.previewAutoplay.value && playingId != c.id) { delay(1_200); pb.play(liveItem(c), playItems()) }
     }
 
-    Row(Modifier.fillMaxSize().padding(top = 50.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)) {
+    Row(Modifier.fillMaxSize().padding(top = 18.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)) {
         // Categorias
         Panel(Modifier.width(196.dp).fillMaxHeight()) {
             Column {
@@ -173,7 +173,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
                         Modifier.fillMaxWidth()
                     )
                 }
-                LazyColumn(state = ui.chList, modifier = Modifier.weight(1f).padding(horizontal = 4.dp)) {
+                LazyColumn(state = ui.chList, modifier = Modifier.weight(1f).padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     itemsIndexed(list, key = { _, c -> c.id }) { i, c ->
                         val req = when { i == 0 -> firstChannel; i == initialIdx -> initial; else -> null }
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -202,44 +202,23 @@ private fun FavButton(fav: Boolean, memKey: String, onClick: () -> Unit) {
     Focus(onClick = onClick, memKey = memKey) { f ->
         val shape = RoundedCornerShape(8.dp)
         Box(
-            Modifier.size(34.dp, 44.dp).clip(shape).background(if (f) C.focusBg else Color(0x14FFFFFF))
+            Modifier.size(32.dp, 34.dp).clip(shape).background(if (f) C.focusBg else Color(0x14FFFFFF))
                 .border(if (f) 1.5.dp else 1.dp, if (f) C.accent else Color(0x22FFFFFF), shape),
             contentAlignment = Alignment.Center
         ) { Icon(if (fav) Ic.Star else Ic.StarOutline, 15.dp, if (fav) C.star else if (f) C.white else C.dim) }
     }
 }
 
-/** Prévia em cima, guia do dia escolhido embaixo e a coluna de dias à direita. */
+/** Prévia em cima e o guia de hoje embaixo. */
 @Composable
 private fun androidx.compose.foundation.layout.RowScope.EpgArea(vm: Vm, pb: Playback, c: Channel?, onWatch: () -> Unit) {
     LaunchedEffect(c?.id) { val ch = c ?: return@LaunchedEffect; delay(450); vm.requestFullEpg(ch) }
     val progs = c?.let { vm.fullEpg[it.id] ?: vm.epg[it.id] }.orEmpty()
-    val days = remember(progs) { (progs.map { dayIndex(it.start) } + 0).filter { it in -3..7 }.distinct().sorted() }
-    var day by remember(c?.id) { mutableIntStateOf(0) }
+    val day = 0 // só o guia de hoje
     Column(Modifier.weight(1f).fillMaxHeight()) {
-        Preview(vm, pb, c, Modifier.fillMaxWidth().height(188.dp))
+        Preview(vm, pb, c, Modifier.fillMaxWidth().height(214.dp))
         Spacer(Modifier.height(8.dp))
         Panel(Modifier.fillMaxWidth().weight(1f)) { DayProgrammes(vm, c, progs, day, onWatch) }
-    }
-    Spacer(Modifier.width(8.dp))
-    // dias
-    Column(Modifier.width(46.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-        days.forEach { d ->
-            val cal = java.util.Calendar.getInstance().apply { add(java.util.Calendar.DAY_OF_YEAR, d) }
-            val wd = java.text.SimpleDateFormat("EEE", java.util.Locale("pt", "BR")).format(cal.time).replace(".", "").take(3).replaceFirstChar { it.uppercase() }
-            Focus(onFocus = { day = d }, onClick = { day = d }, memKey = "day:$d") { f ->
-                val sel = d == day
-                Column(
-                    Modifier.width(46.dp).height(42.dp).clip(RoundedCornerShape(8.dp))
-                        .background(if (f) C.accent else if (sel) C.accentSoft else C.panel)
-                        .border(1.dp, if (sel && !f) C.accent else C.panelBorder, RoundedCornerShape(8.dp)),
-                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
-                ) {
-                    Txt(cal.get(java.util.Calendar.DAY_OF_MONTH).toString(), F.s(12.sp, C.white, FontWeight.Bold, F.outfit))
-                    Txt(if (d == 0) "Hoje" else wd, F.s(6.5.sp, if (sel || f) C.white else C.dim, FontWeight.SemiBold))
-                }
-            }
-        }
     }
 }
 
@@ -302,7 +281,7 @@ internal fun CatRow(
     ) { f ->
         Row(
             Modifier.fillMaxSize()
-                .background(if (f) C.focusBg else if (selected) C.accentSoft else Color.Transparent)
+                .background(if (f) C.focusBg else Color.Transparent)
                 .then(if (f) Modifier.border(1.5.dp, C.accent, RoundedCornerShape(4.dp)) else Modifier),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -310,7 +289,7 @@ internal fun CatRow(
             Spacer(Modifier.width(12.dp))
             if (icon != null) { Icon(icon, 14.dp, if (selected || f) C.white else C.dim); Spacer(Modifier.width(8.dp)) }
             Txt(label, F.s(11.5.sp, if (selected || f) C.white else C.text, if (selected) FontWeight.SemiBold else FontWeight.Medium), Modifier.weight(1f))
-            if (count >= 0) Count(count, selected)
+            if (count >= 0) Count(count, false)
             Spacer(Modifier.width(12.dp))
         }
     }

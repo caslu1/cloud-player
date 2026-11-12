@@ -105,15 +105,33 @@ class Ui {
     var liveCatShown: String? = null
     var movieCat by mutableStateOf<String?>(null)
     var seriesCat by mutableStateOf<String?>(null)
-    val movieGrid = androidx.compose.foundation.lazy.grid.LazyGridState()
-    val seriesGrid = androidx.compose.foundation.lazy.grid.LazyGridState()
-    val movieCatList = androidx.compose.foundation.lazy.LazyListState()
-    val seriesCatList = androidx.compose.foundation.lazy.LazyListState()
-    val catList = androidx.compose.foundation.lazy.LazyListState()
-    val chList = androidx.compose.foundation.lazy.LazyListState()
-    val movieRows = androidx.compose.foundation.lazy.LazyListState()
-    val seriesRows = androidx.compose.foundation.lazy.LazyListState()
-    val matchList = androidx.compose.foundation.lazy.LazyListState()
+    var movieGrid = androidx.compose.foundation.lazy.grid.LazyGridState()
+    var seriesGrid = androidx.compose.foundation.lazy.grid.LazyGridState()
+    var movieCatList = androidx.compose.foundation.lazy.LazyListState()
+    var seriesCatList = androidx.compose.foundation.lazy.LazyListState()
+    var catList = androidx.compose.foundation.lazy.LazyListState()
+    var chList = androidx.compose.foundation.lazy.LazyListState()
+    var movieRows = androidx.compose.foundation.lazy.LazyListState()
+    var seriesRows = androidx.compose.foundation.lazy.LazyListState()
+    var matchList = androidx.compose.foundation.lazy.LazyListState()
+
+    /** Abre uma seção a partir do início sempre do começo (categoria padrão, listas no topo). */
+    fun openSection(t: Tab) {
+        liveCat = "__all"; liveCatShown = null
+        movieCat = null; seriesCat = null
+        footballMenu = 0; footballMenuChosen = false; footballDay = 0
+        movieGrid = androidx.compose.foundation.lazy.grid.LazyGridState()
+        seriesGrid = androidx.compose.foundation.lazy.grid.LazyGridState()
+        movieCatList = androidx.compose.foundation.lazy.LazyListState()
+        seriesCatList = androidx.compose.foundation.lazy.LazyListState()
+        catList = androidx.compose.foundation.lazy.LazyListState()
+        chList = androidx.compose.foundation.lazy.LazyListState()
+        movieRows = androidx.compose.foundation.lazy.LazyListState()
+        seriesRows = androidx.compose.foundation.lazy.LazyListState()
+        matchList = androidx.compose.foundation.lazy.LazyListState()
+        FocusMem.restore = null
+        tab = t; home = false
+    }
 
     fun push(r: Route) { stack.add(r) }
     fun pop() {
@@ -237,7 +255,6 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
                     Tab.SERIES -> SeriesScreen(vm, pb, ui)
                     Tab.FUTEBOL -> FootballScreen(vm, pb, ui)
                 }
-                TopBar(ui, openSearch, reload, openSettings)
             }
         }
         ui.pinPrompt?.let { p -> PinDialog(p) { if (ui.pinPrompt === p) ui.pinPrompt = null } }
@@ -247,26 +264,6 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
                 Txt(it, F.s(9.sp, C.white, FontWeight.Medium))
             }
         }
-    }
-}
-
-@Composable
-fun TopBar(ui: Ui, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit) {
-    Row(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 29.dp), verticalAlignment = Alignment.CenterVertically) {
-        Logo()
-        Spacer(Modifier.width(22.dp))
-        // volta para a tela inicial
-        Pill(
-            "INÍCIO", false, padH = 12.dp, icon = Ic.Home,
-            onFocus = { FocusMem.last = "tab:home" },
-            onClick = { FocusMem.restore = "home:${ui.tab.name}"; ui.home = true }
-        )
-        Spacer(Modifier.width(10.dp))
-        Box(Modifier.width(1.dp).height(14.dp).background(C.panelBorder))
-        Spacer(Modifier.width(12.dp))
-        Txt(ui.tab.title, F.s(12.sp, C.white, FontWeight.Bold, F.outfit, 1.sp))
-        Spacer(Modifier.weight(1f))
-        TopActions(onSearch, onReload, onSettings)
     }
 }
 

@@ -94,7 +94,7 @@ fun FootballScreen(vm: Vm, pb: Playback, ui: Ui) {
         if (pb.current?.channel?.id == c.id) pb.openFull(liveItem(c), items) else pb.play(liveItem(c), items)
     }
 
-    Column(Modifier.fillMaxSize().padding(top = 50.dp)) {
+    Column(Modifier.fillMaxSize().padding(top = 18.dp)) {
         Row(Modifier.weight(1f).padding(start = 24.dp, end = 24.dp, bottom = 16.dp)) {
             // Menu
             Panel(Modifier.width(170.dp).fillMaxHeight()) {

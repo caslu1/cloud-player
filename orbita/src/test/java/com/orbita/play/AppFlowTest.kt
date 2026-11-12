@@ -258,6 +258,8 @@ class AppFlowTest {
         shot("11-lista-player")
         back() // fecha a lista
         back() // sai da tela cheia
+        back() // volta ao início
+        waitText("Ao vivo, hoje e amanhã")
 
         // Buscar, Biblioteca, Configurações
         rule.onNodeWithContentDescription("Configurações").performClick()
@@ -278,7 +280,6 @@ class AppFlowTest {
         waitText("Canais (")
         shot("14-busca")
         back()
-        click("INÍCIO", exact = true)
         waitText("Ao vivo, hoje e amanhã")
         settle(500)
         shot("17-inicio-nebulosa")
