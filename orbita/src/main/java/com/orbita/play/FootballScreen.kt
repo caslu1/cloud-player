@@ -107,7 +107,7 @@ fun FootballScreen(vm: Vm, pb: Playback, ui: Ui) {
                             else -> vm.footballChannels.size
                         }
                         MenuRow(label, count, ui.footballMenu == i, "fb:menu:$i", if (i == ui.footballMenu) menuReq else null,
-                            onFocus = { ui.footballMenu = i }) { runCatching { firstReq.requestFocus() } }
+                            onFocus = {}, onRight = { runCatching { firstReq.requestFocus() } }) { ui.footballMenu = i; runCatching { firstReq.requestFocus() } }
                     }
                     Spacer(Modifier.weight(1f))
                     Focus(Modifier.padding(10.dp).fillMaxWidth(), onClick = { vm.loadMatches(force = true) }, memKey = "fb:refresh") { f ->
@@ -182,8 +182,16 @@ fun FootballScreen(vm: Vm, pb: Playback, ui: Ui) {
 }
 
 @Composable
-internal fun MenuRow(label: String, count: Int, selected: Boolean, memKey: String, requester: FocusRequester?, onFocus: () -> Unit, onClick: () -> Unit) {
-    Focus(Modifier.fillMaxWidth().height(28.5.dp), onClick = onClick, onFocus = onFocus, memKey = memKey, requester = requester) { f ->
+internal fun MenuRow(
+    label: String, count: Int, selected: Boolean, memKey: String, requester: FocusRequester?, onFocus: () -> Unit,
+    onRight: (() -> Unit)? = null, onClick: () -> Unit,
+) {
+    Focus(
+        Modifier.fillMaxWidth().height(28.5.dp), onClick = onClick, onFocus = onFocus, memKey = memKey, requester = requester,
+        onKey = if (onRight == null) null else { ev ->
+            if (ev.type == androidx.compose.ui.input.key.KeyEventType.KeyDown && ev.key == androidx.compose.ui.input.key.Key.DirectionRight) { onRight(); true } else false
+        }
+    ) { f ->
         Row(
             Modifier.fillMaxSize().background(if (f) C.focusBg else if (selected) C.accentSoft else Color.Transparent)
                 .then(if (f) Modifier.border(1.5.dp, C.accent, RoundedCornerShape(4.dp)) else Modifier),

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -79,6 +80,7 @@ fun ApiFootballScreen(vm: Vm, pb: Playback, ui: Ui) {
     var note by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(note) { if (note != null) { delay(3000); note = null } }
     val firstReq = remember { FocusRequester() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     val menuReq = remember { FocusRequester() }
     InitialFocus(if (shown.isNotEmpty()) firstReq else menuReq, today != null)
 
@@ -93,8 +95,11 @@ fun ApiFootballScreen(vm: Vm, pb: Playback, ui: Ui) {
                 Column {
                     PanelHeader("Futebol")
                     apiMenu.forEachIndexed { i, label ->
-                        MenuRow(label, counts[i], menu == i, "fb:menu:$i", if (i == menu) menuReq else null,
-                            onFocus = { ui.footballMenu = i; ui.footballMenuChosen = true }) { runCatching { firstReq.requestFocus() } }
+                        MenuRow(label, counts[i], menu == i, "fb:menu:$i", if (i == menu) menuReq else null, onFocus = {},
+                            onRight = { runCatching { firstReq.requestFocus() } }) {
+                            ui.footballMenu = i; ui.footballMenuChosen = true
+                            scope.launch { ui.matchList.scrollToItem(0); delay(60); runCatching { firstReq.requestFocus() } }
+                        }
                     }
                 }
             }

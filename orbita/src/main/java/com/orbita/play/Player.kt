@@ -642,8 +642,6 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
         }
     }
     var cat by remember { mutableStateOf(startCat) }
-    var pending by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(pending) { val p = pending ?: return@LaunchedEffect; delay(200); cat = p }
     val list = remember(cat, vm.channels) { channelsOf(vm, cat) }
     val curIdx = list.indexOfFirst { it.id == cur?.id }
     val chState = rememberLazyListState(initialFirstVisibleItemIndex = (curIdx - 4).coerceAtLeast(0))
@@ -671,10 +669,9 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
                         Focus(
                             Modifier.fillMaxWidth().height(34.dp),
                             requester = if (i == catIdx) catReq else null,
-                            onFocus = { pending = c.id },
                             onClick = { cat = c.id; toChannels() },
                             onKey = { ev ->
-                                if (ev.type == KeyEventType.KeyDown && ev.key == Key.DirectionRight) { cat = pending ?: cat; toChannels(); true }
+                                if (ev.type == KeyEventType.KeyDown && ev.key == Key.DirectionRight) { toChannels(); true }
                                 else ev.type == KeyEventType.KeyDown && ev.key == Key.DirectionLeft
                             }
                         ) { f ->

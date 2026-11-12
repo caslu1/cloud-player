@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private const val FAV = "__fav"
 private const val RECENT = "__recent"
@@ -69,7 +70,6 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
     var catQuery by remember { mutableStateOf("") }
     var chQuery by remember { mutableStateOf("") }
     var focusedCh by remember { mutableStateOf<Channel?>(null) }
-    var pendingCat by remember { mutableStateOf<String?>(null) }
 
     val visibleCats = vm.liveCats.filter { vm.catVisible("live", it) }
     val cats = remember(visibleCats, catQuery) {
@@ -89,11 +89,6 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
     }
     val catTitle = when (ui.liveCat) { FAV -> "Favoritos"; RECENT -> "Recentes"; ALL -> "Todos os canais"; else -> vm.catName(ui.liveCat) }
 
-    LaunchedEffect(pendingCat) {
-        val p = pendingCat ?: return@LaunchedEffect
-        delay(220)
-        if (ui.liveCat != p) { ui.liveCat = p; chQuery = "" }
-    }
     LaunchedEffect(ui.liveCat, sortAZ) {
         if (ui.liveCatShown != null && ui.liveCatShown != ui.liveCat + sortAZ) ui.chList.scrollToItem(0)
         ui.liveCatShown = ui.liveCat + sortAZ
@@ -112,7 +107,10 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
         if (playingId == c.id) pb.openFull(liveItem(c), playItems())
         else pb.play(liveItem(c), playItems())
     }
-    fun choose(id: String) { ui.liveCat = id; chQuery = ""; runCatching { firstChannel.requestFocus() } }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    /** Vai para o primeiro canal da lista (▶ nas categorias, OK numa categoria). */
+    fun toFirst() { scope.launch { ui.chList.scrollToItem(0); delay(30); runCatching { firstChannel.requestFocus() } } }
+    fun choose(id: String) { ui.liveCat = id; chQuery = ""; toFirst() }
 
     // Prévia automática ao parar sobre um canal (opcional em Configurações)
     LaunchedEffect(focusedCh?.id) {
@@ -130,15 +128,15 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
                 Spacer(Modifier.height(8.dp))
                 LazyColumn(state = ui.catList, modifier = Modifier.weight(1f)) {
                     if (catQuery.isBlank()) {
-                        item(key = FAV) { CatRow("Favoritos", favCount, ui.liveCat == FAV, "cat:$FAV", { pendingCat = FAV }, catReq, Ic.Star) { choose(FAV) } }
-                        item(key = RECENT) { CatRow("Recentes", recentCount, ui.liveCat == RECENT, "cat:$RECENT", { pendingCat = RECENT }, icon = Ic.History) { choose(RECENT) } }
-                        item(key = ALL) { CatRow("Todos os canais", allowed.size, ui.liveCat == ALL, "cat:$ALL", { pendingCat = ALL }, icon = Ic.LiveTv) { choose(ALL) } }
+                        item(key = FAV) { CatRow("Favoritos", favCount, ui.liveCat == FAV, "cat:$FAV", {}, catReq, Ic.Star, ::toFirst) { choose(FAV) } }
+                        item(key = RECENT) { CatRow("Recentes", recentCount, ui.liveCat == RECENT, "cat:$RECENT", {}, icon = Ic.History, onRight = ::toFirst) { choose(RECENT) } }
+                        item(key = ALL) { CatRow("Todos os canais", allowed.size, ui.liveCat == ALL, "cat:$ALL", {}, icon = Ic.LiveTv, onRight = ::toFirst) { choose(ALL) } }
                     }
                     items(cats, key = { "c" + it.id }) { c ->
                         val locked = vm.catLocked(c)
                         val icon = if (locked) Ic.Lock else if (MatchLogic.isSportsName(c.name)) Ic.Soccer else null
                         CatRow(c.name, if (locked) -1 else vm.uniqueByCat[c.id]?.size ?: 0, ui.liveCat == c.id, "cat:${c.id}",
-                            { if (!locked) pendingCat = c.id }, icon = icon) {
+                            {}, icon = icon, onRight = ::toFirst) {
                             if (locked) ui.unlockAdult(vm) { choose(c.id) } else choose(c.id)
                         }
                     }
@@ -292,9 +290,14 @@ private fun DayProgrammes(vm: Vm, c: Channel?, all: List<Prog>, day: Int, onWatc
 @Composable
 internal fun CatRow(
     label: String, count: Int, selected: Boolean, memKey: String, onFocus: () -> Unit, requester: FocusRequester? = null,
-    icon: androidx.compose.ui.graphics.vector.ImageVector? = null, onClick: () -> Unit,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null, onRight: (() -> Unit)? = null, onClick: () -> Unit,
 ) {
-    Focus(Modifier.fillMaxWidth().height(36.dp), onClick = onClick, onFocus = onFocus, memKey = memKey, requester = requester) { f ->
+    Focus(
+        Modifier.fillMaxWidth().height(36.dp), onClick = onClick, onFocus = onFocus, memKey = memKey, requester = requester,
+        onKey = if (onRight == null) null else { ev ->
+            if (ev.type == androidx.compose.ui.input.key.KeyEventType.KeyDown && ev.key == androidx.compose.ui.input.key.Key.DirectionRight) { onRight(); true } else false
+        }
+    ) { f ->
         Row(
             Modifier.fillMaxSize()
                 .background(if (f) C.focusBg else if (selected) C.accentSoft else Color.Transparent)

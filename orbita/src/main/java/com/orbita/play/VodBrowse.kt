@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** Categoria da lateral de Filmes/Séries. */
 class BrowseCat(val id: String, val name: String, val count: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null)
@@ -62,8 +63,6 @@ fun VodBrowse(
     // sem escolha: abre em Continuar assistindo se houver algo em andamento, senão na primeira categoria com títulos
     val cat = selected?.takeIf { id -> cats.any { it.id == id } && !locked(id) } ?: (cats.firstOrNull { it.count > 0 } ?: cats.firstOrNull())?.id ?: ""
     var catQuery by remember { mutableStateOf("") }
-    var pending by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(pending) { val p = pending ?: return@LaunchedEffect; delay(260); if (p != cat) onSelect(p) }
     var shownCat by remember { mutableStateOf(cat) }
     LaunchedEffect(cat) { if (shownCat != cat) { gridState.scrollToItem(0); shownCat = cat } }
 
@@ -86,6 +85,9 @@ fun VodBrowse(
         if (catQuery.isBlank()) cats else cats.filter { MatchLogic.norm(it.name).contains(MatchLogic.norm(catQuery), true) }
     }
     val gridReq = remember { FocusRequester() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    /** Vai para a primeira capa (▶ nas categorias, OK numa categoria). */
+    fun toFirst() { scope.launch { delay(40); gridState.scrollToItem(0); delay(30); runCatching { gridReq.requestFocus() } } }
     val catReq = remember { FocusRequester() }
     InitialFocus(if (entries.isEmpty()) catReq else gridReq)
 
@@ -101,8 +103,8 @@ fun VodBrowse(
                     Spacer(Modifier.height(8.dp))
                     LazyColumn(state = catState, modifier = Modifier.weight(1f)) {
                         items(visibleCats, key = { it.id }) { c ->
-                            CatRow(c.name, c.count, c.id == cat && !searching, "vcat:${c.id}", { if (!searching && !locked(c.id)) pending = c.id }, if (c.id == cat) catReq else null, c.icon) {
-                                val go = { catQuery = ""; results = null; onSelect(c.id); runCatching { gridReq.requestFocus() }; Unit }
+                            CatRow(c.name, c.count, c.id == cat && !searching, "vcat:${c.id}", {}, if (c.id == cat) catReq else null, c.icon, ::toFirst) {
+                                val go = { catQuery = ""; results = null; onSelect(c.id); toFirst() }
                                 if (locked(c.id)) unlock(go) else go()
                             }
                         }

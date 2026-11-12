@@ -74,7 +74,7 @@ fun SettingsScreen(vm: Vm, pb: Playback, ui: Ui) {
         Row(Modifier.weight(1f)) {
             Column(Modifier.width(250.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 sections.forEachIndexed { i, s ->
-                    Focus(Modifier.fillMaxWidth(), onFocus = { section = i }, requester = if (i == 0) first else null, memKey = "set:$i") { f ->
+                    Focus(Modifier.fillMaxWidth(), onClick = { section = i }, requester = if (i == 0) first else null, memKey = "set:$i") { f ->
                         val sel = section == i
                         Row(
                             Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(9.dp))
