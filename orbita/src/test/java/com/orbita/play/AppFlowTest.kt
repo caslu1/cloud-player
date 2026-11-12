@@ -19,6 +19,12 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.printToString
+import java.io.File
 import java.time.Duration
 
 /**
@@ -26,10 +32,27 @@ import java.time.Duration
  * Pega erros que fazem o app fechar (o teste falha com a exceção).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35], qualifiers = "w960dp-h540dp-land-mdpi")
+@Config(sdk = [35], qualifiers = "w960dp-h540dp-land-xhdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AppFlowTest {
     @get:Rule val rule = createAndroidComposeRule<MainActivity>()
     private val server = MockWebServer()
+
+    private val cats = listOf("Futebol", "Esportes", "Abertos", "Notícias", "Filmes 24h", "Séries 24h", "Infantil", "Documentários", "Música")
+    private val channels = listOf("Futebol 1 HD", "Futebol 2 FHD", "Arena Esporte HD", "Gol TV FHD", "Campo 4K", "Placar HD", "Torcida SD", "Futebol+ HD", "Bola Rolando", "Esporte Total 1")
+    private val movies = listOf("Sertão Vermelho", "Rota 116", "Céu de Chumbo", "O Último Farol", "Pequenos Gigantes", "Ponto Cego", "Dez Segundos", "Verão de 98", "Linha Vermelha")
+    private val series = listOf("Plantão Noturno", "Cidade de Vidro", "Maré Alta", "Código Zero", "A Casa da Serra", "Noite em Lisboa")
+    private val matches = listOf(
+        "Série A: Atlético Serrano x Ribeirense", "Série A: União Vale x Porto Alegre", "Série B: Real Cerrado x Operário Sul",
+        "Copa Continental: Náutico Mar x Estrela do Norte", "Copa Continental: Vila Nova Paz x Cruzeiro do Leste"
+    )
+
+    private fun shot(name: String) {
+        repeat(8) { pump() }
+        val dir = File(System.getProperty("user.dir"), "build/screens").apply { mkdirs() }
+        val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
+        File(dir, "$name.png").outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+    }
 
     private fun b64(s: String) = Base64.encodeToString(s.toByteArray(), Base64.NO_WRAP)
 
@@ -42,22 +65,36 @@ class AppFlowTest {
                 val action = Regex("action=([a-z_]+)").find(path)?.groupValues?.get(1)
                 val body = when (action) {
                     null -> """{"user_info":{"auth":1,"status":"Active","exp_date":"1893456000","max_connections":"2","active_cons":"0"},"server_info":{}}"""
-                    "get_live_categories" -> """[{"category_id":"1","category_name":"Futebol"},{"category_id":"2","category_name":"Notícias"}]"""
-                    "get_live_streams" -> """[
-                        {"num":101,"name":"Futebol 1 HD","stream_id":101,"stream_icon":"","category_id":"1","epg_channel_id":"f1"},
-                        {"num":101,"name":"Futebol 1 HD","stream_id":101,"stream_icon":"","category_id":"1"},
-                        {"num":102,"name":"Jornal 24h","stream_id":102,"category_id":"2"}]"""
+                    "get_live_categories" -> cats.withIndex().joinToString(",", "[", "]") { (i, c) -> """{"category_id":"${i + 1}","category_name":"$c"}""" }
+                    "get_live_streams" -> (channels.withIndex().joinToString(",", "[", "") { (i, c) ->
+                        """{"num":${101 + i},"name":"$c","stream_id":${101 + i},"stream_icon":"","category_id":"1"}"""
+                    } + """,{"num":101,"name":"Futebol 1 HD","stream_id":101,"category_id":"1"},
+                        {"num":201,"name":"Jornal 24h","stream_id":201,"category_id":"4"}]""")
                     "get_vod_categories" -> """[{"category_id":"10","category_name":"Drama"}]"""
-                    "get_vod_streams" -> """[{"stream_id":5,"name":"Sertão Vermelho","stream_icon":"","category_id":"10","rating":"8.1","added":"1700000000","container_extension":"mp4"}]"""
-                    "get_vod_info" -> """{"info":{"plot":"Uma engenheira volta para casa.","genre":"Drama","releasedate":"2026-01-01","duration_secs":"7680","rating":"8.1"}}"""
+                    "get_vod_streams" -> movies.withIndex().joinToString(",", "[", "]") { (i, m) ->
+                        """{"stream_id":${5 + i},"name":"$m","stream_icon":"","category_id":"10","rating":"${8.1 - i * 0.2}","added":"${1700000000 - i}","container_extension":"mp4"}"""
+                    }
+                    "get_vod_info" -> """{"info":{"plot":"Uma engenheira volta para casa. Depois de vinte anos longe, ela tenta impedir que a represa da família seja vendida e descobre que o passado não ficou enterrado.","genre":"Drama · Faroeste","releasedate":"2026-01-01","duration_secs":"7680","rating":"8.1","age":"16"}}"""
                     "get_series_categories" -> """[{"category_id":"20","category_name":"Médicos"}]"""
-                    "get_series" -> """[{"series_id":7,"name":"Plantão Noturno","cover":"","category_id":"20","rating":"8.6","plot":"Residentes.","last_modified":"1700000000"}]"""
+                    "get_series" -> series.withIndex().joinToString(",", "[", "]") { (i, n) ->
+                        """{"series_id":${7 + i},"name":"$n","cover":"","category_id":"20","rating":"8.6","genre":"Drama · Médico","releaseDate":"2024","plot":"Entre turnos de doze horas, médicos residentes de um hospital público tentam salvar vidas sem perder a própria.","last_modified":"${1700000000 - i}"}"""
+                    }
                     "get_series_info" -> """{"info":{"plot":"Residentes.","cast":"Ana Lima, Rafael Souza"},"episodes":{"1":[
                         {"id":"71","episode_num":1,"title":"O Plantão","container_extension":"mp4","info":{"duration_secs":"2880"}},
-                        {"id":"72","episode_num":2,"title":"Sirene","container_extension":"mp4","info":{}}]}}"""
-                    "get_short_epg" -> """{"epg_listings":[
-                        {"title":"${b64("Campeonato Nacional: Flamengo x Palmeiras")}","description":"","start_timestamp":"${now - 600}","stop_timestamp":"${now + 6000}"},
-                        {"title":"${b64("Gols da Rodada")}","description":"","start_timestamp":"${now + 6000}","stop_timestamp":"${now + 9000}"}]}"""
+                        {"id":"72","episode_num":2,"title":"Sirene","container_extension":"mp4","info":{"duration_secs":"3060","plot":"Uma ambulância desaparece no meio do trajeto até o hospital."}},
+                        {"id":"73","episode_num":3,"title":"Quarto 214","container_extension":"mp4","info":{"duration_secs":"2820","plot":"Uma paciente misteriosa se recusa a dizer o próprio nome."}}],
+                        "2":[{"id":"81","episode_num":1,"title":"Sem Sinal","container_extension":"mp4","info":{"duration_secs":"3120"}}]}}"""
+                    "get_short_epg" -> {
+                        val id = (Regex("stream_id=(\\d+)").find(path)?.groupValues?.get(1)?.toIntOrNull() ?: 101) - 101
+                        val m = matches[id.mod(matches.size)]
+                        val h = if (id % 3 == 2) 7200 else 0
+                        """{"epg_listings":[
+                        {"title":"${b64("Esporte em Debate")}","description":"","start_timestamp":"${now - 7200 + h}","stop_timestamp":"${now - 1200 + h}"},
+                        {"title":"${b64(m)}","description":"","start_timestamp":"${now - 1200 + h}","stop_timestamp":"${now + 5400 + h}"},
+                        {"title":"${b64("Gols da Rodada")}","description":"","start_timestamp":"${now + 5400 + h}","stop_timestamp":"${now + 8100 + h}"},
+                        {"title":"${b64("Resenha Esportiva")}","description":"","start_timestamp":"${now + 8100 + h}","stop_timestamp":"${now + 10800 + h}"},
+                        {"title":"${b64("Reprise: Clássico da Semana")}","description":"","start_timestamp":"${now + 10800 + h}","stop_timestamp":"${now + 14400 + h}"}]}"""
+                    }
                     else -> "[]"
                 }
                 return MockResponse().setBody(body).setHeader("Content-Type", "application/json")
@@ -82,11 +119,13 @@ class AppFlowTest {
             pump()
             if (has(text)) return
         }
-        throw AssertionError("Texto não apareceu: $text")
+        runCatching { shot("falha-" + text.filter { it.isLetterOrDigit() }) }
+        val tree = runCatching { rule.onRoot(useUnmergedTree = true).printToString(maxDepth = 60) }.getOrDefault("")
+        throw AssertionError("Texto não apareceu: $text\n$tree".take(6000))
     }
 
-    private fun click(text: String) {
-        rule.onAllNodesWithText(text, substring = true)[0].performClick()
+    private fun click(text: String, exact: Boolean = false) {
+        rule.onAllNodesWithText(text, substring = !exact)[0].performClick()
         repeat(5) { pump() }
     }
 
@@ -98,6 +137,7 @@ class AppFlowTest {
     @Test fun loginAndBrowseEverything() {
         rule.mainClock.autoAdvance = false
         waitText("Conectar lista")
+        shot("01-login")
 
         val fields = rule.onAllNodes(hasSetTextAction())
         fields[0].performTextInput(server.url("/").toString())
@@ -107,42 +147,52 @@ class AppFlowTest {
 
         // Canais
         waitText("Futebol 1 HD")
-        waitText("Jornal 24h")
-        click("Jornal 24h") // toca na prévia
+        waitText("Campeonato")
+        waitText("Gol TV")
+        shot("02-canais")
+        click("Futebol 2 FHD") // toca na prévia
         repeat(10) { pump() }
 
         // Filmes
-        click("Filmes")
+        click("Filmes", exact = true)
         waitText("Sertão Vermelho")
         waitText("Lançamentos")
+        waitText("Uma engenheira")
+        shot("03-filmes")
         rule.onAllNodesWithText("Sertão Vermelho")[rule.onAllNodesWithText("Sertão Vermelho").fetchSemanticsNodes().size - 1].performClick()
         waitText("FILME")
         waitText("Uma engenheira")
+        shot("04-filme-detalhe")
         back()
 
         // Séries
-        click("Séries")
+        click("Séries", exact = true)
         waitText("Plantão Noturno")
+        shot("05-series")
         rule.onAllNodesWithText("Ver episódios")[0].performClick()
         waitText("O Plantão")
         waitText("Sirene")
+        shot("06-serie-episodios")
         back()
 
         // Futebol (jogos vindos do EPG)
-        click("Futebol")
-        waitText("Flamengo")
-        waitText("Palmeiras")
+        click("Futebol", exact = true)
+        waitText("Atlético Serrano")
+        waitText("Ribeirense")
+        shot("07-futebol")
 
         // Buscar, Biblioteca, Configurações
-        click("Buscar")
+        click("Buscar", exact = true)
         waitText("O que você quer assistir?")
-        click("Biblioteca")
+        click("Biblioteca", exact = true)
         waitText("Canais favoritos")
+        shot("08-biblioteca")
         click("⚙")
         waitText("Configurações")
         waitText("Ativa")
+        shot("09-configuracoes")
         back()
-        click("Canais")
+        click("Canais", exact = true)
         waitText("Futebol 1 HD")
     }
 }

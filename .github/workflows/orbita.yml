@@ -34,6 +34,13 @@ jobs:
           ./gradlew --no-daemon :orbita:testDebugUnitTest :orbita:assembleRelease || { find orbita/build/test-results -name "*.xml" -exec grep -l "<failure" {} + | xargs -r sed -n "/<failure/,/<\/failure>/p" | head -120; exit 1; }
           cp orbita/build/outputs/apk/release/*.apk Orbita-Play.apk
           ls -la Orbita-Play.apk
+      - name: Publish screenshots
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls orbita/build/screens/*.png 2>/dev/null || exit 0
+          gh release upload orbita-play orbita/build/screens/*.png --clobber || true
       - uses: actions/upload-artifact@v4
         with:
           name: Orbita-Play
