@@ -80,7 +80,10 @@ class Store(ctx: Context) {
         .putString("acc.pass", a.pass).putString("acc.m3u", a.m3uUrl).apply()
 
     fun logout() {
+        // o MAC e a chave do aparelho continuam (são usados no site de ativação)
+        val mac = p.getString("dmac", null); val key = p.getString("dkey", null)
         p.edit().clear().apply()
+        p.edit().putString("dmac", mac).putString("dkey", key).apply()
         reload()
         liveFormat.value = "ts"
     }
@@ -135,6 +138,9 @@ class Store(ctx: Context) {
 
     fun lastEpisodeOf(seriesId: String): Progress? =
         progress.values.filter { it.seriesId == seriesId }.maxByOrNull { it.time }
+
+    fun lastSiteList(): String? = p.getString("siteList", null)
+    fun setLastSiteList(k: String) = p.edit().putString("siteList", k).apply()
 
     fun pin(): String = p.getString("pin", "0000") ?: "0000"
     fun setPin(v: String) = p.edit().putString("pin", v).apply()

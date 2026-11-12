@@ -29,6 +29,8 @@ jobs:
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
       - name: Build
+        env:
+          ORBITA_SITE_URL: ${{ vars.ORBITA_SITE_URL }}
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon :orbita:testDebugUnitTest :orbita:assembleRelease || { find orbita/build/test-results -name "*.xml" -exec grep -l "<failure" {} + | xargs -r sed -n "/<failure/,/<\/failure>/p" | head -120; exit 1; }

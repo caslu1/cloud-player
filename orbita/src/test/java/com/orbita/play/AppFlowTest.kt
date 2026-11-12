@@ -89,6 +89,9 @@ class AppFlowTest {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 val path = request.path.orEmpty()
                 if (path.startsWith("/api/buscarJogos")) return MockResponse().setBody(apiGames()).setHeader("Content-Type", "application/json")
+                if (path.startsWith("/api/app/")) return MockResponse().setHeader("Content-Type", "application/json").setBody(
+                    """{"mac":"0A:1B:2C:3D:4E:5F","key":"581378","status":"trial","plan":"trial","days_left":7,"activate_url":"https://ativar.exemplo/ativar?mac=0A:1B:2C:3D:4E:5F&key=581378","support":"","playlists":[]}"""
+                )
                 if (!path.startsWith("/player_api.php")) return MockResponse().setResponseCode(404)
                 val action = Regex("action=([a-z_]+)").find(path)?.groupValues?.get(1)
                 val body = when (action) {
@@ -130,6 +133,7 @@ class AppFlowTest {
         }
         server.start()
         FootballApi.baseUrl = server.url("/").toString().trimEnd('/')
+        Activation.site = server.url("/").toString().trimEnd('/')
     }
 
     @After fun tearDown() { server.shutdown() }

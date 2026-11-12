@@ -31,6 +31,7 @@ class Match(
 /** Estado do app: conta, catálogo (canais, filmes, séries), guia e jogos. */
 @androidx.compose.runtime.Stable
 class Vm(ctx: Context) {
+    private val ctx: Context = ctx.applicationContext
     val store = Store(ctx.applicationContext)
 
     init { Tmdb.init(ctx.applicationContext) }
@@ -39,6 +40,9 @@ class Vm(ctx: Context) {
     var source: Source? = null; private set
     var account by mutableStateOf<Account?>(null); private set
     var status by mutableStateOf<AccountStatus?>(null)
+    /** Situação no site de ativação (null = desligado ou ainda sem resposta). */
+    var act by mutableStateOf<ActState?>(null)
+    private var actBusy = false
 
     var liveState by mutableStateOf(LoadState.IDLE); private set
     var liveError by mutableStateOf<String?>(null); private set
@@ -91,6 +95,23 @@ class Vm(ctx: Context) {
         store.saveAccount(a)
         account = a
         startLoading()
+    }
+
+    /** Consulta o site: situação do aparelho e listas cadastradas. Sem conta, entra com a 1ª lista do site. */
+    fun checkActivation() {
+        if (!Activation.enabled() || actBusy) return
+        actBusy = true
+        scope.launch {
+            val a = withContext(Dispatchers.IO) { runCatching { Activation.register(ctx) }.getOrNull() }
+            actBusy = false
+            if (a == null) return@launch
+            act = a
+            val first = a.playlists.firstOrNull()
+            if (account == null && first != null && !a.locked && store.lastSiteList() != first.key) {
+                store.setLastSiteList(first.key)
+                runCatching { login(first.account()) }
+            }
+        }
     }
 
     fun resume(): Boolean {

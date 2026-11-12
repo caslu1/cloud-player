@@ -154,6 +154,7 @@ class MainActivity : ComponentActivity() {
         vm = Vm(this)
         pb = Playback(this, vm)
         vm.resume()
+        vm.checkActivation()
         setContent {
             var lastCrash by remember { mutableStateOf(crash) }
             val c = lastCrash
@@ -195,12 +196,16 @@ fun App(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
     Scaled {
         Box(Modifier.fillMaxSize().background(C.screen)) {
             when {
+                vm.act?.locked == true -> ActivationScreen(vm)
                 vm.account == null -> LoginScreen(vm)
                 pb.fullscreen && pb.current != null -> FullPlayer(vm, pb)
                 else -> Shell(vm, pb, ui, exit)
             }
         }
     }
+    // revalida a ativação de tempos em tempos; vencido/bloqueado para o vídeo
+    LaunchedEffect(Unit) { while (true) { delay(10 * 60_000L); vm.checkActivation() } }
+    LaunchedEffect(vm.act?.locked) { if (vm.act?.locked == true) { pb.stop(); pb.fullscreen = false } }
     // Volta o foco para quem abriu o player
     LaunchedEffect(pb.fullscreen) {
         if (pb.fullscreen) ui.playerReturnKey = FocusMem.last

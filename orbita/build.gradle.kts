@@ -18,6 +18,8 @@ android {
         val run = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0
         versionCode = 100 + run
         versionName = "1.0.$run"
+        // site de ativação (MAC + chave). Vazio = desligado. No GitHub: Settings → Variables → ORBITA_SITE_URL
+        buildConfigField("String", "SITE_URL", "\"${System.getenv("ORBITA_SITE_URL") ?: ""}\"")
     }
 
     signingConfigs {
@@ -45,6 +47,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     testOptions {
         unitTests {
@@ -73,6 +76,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("com.google.zxing:core:3.5.3")
 
     testImplementation("junit:junit:4.13.2")
     // Teste de ponta a ponta: abre o app num Android simulado e faz login num servidor IPTV falso

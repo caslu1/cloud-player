@@ -105,6 +105,11 @@ fun LoginScreen(vm: Vm) {
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     listOf("Canais ao vivo", "Filmes e séries", "Guia EPG", "Futebol").forEach { Txt("•  $it", F.s(8.5.sp, C.dim)) }
                 }
+                if (Activation.enabled()) {
+                    Spacer(Modifier.height(22.dp))
+                    ActivationPolling(vm)
+                    ActivationCard(vm)
+                }
             }
             Column(
                 Modifier.width(330.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF0E0B1A)).border(1.dp, Color(0xFF221A3A), RoundedCornerShape(12.dp))
