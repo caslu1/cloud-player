@@ -147,7 +147,7 @@ class AppFlowTest {
 
         // Canais
         waitText("Futebol 1 HD")
-        waitText("Campeonato")
+        waitText("Atlético Serrano x Ribeirense")
         waitText("Gol TV")
         shot("02-canais")
         click("Futebol 2 FHD") // toca na prévia
