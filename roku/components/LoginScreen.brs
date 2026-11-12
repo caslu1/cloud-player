@@ -5,6 +5,9 @@ sub init()
     m.keys = ["server", "user", "pass"]
     m.labels = ["Servidor", "Usuário", "Senha"]
     m.form.observeField("itemSelected", "onSelect")
+    m.timeout = m.top.findNode("timeout")
+    m.timeout.observeField("fire", "onTimeout")
+    m.busy = false
     m.top.observeField("focusedChild", "onFocus")
     refresh()
 end sub
@@ -66,11 +69,22 @@ sub login()
     m.values.server = s
     m.global.creds = { server: s, user: m.values.user, pass: m.values.pass }
     m.msg.color = "0xA59FC0FF"
-    m.msg.text = "Conectando…"
+    m.msg.text = "Conectando a " + s + " …"
+    m.busy = true
+    m.timeout.control = "start"
     callApi("login", apiUrl(""))
 end sub
 
+sub onTimeout()
+    if not m.busy then return
+    m.busy = false
+    m.msg.color = "0xFF6B81FF"
+    m.msg.text = "O servidor não respondeu. Confira o endereço (com http:// ou https:// e a porta, se houver) e tente de novo."
+end sub
+
 sub onApi(event as object)
+    m.timeout.control = "stop"
+    m.busy = false
     r = event.getData()
     ok = false
     if r.ok and type(r.data) = "roAssociativeArray" and r.data.user_info <> invalid
@@ -85,6 +99,12 @@ sub onApi(event as object)
         m.top.action = { type: "home" }
     else
         m.msg.color = "0xFF6B81FF"
-        m.msg.text = "Não foi possível entrar. Confira os dados (código " + asText(r.code) + ")."
+        if r.code = 0
+            m.msg.text = "Sem resposta do servidor (código 0). Confira o endereço e a internet da TV."
+        else if r.code = 200
+            m.msg.text = "Usuário ou senha incorretos, ou a lista está vencida."
+        else
+            m.msg.text = "Não foi possível entrar (código " + asText(r.code) + "). Confira os dados."
+        end if
     end if
 end sub

@@ -8,7 +8,7 @@
         <Label id="title" translation="[80,50]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" />
         <Rectangle translation="[70,130]" width="500" height="900" color="0x0D0B18E6" />
         <Label text="CATEGORIAS" translation="[90,145]" font="font:SmallestBoldSystemFont" color="0x6D6788FF" />
-        <LabelList id="cats" translation="[80,190]" itemSize="[480,64]" numRows="12"
+        <LabelList id="cats" vertFocusAnimationStyle="floatingFocus" translation="[80,190]" itemSize="[480,64]" numRows="12"
             color="0xCFC8EAFF" focusedColor="0xFFFFFFFF" focusBitmapUri="pkg:/images/row.png" focusBitmapBlendColor="0x7C5CFFFF"
             font="font:MediumSystemFont" focusedFont="font:MediumBoldSystemFont" />
         <Label id="catTitle" translation="[620,145]" width="1200" font="font:SmallestBoldSystemFont" color="0x6D6788FF" />

@@ -8,12 +8,12 @@
         <Label text="CANAIS" translation="[80,50]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" />
         <Rectangle translation="[70,130]" width="540" height="900" color="0x0D0B18E6" />
         <Label text="CATEGORIAS" translation="[90,145]" font="font:SmallestBoldSystemFont" color="0x6D6788FF" />
-        <LabelList id="cats" translation="[80,190]" itemSize="[520,64]" numRows="12"
+        <LabelList id="cats" vertFocusAnimationStyle="floatingFocus" translation="[80,190]" itemSize="[520,64]" numRows="12"
             color="0xCFC8EAFF" focusedColor="0xFFFFFFFF" focusBitmapUri="pkg:/images/row.png" focusBitmapBlendColor="0x7C5CFFFF"
             font="font:MediumSystemFont" focusedFont="font:MediumBoldSystemFont" />
         <Rectangle translation="[640,130]" width="1210" height="900" color="0x0D0B18E6" />
         <Label id="catTitle" translation="[660,145]" width="1100" font="font:SmallestBoldSystemFont" color="0x6D6788FF" />
-        <LabelList id="channels" translation="[655,190]" itemSize="[1180,64]" numRows="12"
+        <LabelList id="channels" vertFocusAnimationStyle="floatingFocus" translation="[655,190]" itemSize="[1180,64]" numRows="12"
             color="0xE9E6F5FF" focusedColor="0x0B0A12FF" focusBitmapUri="pkg:/images/rowwide.png" focusBitmapBlendColor="0xF4F2FAFF"
             font="font:MediumSystemFont" focusedFont="font:MediumBoldSystemFont" />
         <Label id="status" translation="[660,500]" width="1180" horizAlign="center" font="font:MediumSystemFont" color="0xA59FC0FF" text="Carregando…" />

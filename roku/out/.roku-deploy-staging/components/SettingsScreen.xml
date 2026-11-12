@@ -11,6 +11,6 @@
         <Label text="CONFIGURAÇÕES" translation="[80,50]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" />
         <Rectangle translation="[70,140]" width="1780" height="420" color="0x0D0B18E6" />
         <Label id="info" translation="[110,175]" width="1700" font="font:MediumSystemFont" color="0xE9E6F5FF" wrap="true" lineSpacing="18" />
-        <LabelList id="menu" translation="[80,620]" itemSize="[600,76]" numRows="2" itemSpacing="[0,14]" color="0xE9E6F5FF" focusedColor="0x0B0A12FF" focusBitmapUri="pkg:/images/row.png" focusBitmapBlendColor="0xF4F2FAFF" font="font:MediumSystemFont" focusedFont="font:MediumBoldSystemFont" />
+        <LabelList id="menu" vertFocusAnimationStyle="floatingFocus" translation="[80,620]" itemSize="[600,76]" numRows="2" itemSpacing="[0,14]" color="0xE9E6F5FF" focusedColor="0x0B0A12FF" focusBitmapUri="pkg:/images/row.png" focusBitmapBlendColor="0xF4F2FAFF" font="font:MediumSystemFont" focusedFont="font:MediumBoldSystemFont" />
     </children>
 </component>
