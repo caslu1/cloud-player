@@ -124,26 +124,30 @@ fun Switch(on: Boolean) {
     ) { Box(Modifier.size(14.dp).clip(CircleShape).background(C.white)) }
 }
 
-/** Janela de confirmação (ex.: sair do app). */
+/** Janela de confirmação (sair do app, sair da conta, limpar dados…). */
 @Composable
-fun ConfirmDialog(title: String, message: String, confirm: String, onConfirm: () -> Unit, onCancel: () -> Unit) {
+fun ConfirmDialog(
+    title: String, message: String, confirm: String, onConfirm: () -> Unit, onCancel: () -> Unit,
+    icon: androidx.compose.ui.graphics.vector.ImageVector = Ic.Logout, danger: Boolean = false,
+) {
     val cancelReq = remember { FocusRequester() }
     LaunchedEffect(Unit) { delay(60); runCatching { cancelReq.requestFocus() } }
     BackHandler { onCancel() }
     Box(Modifier.fillMaxSize().background(Color(0xCC000000)), contentAlignment = Alignment.Center) {
         Column(
-            Modifier.width(330.dp).clip(RoundedCornerShape(16.dp)).background(C.panelSolid).border(1.dp, C.panelBorder, RoundedCornerShape(16.dp))
+            Modifier.width(340.dp).clip(RoundedCornerShape(16.dp)).background(C.panelSolid).border(1.dp, C.panelBorder, RoundedCornerShape(16.dp))
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(Modifier.size(40.dp).clip(CircleShape).background(C.accentSoft), contentAlignment = Alignment.Center) { Icon(Ic.Logout, 18.dp, C.accentText) }
+            val tint = if (danger) C.live else C.accentText
+            Box(Modifier.size(44.dp).clip(CircleShape).background(tint.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) { Icon(icon, 20.dp, tint) }
             Spacer(Modifier.height(12.dp))
             Txt(title, F.s(14.sp, C.white, FontWeight.Bold, F.outfit))
-            if (message.isNotEmpty()) { Spacer(Modifier.height(4.dp)); Txt(message, F.s(9.sp, C.dim), maxLines = 2) }
+            if (message.isNotEmpty()) { Spacer(Modifier.height(5.dp)); Txt(message, F.s(9.sp, C.dim), maxLines = 3, align = androidx.compose.ui.text.style.TextAlign.Center) }
             Spacer(Modifier.height(18.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ActionButton("Cancelar", requester = cancelReq) { onCancel() }
-                ActionButton(confirm, primary = true, icon = Ic.Logout) { onConfirm() }
+                ActionButton(confirm, primary = true, icon = icon) { onConfirm() }
             }
         }
     }
