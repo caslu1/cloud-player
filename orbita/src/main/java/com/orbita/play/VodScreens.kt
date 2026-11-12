@@ -340,22 +340,36 @@ fun MovieDetail(vm: Vm, pb: Playback, ui: Ui, m: Movie) {
     InitialFocus(playReq)
     Box(Modifier.fillMaxSize()) {
         Backdrop(h.backdrop, m.name)
-        Row(Modifier.fillMaxSize().padding(start = 28.dp, end = 40.dp, top = 54.dp)) {
+        // capa e informações juntas, centralizadas na tela (sem espaço vazio no meio em telas largas)
+        Row(
+            Modifier.align(Alignment.Center).widthIn(max = 900.dp).fillMaxWidth().padding(horizontal = 40.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(Modifier.width(220.dp).height(330.dp).clip(RoundedCornerShape(14.dp)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(14.dp))) {
+                GeneratedArt(h.title, Modifier.fillMaxSize(), big = true)
+                (t?.posterUrl("w500") ?: m.poster)?.let { AsyncImage(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
+            }
+            Spacer(Modifier.width(34.dp))
             Column(Modifier.weight(1f)) {
-                Txt("FILME", F.s(8.sp, C.cyan, FontWeight.SemiBold, spacing = 2.sp))
-                Spacer(Modifier.height(6.dp))
-                TitleArt(h.title, h.logo)
-                Spacer(Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    h.chips.forEach { MetaChip(it) }
-                    if (h.rating > 0) MetaChip(stars(h.rating), C.star, Color(0x33FBBF24))
-                    h.genre?.let { Txt(it, F.s(8.5.sp, C.dim)) }
+                Txt("FILME", F.s(9.sp, C.cyan, FontWeight.SemiBold, spacing = 2.sp))
+                Spacer(Modifier.height(8.dp))
+                if (h.logo != null) {
+                    AsyncImage(
+                        h.logo, h.title, Modifier.widthIn(max = 380.dp).heightIn(max = 110.dp),
+                        contentScale = ContentScale.Fit, alignment = Alignment.CenterStart
+                    )
+                } else Txt(h.title, F.s(30.sp, C.white, FontWeight.Bold, FontFamily.Serif), maxLines = 2)
+                Spacer(Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    h.chips.forEach { BigChip(it) }
+                    if (h.rating > 0) BigChip(stars(h.rating), C.star, Color(0x33FBBF24))
                 }
-                Spacer(Modifier.height(10.dp))
-                Txt(h.plot ?: if (info == null && t == null) "Carregando informações…" else "", F.s(10.sp, C.text), Modifier.width(470.dp), maxLines = 5)
-                info?.cast?.let { Spacer(Modifier.height(8.dp)); Txt("Elenco: $it", F.s(8.5.sp, C.dim), Modifier.width(470.dp), maxLines = 2) }
-                Spacer(Modifier.height(16.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                h.genre?.let { Spacer(Modifier.height(8.dp)); Txt(it, F.s(11.sp, C.dim, FontWeight.Medium)) }
+                Spacer(Modifier.height(12.dp))
+                Txt(h.plot ?: if (info == null && t == null) "Carregando informações…" else "", F.s(12.sp, C.text), maxLines = 6)
+                info?.cast?.let { Spacer(Modifier.height(10.dp)); Txt("Elenco: $it", F.s(10.sp, C.dim), maxLines = 2) }
+                Spacer(Modifier.height(20.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     ActionButton(if (prog != null) "Continuar ${fmtTime(prog.pos)}" else "Assistir", primary = true, icon = "▶", requester = playReq) {
                         pb.openFull(movieItem(m, h.genre.orEmpty()), startMs = prog?.pos ?: 0L)
                     }
@@ -364,17 +378,20 @@ fun MovieDetail(vm: Vm, pb: Playback, ui: Ui, m: Movie) {
                     ActionButton("Trailer") { openTrailer(ctx, t?.trailer ?: info?.trailer, m.name) }
                 }
                 if (prog != null) {
-                    Spacer(Modifier.height(12.dp))
-                    ProgressBar(prog.fraction, Modifier.width(220.dp).height(3.dp).clip(RoundedCornerShape(2.dp)), C.accent)
-                    Txt("Faltam ${prog.remainingMin} min", F.s(8.sp, C.dim), Modifier.padding(top = 4.dp))
+                    Spacer(Modifier.height(14.dp))
+                    ProgressBar(prog.fraction, Modifier.width(260.dp).height(4.dp).clip(RoundedCornerShape(2.dp)), C.accent)
+                    Txt("Faltam ${prog.remainingMin} min", F.s(9.5.sp, C.dim), Modifier.padding(top = 5.dp))
                 }
-            }
-            Box(Modifier.padding(top = 16.dp).width(170.dp).height(255.dp).clip(RoundedCornerShape(12.dp))) {
-                GeneratedArt(m.name, Modifier.fillMaxSize(), big = true)
-                (t?.posterUrl("w500") ?: m.poster)?.let { AsyncImage(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
             }
         }
         HintBar(listOf("OK" to "Selecionar", "VOLTAR" to "Filmes"), Modifier.align(Alignment.BottomStart).padding(bottom = 14.dp))
+    }
+}
+
+@Composable
+private fun BigChip(text: String, color: Color = C.white, bg: Color = Color(0x33FFFFFF)) {
+    Box(Modifier.clip(RoundedCornerShape(5.dp)).background(bg).padding(horizontal = 8.dp, vertical = 3.5.dp)) {
+        Txt(text, F.s(9.5.sp, color, FontWeight.Bold))
     }
 }
 

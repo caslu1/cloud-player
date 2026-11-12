@@ -205,11 +205,11 @@ fun ActionButton(
                 .then(if (f) Modifier.border(2.dp, C.white, shape) else Modifier.border(1.dp, if (primary) C.accent else C.panelBorder, shape))
                 .clip(shape)
                 .background(if (primary) C.accent else if (f) C.focusBg else Color(0xCC1E1C34))
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 18.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (icon != null) { Txt(icon, F.s(10.sp, C.white, FontWeight.Bold)); Spacer(Modifier.width(5.dp)) }
-            Txt(text, F.s(9.5.sp, C.white, FontWeight.Bold))
+            if (icon != null) { Txt(icon, F.s(11.sp, C.white, FontWeight.Bold)); Spacer(Modifier.width(6.dp)) }
+            Txt(text, F.s(10.5.sp, C.white, FontWeight.Bold))
         }
     }
 }
