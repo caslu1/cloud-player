@@ -82,7 +82,7 @@ object Tmdb {
         var s = raw
         val year = yearRx.findAll(s).lastOrNull()?.groupValues?.get(1)
         s = prefix.replace(s, "")
-        s = s.replace(Regex("""\[.*?]|\{.*?}"""), " ")
+        s = s.replace(Regex("""\[.*?\]|\{.*?\}"""), " ")
         s = yearRx.replace(s, " ")
         s = s.replace(Regex("""\(.*?\)"""), " ")
         s = junk.replace(s, " ")

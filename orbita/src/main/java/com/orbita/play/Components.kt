@@ -328,7 +328,7 @@ fun ChannelLogo(c: Channel, modifier: Modifier = Modifier) {
 }
 
 fun abbrev(name: String): String {
-    val clean = name.replace(Regex("""(?i)\b(fhd|uhd|hd|sd|4k|h265|hevc)\b|[\[\](){}|]"""), " ").trim()
+    val clean = name.replace(Regex("""(?i)\b(fhd|uhd|hd|sd|4k|h265|hevc)\b|[\[\]\(\)\{\}|]"""), " ").trim()
     val words = clean.split(Regex("\\s+")).filter { it.isNotBlank() }
     if (words.isEmpty()) return "TV"
     val first = words[0].take(5).uppercase()

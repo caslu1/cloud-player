@@ -26,7 +26,7 @@ object MatchLogic {
         return Title(home, away, comp)
     }
 
-    private fun clean(s: String) = s.replace(Regex("""\(.*?\)|\[.*?]"""), " ").replace(Regex("""\s{2,}"""), " ").trim().trim('-', '|', '.', ',', ' ')
+    private fun clean(s: String) = s.replace(Regex("""\(.*?\)|\[.*?\]"""), " ").replace(Regex("""\s{2,}"""), " ").trim().trim('-', '|', '.', ',', ' ')
 
     private fun okTeam(s: String): Boolean {
         if (s.length !in 2..32 || notTeam.containsMatchIn(s)) return false
