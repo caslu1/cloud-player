@@ -42,14 +42,14 @@ import java.util.Locale
 
 private val ptBR = Locale("pt", "BR")
 
-private fun dayIndex(t: Long): Int {
+internal fun dayIndex(t: Long): Int {
     val c = Calendar.getInstance(); val today = Calendar.getInstance()
     c.timeInMillis = t
     today.set(Calendar.HOUR_OF_DAY, 0); today.set(Calendar.MINUTE, 0); today.set(Calendar.SECOND, 0); today.set(Calendar.MILLISECOND, 0)
     return Math.floorDiv(t - today.timeInMillis, 86_400_000L).toInt()
 }
 
-private fun dayLabel(i: Int): String = when (i) {
+internal fun dayLabel(i: Int): String = when (i) {
     -1 -> "Ontem"; 0 -> "Hoje"; 1 -> "Amanhã"
     else -> {
         val c = Calendar.getInstance(); c.add(Calendar.DAY_OF_YEAR, i)
@@ -61,6 +61,7 @@ private val menu = listOf("Jogos de hoje", "Ao vivo agora", "Próximos dias", "T
 
 @Composable
 fun FootballScreen(vm: Vm, pb: Playback, ui: Ui) {
+    if (FootballApi.enabled) { ApiFootballScreen(vm, pb, ui); return }
     ScreenBackground()
     LaunchedEffect(vm.liveState) { if (vm.liveState == LoadState.READY) vm.loadMatches() }
     if (vm.liveState != LoadState.READY) { Loading("Carregando canais…", Modifier.fillMaxSize()); return }
@@ -185,7 +186,7 @@ fun FootballScreen(vm: Vm, pb: Playback, ui: Ui) {
 }
 
 @Composable
-private fun MenuRow(label: String, count: Int, selected: Boolean, memKey: String, requester: FocusRequester?, onFocus: () -> Unit, onClick: () -> Unit) {
+internal fun MenuRow(label: String, count: Int, selected: Boolean, memKey: String, requester: FocusRequester?, onFocus: () -> Unit, onClick: () -> Unit) {
     Focus(Modifier.fillMaxWidth().height(28.5.dp), onClick = onClick, onFocus = onFocus, memKey = memKey, requester = requester) { f ->
         Row(
             Modifier.fillMaxSize().background(if (f) C.focusBg else if (selected) C.accentSoft else Color.Transparent)
@@ -260,7 +261,7 @@ private fun MatchPreview(vm: Vm, pb: Playback, c: Channel?, m: Match?, modifier:
 
 /** Desenho do campo (linhas brancas) como no design. */
 @Composable
-private fun Pitch(modifier: Modifier) {
+internal fun Pitch(modifier: Modifier) {
     androidx.compose.foundation.Canvas(modifier) {
         val stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.2.dp.toPx())
         val line = Color(0x55FFFFFF)

@@ -430,7 +430,13 @@ private val shieldShape: Shape = GenericShape { size, _ ->
 }
 
 @Composable
-fun TeamShield(team: String, size: Dp = 24.dp) {
+fun TeamShield(team: String, size: Dp = 24.dp, logo: String? = null) {
+    if (logo != null) {
+        Box(Modifier.width(size).height(size * 1.12f), contentAlignment = Alignment.Center) {
+            AsyncImage(logo, null, Modifier.size(size), contentScale = ContentScale.Fit)
+        }
+        return
+    }
     val c = C.hash(MatchLogic.norm(team).lowercase())
     Box(Modifier.width(size).height(size * 1.12f).clip(shieldShape).background(c), contentAlignment = Alignment.Center) {
         Txt(MatchLogic.initials(team), F.s((size.value * 0.3f).sp, C.white, FontWeight.Bold, F.outfit), Modifier.padding(bottom = size * 0.15f))

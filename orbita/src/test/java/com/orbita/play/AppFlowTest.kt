@@ -54,6 +54,26 @@ class AppFlowTest {
         File(dir, "$name.png").outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
     }
 
+    /** Resposta no formato da API api.futebols.com.br (escudo em base64 incluído, como na API real). */
+    private fun apiGames(): String {
+        val iso = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+        fun t(minFromNow: Int) = iso.format(java.util.Date(System.currentTimeMillis() + minFromNow * 60_000L))
+        fun g(id: Int, a: String, b: String, ga: Int, gb: Int, st: String, desc: String, min: String?, start: String, camp: String, chs: List<String>) = """
+            {"id":$id,"timeA":"$a","timeB":"$b","golsA":$ga,"golsB":$gb,"golsPenaltiA":null,"golsPenaltiB":null,
+             "logoA":"data:image/png;base64,AAAA","logoB":"data:image/png;base64,AAAA","logoA_url":null,"logoB_url":null,
+             "description":"$desc","status":"$st","start":"$start","tempo_atual":${min?.let { "\"$it\"" } ?: "null"},"visible":true,
+             "campeonato":{"id":1,"campName":"$camp","logoCamp":"data:image/png;base64,AAAA"},
+             "canais":[],"canais_ia":[],"canais_simples":[${chs.joinToString(",") { "{\"channel_id\":1,\"channel_name\":\"$it\"}" }}]}"""
+        return listOf(
+            g(1, "Atlético Serrano", "Ribeirense", 2, 1, "inprogress", "2nd half", "67", t(-70), "Série A", listOf("Futebol 2", "Premiere")),
+            g(2, "União Vale", "Porto Alegre", 0, 0, "inprogress", "1st half", "23", t(-25), "Série A", listOf("Futebol 1")),
+            g(3, "Real Cerrado", "Operário Sul", 0, 0, "notstarted", "Not started", null, t(90), "Série B", listOf("Gol TV")),
+            g(4, "Náutico Mar", "Estrela do Norte", 0, 0, "notstarted", "Not started", null, t(120), "Copa Continental", listOf("Campo 4K")),
+            g(5, "Vila Nova Paz", "Cruzeiro do Leste", 0, 0, "notstarted", "Not started", null, t(120), "Copa Continental", listOf("Canal Pago XYZ")),
+            g(6, "Porto Alegre", "Vila Nova Paz", 3, 2, "finished", "Ended", null, t(-300), "Estadual", listOf("Placar")),
+        ).joinToString(",", "[", "]")
+    }
+
     private fun b64(s: String) = Base64.encodeToString(s.toByteArray(), Base64.NO_WRAP)
 
     @Before fun setUp() {
@@ -61,6 +81,7 @@ class AppFlowTest {
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 val path = request.path.orEmpty()
+                if (path.startsWith("/api/buscarJogos")) return MockResponse().setBody(apiGames()).setHeader("Content-Type", "application/json")
                 if (!path.startsWith("/player_api.php")) return MockResponse().setResponseCode(404)
                 val action = Regex("action=([a-z_]+)").find(path)?.groupValues?.get(1)
                 val body = when (action) {
@@ -101,6 +122,7 @@ class AppFlowTest {
             }
         }
         server.start()
+        FootballApi.baseUrl = server.url("/").toString().trimEnd('/')
     }
 
     @After fun tearDown() { server.shutdown() }
@@ -179,6 +201,10 @@ class AppFlowTest {
         click("Futebol", exact = true)
         waitText("Atlético Serrano")
         waitText("Ribeirense")
+        waitText("AO VIVO 67'")
+        waitText("2 × 1")
+        rule.onAllNodesWithText("Ribeirense", substring = true)[0].performClick() // abre a prévia no canal Futebol 2 FHD
+        repeat(10) { pump() }
         shot("07-futebol")
 
         // Buscar, Biblioteca, Configurações

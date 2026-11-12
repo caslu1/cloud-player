@@ -59,4 +59,16 @@ class LogicTest {
         assertEquals("http://srv:8080", Net.normalizeServer(" srv:8080/ "))
         assertEquals("https://a.b", Net.normalizeServer("https://a.b/player_api.php"))
     }
+
+    @Test fun matchesApiChannelNames() {
+        fun ch(id: String, n: String) = Channel(id, 1, n, null, "1", null, "u")
+        val list = listOf(ch("1", "SPORTV 2 FHD"), ch("2", "BR: Premiere 1 HD"), ch("3", "ESPN 4"), ch("4", "Sportv"), ch("5", "Disney+ HD"))
+        val index = list.groupBy { FootballApi.channelKey(it.name) }
+        assertEquals(listOf("1"), FootballApi.matchChannels(listOf("Sportv 2"), index).map { it.id })
+        assertEquals(listOf("4"), FootballApi.matchChannels(listOf("Sportv"), index).map { it.id })
+        assertEquals(listOf("2"), FootballApi.matchChannels(listOf("Premiere"), index).map { it.id })
+        assertEquals(listOf("3"), FootballApi.matchChannels(listOf("ESPN 4"), index).map { it.id })
+        assertEquals(listOf("5"), FootballApi.matchChannels(listOf("Disney+ Brazil"), index).map { it.id })
+        assertEquals(emptyList<String>(), FootballApi.matchChannels(listOf("Prime Video"), index).map { it.id })
+    }
 }

@@ -241,6 +241,32 @@ class Vm(ctx: Context) {
         }
     }
 
+    // ---- API de futebol (placar ao vivo)
+    val apiDays = mutableStateMapOf<Int, List<FootballApi.Game>>()
+    val apiErrors = mutableStateMapOf<Int, String>()
+    private val apiLoading = HashSet<Int>()
+    private var indexOf: List<Channel>? = null
+    private var index: Map<String, List<Channel>> = emptyMap()
+
+    /** Canais da lista indexados pelo nome normalizado (para achar "Sportv 2" na lista do usuário). */
+    fun channelIndex(): Map<String, List<Channel>> {
+        if (indexOf !== channels) { index = channels.groupBy { FootballApi.channelKey(it.name) }; indexOf = channels }
+        return index
+    }
+
+    fun loadApiDay(day: Int, force: Boolean = false) {
+        if (!force && apiDays.containsKey(day)) return
+        if (!apiLoading.add(day)) return
+        scope.launch {
+            try {
+                val games = withContext(Dispatchers.IO) { FootballApi.day(day) }
+                apiDays[day] = games; apiErrors.remove(day)
+            } catch (e: Exception) {
+                apiErrors[day] = e.message ?: "Falha ao carregar os jogos."
+            } finally { apiLoading.remove(day) }
+        }
+    }
+
     fun play(item: PlayItem) {
         if (item.kind == Kind.LIVE) item.channel?.let { store.addRecent(it.id) }
     }
