@@ -50,7 +50,7 @@ private class LiteTile(val key: String, val label: String, val icon: ImageVector
 
 /**
  * Tela inicial Lite: logo no centro, fundo com capas do seu catálogo, uma fileira de blocos quadrados,
- * Buscar/Recarregar e o rodapé com versão, status e ID do aparelho.
+ * Buscar/Recarregar e o rodapé com versão, status, MAC e chave.
  */
 @Composable
 fun HomeLite(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit) {
@@ -98,10 +98,8 @@ fun HomeLite(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () ->
             append(if (st?.status == null || st.status.equals("Active", true)) "Ativa" else st.status)
             st?.expires?.let { append(" · vence " + SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")).format(Date(it))) }
         }
-        val deviceId = remember {
-            runCatching { android.provider.Settings.Secure.getString(ctx.contentResolver, android.provider.Settings.Secure.ANDROID_ID) }
-                .getOrNull().orEmpty().uppercase().take(8).ifEmpty { "—" }
-        }
+        val mac = remember { Activation.mac(ctx) }
+        val key = remember { Activation.key(ctx) }
         Row(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 30.dp, vertical = 14.dp)) {
             Column {
                 Txt("Versão: $ver", F.s(8.sp, C.dim))
@@ -109,7 +107,8 @@ fun HomeLite(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () ->
             }
             Spacer(Modifier.weight(1f))
             Column(horizontalAlignment = Alignment.End) {
-                Txt("ID do aparelho: $deviceId", F.s(8.sp, C.dim))
+                Txt("MAC: $mac", F.s(8.sp, C.dim))
+                Txt("Chave: $key", F.s(8.sp, C.dim))
                 vm.account?.takeIf { it.type == "xtream" }?.let { Txt("Usuário: ${it.user}", F.s(8.sp, C.dim)) }
             }
         }

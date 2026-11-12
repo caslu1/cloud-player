@@ -157,6 +157,8 @@ private fun GeneralInfo(vm: Vm) {
     st?.expires?.let { Line("Validade", SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")).format(Date(it))) }
     st?.maxConnections?.let { Line("Conexões", "${st.activeConnections ?: "0"} de $it em uso") }
     Line("Conteúdo", "${fmtCount(vm.uniqueChannels.size)} canais · ${fmtCount(vm.movies.size)} filmes · ${fmtCount(vm.series.size)} séries")
+    Line("MAC", Activation.mac(ctx))
+    Line("Chave", Activation.key(ctx))
     Line("Versão", "Orbita Play $ver")
     Spacer(Modifier.height(10.dp))
     Txt("O app não fornece conteúdo: use apenas listas que você tem direito de usar.", F.s(8.5.sp, C.faint), maxLines = 2)
