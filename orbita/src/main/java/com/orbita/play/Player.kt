@@ -560,47 +560,132 @@ private fun VodOverlay(item: PlayItem, pos: Long, dur: Long, playing: Boolean, m
     }
 }
 
+/**
+ * Lista do player (◀): categorias à esquerda e canais à direita, com o programa atual e o progresso.
+ * Trocar de categoria aqui também muda a lista usada por ▲▼ no player.
+ */
 @Composable
 private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
-    val items = pb.list.ifEmpty { pb.current?.let { listOf(it) } ?: emptyList() }
-    val curIdx = items.indexOfFirst { it.key == pb.current?.key }.coerceAtLeast(0)
-    val state = rememberLazyListState(initialFirstVisibleItemIndex = (curIdx - 3).coerceAtLeast(0))
-    val first = remember { FocusRequester() }
-    LaunchedEffect(Unit) { delay(30); runCatching { first.requestFocus() } }
-    Row(Modifier.fillMaxSize()) {
-        Box(Modifier.width(300.dp).fillMaxHeight().background(Color(0xF20E0D22)).border(1.dp, C.panelBorder)) {
-            Column {
-                PanelHeader("Canais", "${items.size}")
-                LazyColumn(state = state, modifier = Modifier.padding(horizontal = 6.dp)) {
-                    itemsIndexed(items, key = { _, it -> it.key }) { i, it ->
-                        val c = it.channel
-                        LaunchedEffect(c?.id) { c?.let { ch -> vm.requestEpg(ch, 4) } }
+    val cur = pb.current?.channel
+    val cats = remember(vm.liveCats) { listOf(Cat("__fav", "★  Favoritos"), Cat("__recent", "🕘  Recentes"), Cat("__all", "Todos os canais")) + vm.liveCats }
+    // categoria inicial: a da lista que está tocando (se for uma só), senão a do canal
+    val startCat = remember {
+        val ids = pb.list.mapNotNull { it.channel?.catId }.distinct()
+        when {
+            ids.size == 1 -> ids[0]
+            pb.list.size > 1 && pb.list.size == vm.channels.size -> "__all"
+            pb.list.isNotEmpty() && pb.list.all { vm.store.isFav(it.channel?.id ?: "") } -> "__fav"
+            else -> cur?.catId ?: "__all"
+        }
+    }
+    var cat by remember { mutableStateOf(startCat) }
+    var pending by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(pending) { val p = pending ?: return@LaunchedEffect; delay(200); cat = p }
+    val list = remember(cat, vm.channels) { channelsOf(vm, cat) }
+    val curIdx = list.indexOfFirst { it.id == cur?.id }
+    val chState = rememberLazyListState(initialFirstVisibleItemIndex = (curIdx - 4).coerceAtLeast(0))
+    val catIdx = cats.indexOfFirst { it.id == cat }.coerceAtLeast(0)
+    val catState = rememberLazyListState(initialFirstVisibleItemIndex = (catIdx - 4).coerceAtLeast(0))
+    val chReq = remember { FocusRequester() }
+    val catReq = remember { FocusRequester() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    LaunchedEffect(Unit) { delay(40); runCatching { chReq.requestFocus() } }
+    LaunchedEffect(cat) { if (cat != startCat) chState.scrollToItem(0) }
+
+    fun toChannels() { scope.launch { delay(30); runCatching { chReq.requestFocus() } } }
+    fun toCats() { scope.launch { catState.scrollToItem((catIdx - 4).coerceAtLeast(0)); delay(30); runCatching { catReq.requestFocus() } } }
+
+    Box(
+        Modifier.fillMaxHeight().width(640.dp)
+            .background(Brush.horizontalGradient(0f to Color(0xF5080A18), 0.8f to Color(0xEB0B0A1C), 1f to Color.Transparent))
+    ) {
+        Row(Modifier.fillMaxSize().padding(start = 22.dp, top = 22.dp, bottom = 18.dp, end = 50.dp)) {
+            Column(Modifier.width(190.dp).fillMaxHeight()) {
+                Txt("CATEGORIAS", F.label, Modifier.padding(start = 10.dp, bottom = 8.dp))
+                LazyColumn(state = catState, modifier = Modifier.weight(1f)) {
+                    itemsIndexed(cats, key = { _, c -> c.id }) { i, c ->
+                        val sel = c.id == cat
                         Focus(
-                            Modifier.fillMaxWidth().padding(vertical = 1.dp),
-                            requester = if (i == curIdx) first else null,
-                            onClick = { if (it.key != pb.current?.key) pb.play(it, pb.list); onClose() },
+                            Modifier.fillMaxWidth().height(34.dp),
+                            requester = if (i == catIdx) catReq else null,
+                            onFocus = { pending = c.id },
+                            onClick = { cat = c.id; toChannels() },
                             onKey = { ev ->
-                                if (ev.type == KeyEventType.KeyDown && (ev.key == Key.DirectionLeft || ev.key == Key.DirectionRight)) { onClose(); true } else false
+                                if (ev.type == KeyEventType.KeyDown && ev.key == Key.DirectionRight) { cat = pending ?: cat; toChannels(); true }
+                                else ev.type == KeyEventType.KeyDown && ev.key == Key.DirectionLeft
                             }
                         ) { f ->
                             Row(
-                                Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(if (f) C.focusBg else Color.Transparent)
+                                Modifier.fillMaxSize().clip(RoundedCornerShape(6.dp))
+                                    .background(if (f) C.focusBg else if (sel) C.accentSoft else Color.Transparent)
                                     .then(if (f) Modifier.border(1.5.dp, C.accent, RoundedCornerShape(6.dp)) else Modifier)
-                                    .padding(horizontal = 8.dp, vertical = 5.dp),
+                                    .padding(horizontal = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Txt(c?.num?.toString() ?: "", F.s(8.5.sp, if (it.key == pb.current?.key) C.cyan else C.dim, FontWeight.SemiBold), Modifier.width(30.dp))
-                                if (c != null) ChannelLogo(c, Modifier.size(30.dp, 22.dp))
-                                Spacer(Modifier.width(7.dp))
+                                Txt(c.name, F.s(11.sp, if (sel || f) C.white else C.text, if (sel) FontWeight.SemiBold else FontWeight.Medium), Modifier.weight(1f))
+                                if (sel) Box(Modifier.size(5.dp).clip(androidx.compose.foundation.shape.CircleShape).background(C.accent))
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f).fillMaxHeight()) {
+                Row(Modifier.padding(start = 10.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Txt(cats.firstOrNull { it.id == cat }?.name?.trimStart('★', ' ')?.removePrefix("🕘")?.trim()?.uppercase() ?: "CANAIS", F.label, Modifier.weight(1f))
+                    Txt("${list.size} CANAIS", F.label)
+                }
+                if (list.isEmpty()) {
+                    EmptyState("Nenhum canal nesta categoria", "◀ para escolher outra categoria", Modifier.fillMaxWidth())
+                    Focus(Modifier.size(1.dp), requester = chReq, onKey = { ev -> if (ev.type == KeyEventType.KeyDown && ev.key == Key.DirectionLeft) { toCats(); true } else false }) { }
+                }
+                LazyColumn(state = chState, modifier = Modifier.weight(1f)) {
+                    itemsIndexed(list, key = { _, c -> c.id }) { i, c ->
+                        LaunchedEffect(c.id) { delay(120); vm.requestEpg(c, 6) }
+                        val playing = c.id == cur?.id
+                        Focus(
+                            Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                            requester = if (i == (if (curIdx >= 0) curIdx else 0)) chReq else null,
+                            onClick = {
+                                if (!playing) pb.play(liveItem(c), list.map { liveItem(it) })
+                                onClose()
+                            },
+                            onLongClick = { vm.store.toggleFav(c.id) },
+                            onKey = { ev ->
+                                if (ev.type != KeyEventType.KeyDown) false
+                                else if (ev.key == Key.DirectionLeft) { toCats(); true }
+                                else if (ev.key == Key.DirectionRight) { onClose(); true }
+                                else false
+                            }
+                        ) { f ->
+                            Row(
+                                Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(8.dp)).background(if (f) C.focusBg else Color.Transparent)
+                                    .then(if (f) Modifier.border(1.5.dp, C.accent, RoundedCornerShape(8.dp)) else Modifier)
+                                    .padding(horizontal = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Txt(c.num.toString(), F.s(10.sp, if (playing || f) C.cyan else C.dim, FontWeight.SemiBold), Modifier.width(36.dp))
+                                ChannelLogo(c, Modifier.size(42.dp, 30.dp))
+                                Spacer(Modifier.width(10.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Txt(it.title, F.s(9.sp, C.white, FontWeight.SemiBold))
-                                    val now = c?.let { ch -> vm.nowOn(ch) }
-                                    if (now != null) Txt(now.title, F.s(7.5.sp, C.dim))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Txt(c.name, F.s(11.5.sp, C.white, FontWeight.SemiBold), Modifier.weight(1f, fill = false))
+                                        if (playing) { Spacer(Modifier.width(6.dp)); Txt("▶ assistindo", F.s(7.5.sp, C.cyan, FontWeight.Bold)) }
+                                        if (vm.store.isFav(c.id)) { Spacer(Modifier.width(5.dp)); Txt("★", F.s(9.sp, C.star)) }
+                                    }
+                                    val now = vm.nowOn(c)
+                                    if (now != null) {
+                                        Txt("${hhmm(now.start)} · ${now.title}", F.s(9.sp, C.dim))
+                                        Spacer(Modifier.height(3.dp))
+                                        ProgressBar(now.progress(), Modifier.fillMaxWidth(0.9f).height(2.dp).clip(RoundedCornerShape(1.dp)))
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                Spacer(Modifier.height(6.dp))
+                Txt("OK assistir   ◀ categorias   ▶ ou VOLTAR fechar   segurar OK favoritar", F.s(8.sp, C.faint), Modifier.padding(start = 10.dp))
             }
         }
     }

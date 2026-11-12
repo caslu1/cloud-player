@@ -55,5 +55,5 @@ object F {
     fun s(size: TextUnit, color: Color = C.text, w: FontWeight = FontWeight.Normal, family: FontFamily = inter, spacing: TextUnit = TextUnit.Unspecified) =
         TextStyle(fontSize = size, color = color, fontWeight = w, fontFamily = family, letterSpacing = spacing)
 
-    val label = s(7.5.sp, C.dim, FontWeight.SemiBold, spacing = 1.6.sp)
+    val label = s(8.5.sp, C.dim, FontWeight.SemiBold, spacing = 1.6.sp)
 }

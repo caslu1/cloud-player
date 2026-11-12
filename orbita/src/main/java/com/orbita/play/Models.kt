@@ -70,6 +70,18 @@ class SeriesInfo(
     val seasons: Map<Int, List<Episode>>,
 )
 
+/**
+ * Arruma o guia do provedor: ordena, tira repetidos e corta programas sobrepostos
+ * (ex.: "Mais Você 11:35–12:45" e "SP1 11:45" → Mais Você termina 11:45). Assim só um programa fica "agora".
+ */
+fun normalizeEpg(list: List<Prog>): List<Prog> {
+    val sorted = list.filter { it.end > it.start && it.title.isNotBlank() }.sortedBy { it.start }.distinctBy { it.start }
+    return sorted.mapIndexed { i, p ->
+        val next = sorted.getOrNull(i + 1)
+        if (next != null && next.start < p.end) p.copy(end = next.start) else p
+    }.filter { it.end > it.start }
+}
+
 /** Um programa do guia (EPG). Horários em milissegundos UTC. */
 data class Prog(val title: String, val desc: String, val start: Long, val end: Long) {
     fun isNow(now: Long = System.currentTimeMillis()) = now in start until end

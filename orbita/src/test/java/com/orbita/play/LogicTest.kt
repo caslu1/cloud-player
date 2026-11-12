@@ -78,4 +78,18 @@ class LogicTest {
         assertEquals("Up: Altas Aventuras" to "2009", Tmdb.clean("Up: Altas Aventuras 2009 FHD"))
         assertEquals("The Last of Us" to null, Tmdb.clean("BR: The Last of Us [L]"))
     }
+
+    @Test fun epgOverlapsLeaveOneProgrammeNow() {
+        val m = 60_000L
+        val raw = listOf(
+            Prog("Mais Você", "", 0, 70 * m),        // 11:35–12:45 no provedor
+            Prog("SP1", "", 10 * m, 70 * m),        // 11:45 começa antes do anterior terminar
+            Prog("SP1", "", 70 * m, 85 * m),
+            Prog("Mais Você", "", 0, 70 * m),        // repetido
+        )
+        val n = normalizeEpg(raw)
+        assertEquals(listOf("Mais Você", "SP1", "SP1"), n.map { it.title })
+        assertEquals(10 * m, n[0].end)
+        assertEquals(1, n.count { it.isNow(15 * m) })
+    }
 }

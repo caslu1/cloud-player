@@ -118,7 +118,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
     Column(Modifier.fillMaxSize().padding(top = 50.dp)) {
         Row(Modifier.weight(1f).padding(horizontal = 24.dp)) {
             // Categorias
-            Panel(Modifier.width(200.dp).fillMaxHeight()) {
+            Panel(Modifier.width(215.dp).fillMaxHeight()) {
                 Column {
                     PanelHeader("Categorias", "${vm.liveCats.size}")
                     SearchField(catQuery, { catQuery = it }, "Buscar categoria", Modifier.padding(horizontal = 10.dp))
@@ -140,7 +140,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
             }
             Spacer(Modifier.width(10.dp))
             // Canais
-            Panel(Modifier.width(280.dp).fillMaxHeight()) {
+            Panel(Modifier.width(345.dp).fillMaxHeight()) {
                 Column {
                     PanelHeader(catTitle, "${list.size} canais")
                     SearchField(chQuery, { chQuery = it }, "Buscar canal", Modifier.padding(horizontal = 10.dp))
@@ -167,7 +167,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
             // Prévia + guia
             Column(Modifier.weight(1f).fillMaxHeight()) {
                 val shown = focusedCh ?: vm.channelById[playingId ?: ""] ?: list.firstOrNull()
-                Preview(vm, pb, shown, Modifier.fillMaxWidth().height(250.dp))
+                Preview(vm, pb, shown, Modifier.fillMaxWidth().height(196.dp))
                 Spacer(Modifier.height(10.dp))
                 Panel(Modifier.fillMaxWidth().weight(1f)) { EpgList(vm, shown) }
             }
@@ -181,7 +181,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
 
 @Composable
 private fun CatRow(label: String, count: Int, selected: Boolean, memKey: String, onFocus: () -> Unit, requester: FocusRequester? = null, onClick: () -> Unit) {
-    Focus(Modifier.fillMaxWidth().height(28.5.dp), onClick = onClick, onFocus = onFocus, memKey = memKey, requester = requester) { f ->
+    Focus(Modifier.fillMaxWidth().height(36.dp), onClick = onClick, onFocus = onFocus, memKey = memKey, requester = requester) { f ->
         Row(
             Modifier.fillMaxSize()
                 .background(if (f) C.focusBg else if (selected) C.accentSoft else Color.Transparent)
@@ -190,7 +190,7 @@ private fun CatRow(label: String, count: Int, selected: Boolean, memKey: String,
         ) {
             Box(Modifier.width(2.5.dp).fillMaxHeight().background(if (selected) C.accent else Color.Transparent))
             Spacer(Modifier.width(12.dp))
-            Txt(label, F.s(10.sp, if (selected || f) C.white else C.text, if (selected) FontWeight.SemiBold else FontWeight.Normal), Modifier.weight(1f))
+            Txt(label, F.s(11.5.sp, if (selected || f) C.white else C.text, if (selected) FontWeight.SemiBold else FontWeight.Medium), Modifier.weight(1f))
             Count(count, selected)
             Spacer(Modifier.width(12.dp))
         }
@@ -208,24 +208,24 @@ fun ChannelRow(
     ) { f ->
         val shape = RoundedCornerShape(8.dp)
         Row(
-            Modifier.fillMaxWidth().height(33.dp).clip(shape)
+            Modifier.fillMaxWidth().height(44.dp).clip(shape)
                 .background(if (f) C.focusBg else Color.Transparent)
                 .then(if (f) Modifier.border(1.5.dp, C.accent, shape) else Modifier)
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Txt(c.num.toString(), F.s(8.5.sp, if (f || playing) C.cyan else C.dim, FontWeight.SemiBold), Modifier.width(30.dp))
-            ChannelLogo(c, Modifier.size(31.dp, 22.dp))
+            Txt(c.num.toString(), F.s(10.sp, if (f || playing) C.cyan else C.dim, FontWeight.SemiBold), Modifier.width(36.dp))
+            ChannelLogo(c, Modifier.size(42.dp, 30.dp))
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
-                Txt(c.name, F.s(9.5.sp, C.white, FontWeight.SemiBold))
+                Txt(c.name, F.s(11.5.sp, C.white, FontWeight.SemiBold))
                 val now = vm.nowOn(c)
                 val sub = when {
                     now != null -> "${now.title} · ${hhmm(now.start)}"
                     playing -> "Assistindo agora"
                     else -> ""
                 }
-                if (sub.isNotEmpty()) Txt(sub, F.s(7.5.sp, if (playing) C.cyan else C.dim))
+                if (sub.isNotEmpty()) Txt(sub, F.s(9.sp, if (playing) C.cyan else C.dim))
             }
             if (fav) Txt("★", F.s(10.sp, C.star))
         }
@@ -261,10 +261,10 @@ private fun Preview(vm: Vm, pb: Playback, c: Channel?, modifier: Modifier) {
                     .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xE6081A10))))
                     .padding(start = 13.dp, end = 13.dp, bottom = 11.dp, top = 24.dp)
             ) {
-                Txt("${info.num} · ${info.name}", F.s(14.sp, C.white, FontWeight.Bold, F.outfit))
+                Txt("${info.num} · ${info.name}", F.s(15.sp, C.white, FontWeight.Bold, F.outfit))
                 Spacer(Modifier.height(3.dp))
                 if (now != null) {
-                    Txt("${now.title} · ${hhmm(now.start)} – ${hhmm(now.end)}", F.s(8.5.sp, C.text))
+                    Txt("${now.title} · ${hhmm(now.start)} – ${hhmm(now.end)}", F.s(10.sp, C.text))
                     Spacer(Modifier.height(6.dp))
                     ProgressBar(now.progress(), Modifier.fillMaxWidth().height(2.5.dp).clip(RoundedCornerShape(2.dp)))
                 } else Txt(vm.catName(info.catId), F.s(8.5.sp, C.text))
@@ -277,7 +277,9 @@ private fun Preview(vm: Vm, pb: Playback, c: Channel?, modifier: Modifier) {
 private fun EpgList(vm: Vm, c: Channel?) {
     Column(Modifier.fillMaxSize()) {
         PanelHeader("Programação", "Hoje")
-        val progs = c?.let { vm.epg[it.id] }.orEmpty().filter { it.end > System.currentTimeMillis() - 3600_000 }
+        val nowMs = System.currentTimeMillis()
+        // só o que está passando e o que vem depois (um único "AGORA")
+        val progs = c?.let { vm.epg[it.id] }.orEmpty().filter { it.end > nowMs }
         if (c == null || progs.isEmpty()) {
             EmptyState(
                 if (vm.source is XtreamSource) "Sem programação disponível" else "Guia indisponível para listas M3U",
@@ -286,25 +288,35 @@ private fun EpgList(vm: Vm, c: Channel?) {
             )
             return@Column
         }
-        progs.take(8).forEach { p ->
-            val now = p.isNow()
+        progs.take(7).forEachIndexed { i, p ->
+            val now = i == 0 && p.start <= nowMs
             Row(
-                Modifier.fillMaxWidth().height(29.5.dp).background(if (now) C.cyanSoft.copy(alpha = 0.6f) else Color.Transparent),
+                Modifier.fillMaxWidth().height(if (now) 46.dp else 34.dp).background(if (now) C.cyanSoft.copy(alpha = 0.55f) else Color.Transparent),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(Modifier.width(2.dp).fillMaxHeight().background(if (now) C.cyan else Color.Transparent))
-                Spacer(Modifier.width(11.dp))
-                Txt(hhmm(p.start), F.s(9.sp, if (now) C.cyan else C.dim, FontWeight.SemiBold), Modifier.width(71.dp))
-                Txt(p.title, F.s(9.5.sp, if (now) C.white else C.text), Modifier.weight(1f, fill = false))
-                if (now) {
-                    Spacer(Modifier.width(6.dp))
-                    Box(Modifier.clip(RoundedCornerShape(3.dp)).background(C.cyan).padding(horizontal = 4.dp, vertical = 1.dp)) {
-                        Txt("AGORA", F.s(6.5.sp, Color(0xFF062430), FontWeight.Bold))
+                Box(Modifier.width(3.dp).fillMaxHeight().background(if (now) C.cyan else Color.Transparent))
+                Spacer(Modifier.width(13.dp))
+                Column(Modifier.width(78.dp)) {
+                    Txt(hhmm(p.start), F.s(11.sp, if (now) C.cyan else C.dim, FontWeight.SemiBold))
+                    if (now) Txt("até ${hhmm(p.end)}", F.s(8.sp, C.dim))
+                }
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Txt(p.title, F.s(11.5.sp, if (now) C.white else C.text, if (now) FontWeight.SemiBold else FontWeight.Normal), Modifier.weight(1f, fill = false))
+                        if (now) {
+                            Spacer(Modifier.width(7.dp))
+                            Box(Modifier.clip(RoundedCornerShape(3.dp)).background(C.cyan).padding(horizontal = 5.dp, vertical = 1.5.dp)) {
+                                Txt("AGORA", F.s(7.sp, Color(0xFF062430), FontWeight.Bold))
+                            }
+                        }
+                    }
+                    if (now) {
+                        Spacer(Modifier.height(5.dp))
+                        ProgressBar(p.progress(nowMs), Modifier.fillMaxWidth(0.85f).height(2.5.dp).clip(RoundedCornerShape(2.dp)))
                     }
                 }
-                Spacer(Modifier.width(10.dp))
+                Spacer(Modifier.width(12.dp))
             }
         }
     }
 }
-

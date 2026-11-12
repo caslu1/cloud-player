@@ -234,8 +234,8 @@ fun PanelHeader(left: String, right: String = "", modifier: Modifier = Modifier)
 @Composable
 fun Count(n: Int, highlight: Boolean) {
     Box(
-        Modifier.clip(RoundedCornerShape(8.dp)).background(if (highlight) C.accent else Color(0x22FFFFFF)).padding(horizontal = 5.dp, vertical = 1.5.dp)
-    ) { Txt(fmtCount(n), F.s(7.sp, if (highlight) C.white else C.faint, FontWeight.SemiBold)) }
+        Modifier.clip(RoundedCornerShape(8.dp)).background(if (highlight) C.accent else Color(0x22FFFFFF)).padding(horizontal = 6.dp, vertical = 2.dp)
+    ) { Txt(fmtCount(n), F.s(8.sp, if (highlight) C.white else C.faint, FontWeight.SemiBold)) }
 }
 
 fun fmtCount(n: Int): String = if (n >= 1000) String.format(Locale("pt", "BR"), "%,d", n).replace(',', '.') else n.toString()
@@ -253,7 +253,7 @@ fun SearchField(
         var had by remember { mutableStateOf(false) }
         BasicTextField(
             value, onChange,
-            modifier.fillMaxWidth().height(26.dp).clip(shape).background(C.field).border(1.5.dp, C.accent, shape)
+            modifier.fillMaxWidth().height(30.dp).clip(shape).background(C.field).border(1.5.dp, C.accent, shape)
                 .focusRequester(fieldReq)
                 .onFocusChanged { if (it.isFocused) had = true else if (had) editing = false }
                 .padding(horizontal = 10.dp, vertical = 6.dp),
@@ -267,12 +267,12 @@ fun SearchField(
     } else {
         Focus(modifier, onClick = { editing = true }, requester = requester, onFocus = onFocus) { f ->
             Row(
-                Modifier.fillMaxWidth().height(26.dp).clip(shape).background(C.field)
+                Modifier.fillMaxWidth().height(30.dp).clip(shape).background(C.field)
                     .border(if (f) 1.5.dp else 1.dp, if (f) C.accent else C.panelBorder, shape).padding(horizontal = 9.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Txt("🔍", F.s(8.sp, C.dim)); Spacer(Modifier.width(5.dp))
-                Txt(value.ifEmpty { placeholder }, F.s(9.sp, if (value.isEmpty()) C.faint else C.white), Modifier.weight(1f))
+                Txt(value.ifEmpty { placeholder }, F.s(10.5.sp, if (value.isEmpty()) C.faint else C.white), Modifier.weight(1f))
                 if (value.isNotEmpty() && f) Txt("OK editar", F.s(7.sp, C.faint))
             }
         }
@@ -450,10 +450,10 @@ fun HintBar(hints: List<Pair<String, String>>, modifier: Modifier = Modifier) {
         for ((k, v) in hints) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.clip(RoundedCornerShape(3.dp)).background(Color(0x33FFFFFF)).padding(horizontal = 5.dp, vertical = 1.5.dp)) {
-                    Txt(k, F.s(7.5.sp, C.white, FontWeight.Bold))
+                    Txt(k, F.s(8.5.sp, C.white, FontWeight.Bold))
                 }
-                Spacer(Modifier.width(4.dp))
-                Txt(v, F.s(8.sp, C.dim))
+                Spacer(Modifier.width(5.dp))
+                Txt(v, F.s(9.sp, C.dim))
             }
         }
     }

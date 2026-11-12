@@ -192,12 +192,12 @@ class Vm(ctx: Context) {
             try {
                 val list = epgGate.withPermit { withContext(Dispatchers.IO) { runCatching { source?.epg(c, limit) }.getOrNull() } }
                 epgTime[c.id] = System.currentTimeMillis()
-                if (list != null) epg[c.id] = list
+                if (list != null) epg[c.id] = normalizeEpg(list)
             } finally { epgRunning.remove(c.id) }
         }
     }
 
-    fun nowOn(c: Channel): Prog? = epg[c.id]?.firstOrNull { it.isNow() }
+    fun nowOn(c: Channel): Prog? { val t = System.currentTimeMillis(); return epg[c.id]?.lastOrNull { it.start <= t && t < it.end } }
 
     fun requestMovieInfo(m: Movie) {
         if (movieInfos.containsKey(m.id)) return
@@ -235,7 +235,7 @@ class Vm(ctx: Context) {
                     val progs = gate.withPermit { withContext(Dispatchers.IO) { runCatching { src.epg(c, 40) }.getOrNull() } }
                     done++; matchProgress = done.toFloat() / list.size
                     if (progs != null) {
-                        if (!epg.containsKey(c.id)) { epg[c.id] = progs; epgTime[c.id] = System.currentTimeMillis() }
+                        if (!epg.containsKey(c.id)) { epg[c.id] = normalizeEpg(progs); epgTime[c.id] = System.currentTimeMillis() }
                         for (p in progs) {
                             if (p.end < System.currentTimeMillis() - 6 * 3600_000L) continue
                             val t = MatchLogic.parseTitle(p.title) ?: continue
