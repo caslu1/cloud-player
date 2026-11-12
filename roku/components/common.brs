@@ -1,7 +1,8 @@
 ' Funções usadas por várias telas.
 
+' (roUrlTransfer não pode ser criado na thread da tela: travava o app no login)
 function esc(s as string) as string
-    return CreateObject("roUrlTransfer").Escape(s)
+    return s.EncodeUriComponent()
 end function
 
 function apiUrl(action as string, extra = "" as string) as string
