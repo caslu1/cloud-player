@@ -261,42 +261,10 @@ fun StateRetry(msg: String, retry: () -> Unit) {
     }
 }
 
-/** Esqueleto comum de Filmes e Séries: fundo + destaque + linhas; o destaque encolhe quando você desce pelas linhas. */
-@Composable
-private fun VodHome(
-    vm: Vm, rows: List<VodRow>, state: LazyListState, hero: @Composable (HeroSel, Boolean) -> HeroData,
-    buttons: @Composable (HeroSel, FocusRequester) -> Unit, wideImage: (Progress) -> String?, onWide: (Progress) -> Unit, onWideLong: (Progress) -> Unit,
-) {
-    val sel = remember { HeroSel() }
-    val playReq = remember { FocusRequester() }
-    InitialFocus(playReq)
-    Box(Modifier.fillMaxSize()) {
-        HeroLayer(sel, hero) { buttons(sel, playReq) }
-        RowsLayer(sel) { top ->
-            VodRows(vm, rows, state, Modifier.fillMaxSize().padding(top = top), sel, null, wideImage, onWide, onWideLong)
-        }
-    }
-}
-
-@Composable
-private fun HeroLayer(sel: HeroSel, hero: @Composable (HeroSel, Boolean) -> HeroData, buttons: @Composable () -> Unit) {
-    val compact = sel.row > 0
-    val h = hero(sel, compact)
-    Backdrop(h.backdrop, h.title)
-    HeroBlock(h, compact, buttons)
-}
-
-@Composable
-private fun RowsLayer(sel: HeroSel, content: @Composable (Dp) -> Unit) {
-    val top by animateDpAsState(if (sel.row > 0) 172.dp else 278.dp, tween(220), label = "top")
-    content(top)
-}
-
 // ---------------------------------------------------------------- Filmes
 
 @Composable
 fun MoviesScreen(vm: Vm, pb: Playback, ui: Ui) {
-    val ctx = LocalContext.current
     LaunchedEffect(Unit) { if (vm.movieState == LoadState.IDLE || vm.movieState == LoadState.ERROR) vm.loadMovies() }
     if (vm.movieState != LoadState.READY) {
         ScreenBackground()
@@ -306,46 +274,35 @@ fun MoviesScreen(vm: Vm, pb: Playback, ui: Ui) {
     }
     if (vm.movies.isEmpty()) { ScreenBackground(); EmptyState("Sua lista não tem filmes", "", Modifier.fillMaxSize()); return }
 
-    val latest = remember(vm.movies) { vm.movies.sortedByDescending { it.added }.take(40) }
-    val cont = vm.store.continueWatching(Kind.MOVIE)
+    val latest = remember(vm.movies) { vm.movies.sortedByDescending { it.added }.take(80) }
+    val cont = vm.store.continueWatching(Kind.MOVIE).mapNotNull { vm.movieById[it.key.removePrefix("mv:")] }
     val mine = vm.store.myList.filter { it.startsWith("m:") }.mapNotNull { vm.movieById[it.removePrefix("m:")] }
-
     fun entry(m: Movie) = VodEntry(m.id, m.name, m.poster, m.rating, { ui.push(Route.MovieDetail(m, FocusMem.last)) }, { vm.store.toggleList("m:${m.id}") }, movie = m)
 
-    val rows = remember(vm.movies, cont, mine) {
+    val cats = remember(vm.movieCats, cont.size, mine.size) {
         buildList {
-            if (cont.isNotEmpty()) add(VodRow("cont", "Continuar assistindo", emptyList(), wide = cont))
-            add(VodRow("new", "Lançamentos", latest.map(::entry)))
-            if (mine.isNotEmpty()) add(VodRow("mine", "Minha lista", mine.map(::entry)))
-            vm.movieCats.forEach { c ->
-                val l = vm.moviesByCat[c.id].orEmpty()
-                add(VodRow("c" + c.id, c.name, l.take(30).map(::entry), more = if (l.size > 30) ({ ui.push(Route.CategoryGrid(true, c, FocusMem.last)) }) else null))
-            }
+            if (cont.isNotEmpty()) add(BrowseCat("__cont", "▶  Continuar assistindo", cont.size))
+            add(BrowseCat("__new", "✦  Lançamentos", latest.size))
+            if (mine.isNotEmpty()) add(BrowseCat("__mine", "＋  Minha lista", mine.size))
+            vm.movieCats.forEach { add(BrowseCat(it.id, it.name, vm.moviesByCat[it.id]?.size ?: 0)) }
         }
     }
-
-    VodHome(
-        vm, rows, ui.movieRows,
-        hero = { sel, _ ->
-            var shown by remember { mutableStateOf(latest.first()) }
-            LaunchedEffect(sel.key) {
-                val k = sel.key ?: return@LaunchedEffect
-                delay(300)
-                (vm.movieById[k] ?: vm.movieById[k.removePrefix("mv:")])?.let { shown = it }
+    VodBrowse(
+        vm, cats, ui.movieCat, { ui.movieCat = it }, ui.movieCatList, ui.movieGrid,
+        entriesOf = { id ->
+            when (id) {
+                "__cont" -> cont.map(::entry)
+                "__new" -> latest.map(::entry)
+                "__mine" -> mine.map(::entry)
+                else -> vm.moviesByCat[id].orEmpty().map(::entry)
             }
-            LaunchedEffect(shown.id) { vm.requestMeta(shown); vm.requestMovieInfo(shown) }
-            movieHero(vm, shown, "EM DESTAQUE")
         },
-        buttons = { sel, req ->
-            val m = sel.key?.let { vm.movieById[it] ?: vm.movieById[it.removePrefix("mv:")] } ?: latest.first()
-            MovieButtons(vm, pb, ctx, m, req)
+        hero = { e ->
+            val m = e?.movie ?: latest.first()
+            LaunchedEffect(m.id) { vm.requestMeta(m); vm.requestMovieInfo(m) }
+            movieHero(vm, m, "FILME")
         },
-        wideImage = { p -> vm.movieById[p.key.removePrefix("mv:")]?.let { vm.metaOf(it)?.backdropUrl("w780") } ?: p.image },
-        onWide = { p ->
-            val m = vm.movieById[p.key.removePrefix("mv:")]
-            pb.openFull(PlayItem(Kind.MOVIE, p.key, p.title, p.subtitle, m?.url ?: p.url, p.image), startMs = p.pos)
-        },
-        onWideLong = { p -> vm.movieById[p.key.removePrefix("mv:")]?.let { ui.push(Route.MovieDetail(it, FocusMem.last)) } },
+        empty = "Nenhum filme nesta categoria",
     )
 }
 
@@ -470,45 +427,35 @@ fun SeriesScreen(vm: Vm, pb: Playback, ui: Ui) {
     }
     if (vm.series.isEmpty()) { ScreenBackground(); EmptyState("Sua lista não tem séries", "", Modifier.fillMaxSize()); return }
 
-    val latest = remember(vm.series) { vm.series.sortedByDescending { it.added }.take(40) }
-    val cont = vm.store.continueWatching(Kind.EPISODE)
+    val latest = remember(vm.series) { vm.series.sortedByDescending { it.added }.take(80) }
+    val cont = vm.store.continueWatching(Kind.EPISODE).mapNotNull { p -> p.seriesId?.let { vm.seriesById[it] } }.distinctBy { it.id }
     val mine = vm.store.myList.filter { it.startsWith("s:") }.mapNotNull { vm.seriesById[it.removePrefix("s:")] }
     fun entry(s: Series) = VodEntry(s.id, s.name, s.cover, s.rating, { ui.push(Route.SeriesDetail(s, FocusMem.last)) }, { vm.store.toggleList("s:${s.id}") }, series = s)
-    val rows = remember(vm.series, cont, mine) {
+
+    val cats = remember(vm.seriesCats, cont.size, mine.size) {
         buildList {
-            if (cont.isNotEmpty()) add(VodRow("cont", "Continuar assistindo", emptyList(), wide = cont))
-            add(VodRow("new", "Adicionadas recentemente", latest.map(::entry)))
-            if (mine.isNotEmpty()) add(VodRow("mine", "Minha lista", mine.map(::entry)))
-            vm.seriesCats.forEach { c ->
-                val l = vm.seriesByCat[c.id].orEmpty()
-                add(VodRow("c" + c.id, c.name, l.take(30).map(::entry), more = if (l.size > 30) ({ ui.push(Route.CategoryGrid(false, c, FocusMem.last)) }) else null))
-            }
+            if (cont.isNotEmpty()) add(BrowseCat("__cont", "▶  Continuar assistindo", cont.size))
+            add(BrowseCat("__new", "✦  Adicionadas recentemente", latest.size))
+            if (mine.isNotEmpty()) add(BrowseCat("__mine", "＋  Minha lista", mine.size))
+            vm.seriesCats.forEach { add(BrowseCat(it.id, it.name, vm.seriesByCat[it.id]?.size ?: 0)) }
         }
     }
-    fun seriesOf(key: String?): Series? = key?.let { vm.seriesById[it] ?: vm.store.progress[it]?.seriesId?.let { id -> vm.seriesById[id] } }
-
-    VodHome(
-        vm, rows, ui.seriesRows,
-        hero = { sel, _ ->
-            var shown by remember { mutableStateOf(latest.first()) }
-            LaunchedEffect(sel.key) {
-                delay(300)
-                seriesOf(sel.key)?.let { shown = it }
+    VodBrowse(
+        vm, cats, ui.seriesCat, { ui.seriesCat = it }, ui.seriesCatList, ui.seriesGrid,
+        entriesOf = { id ->
+            when (id) {
+                "__cont" -> cont.map(::entry)
+                "__new" -> latest.map(::entry)
+                "__mine" -> mine.map(::entry)
+                else -> vm.seriesByCat[id].orEmpty().map(::entry)
             }
-            LaunchedEffect(shown.id) { vm.requestMeta(shown) }
-            seriesHero(vm, shown, "SÉRIE")
         },
-        buttons = { sel, req ->
-            val s = seriesOf(sel.key) ?: latest.first()
-            val last = vm.store.lastEpisodeOf(s.id)
-            ActionButton(if (last != null) "Continuar T${last.season} · E${last.episode}" else "Ver episódios", primary = true, icon = "▶", requester = req) {
-                ui.push(Route.SeriesDetail(s, FocusMem.last))
-            }
-            ActionButton(if (vm.store.inList("s:${s.id}")) "✓ Na minha lista" else "+ Minha lista") { vm.store.toggleList("s:${s.id}") }
+        hero = { e ->
+            val s = e?.series ?: latest.first()
+            LaunchedEffect(s.id) { vm.requestMeta(s) }
+            seriesHero(vm, s, "SÉRIE")
         },
-        wideImage = { p -> p.seriesId?.let { vm.seriesById[it] }?.let { vm.metaOf(it)?.backdropUrl("w780") } ?: p.image },
-        onWide = { p -> p.seriesId?.let { vm.seriesById[it] }?.let { ui.push(Route.SeriesDetail(it, FocusMem.last)) } },
-        onWideLong = { p -> p.seriesId?.let { vm.seriesById[it] }?.let { ui.push(Route.SeriesDetail(it, FocusMem.last)) } },
+        empty = "Nenhuma série nesta categoria",
     )
 }
 

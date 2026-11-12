@@ -92,4 +92,13 @@ class LogicTest {
         assertEquals(10 * m, n[0].end)
         assertEquals(1, n.count { it.isNow(15 * m) })
     }
+
+    @Test fun oneLinePerChannelAcrossQualities() {
+        fun ch(id: String, n: String) = Channel(id, id.toInt(), n, null, "1", null, "u")
+        val list = listOf(
+            ch("1", "Animal Planet FHD"), ch("2", "Animal Planet FHD²"), ch("3", "Animal Planet HD"), ch("4", "Animal Planet SD²"),
+            ch("5", "H2 HD"), ch("6", "H2 FHD"), ch("7", "Globo SP SD"), ch("8", "Globo RJ FHD"),
+        )
+        assertEquals(listOf("Animal Planet FHD", "H2 FHD", "Globo SP SD", "Globo RJ FHD"), Quality.unique(list).map { it.name })
+    }
 }

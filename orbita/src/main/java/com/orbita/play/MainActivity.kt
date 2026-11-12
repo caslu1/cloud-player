@@ -89,6 +89,12 @@ class Ui {
     var query by mutableStateOf("")
     var libraryMenu by mutableIntStateOf(0)
     var liveCatShown: String? = null
+    var movieCat by mutableStateOf<String?>(null)
+    var seriesCat by mutableStateOf<String?>(null)
+    val movieGrid = androidx.compose.foundation.lazy.grid.LazyGridState()
+    val seriesGrid = androidx.compose.foundation.lazy.grid.LazyGridState()
+    val movieCatList = androidx.compose.foundation.lazy.LazyListState()
+    val seriesCatList = androidx.compose.foundation.lazy.LazyListState()
     val catList = androidx.compose.foundation.lazy.LazyListState()
     val chList = androidx.compose.foundation.lazy.LazyListState()
     val movieRows = androidx.compose.foundation.lazy.LazyListState()
@@ -232,7 +238,7 @@ fun TopBar(ui: Ui, tabReq: FocusRequester, onSettings: () -> Unit) {
                 Pill(
                     t.label, ui.tab == t, Modifier.padding(end = 3.dp),
                     requester = if (ui.tab == t) tabReq else null,
-                    onFocus = { FocusMem.last = "tab:${t.name}"; if (ui.tab != t) ui.tab = t },
+                    onFocus = { FocusMem.last = "tab:${t.name}" }, // só troca de aba com OK
                     onClick = { ui.tab = t }
                 )
             }

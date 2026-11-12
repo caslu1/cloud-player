@@ -45,6 +45,9 @@ class Vm(ctx: Context) {
     var channels by mutableStateOf<List<Channel>>(emptyList()); private set
     var channelById: Map<String, Channel> = emptyMap(); private set
     var channelsByCat: Map<String, List<Channel>> = emptyMap(); private set
+    /** Listas sem as versões repetidas de qualidade (o que aparece nas listas de canais). */
+    var uniqueChannels: List<Channel> = emptyList(); private set
+    var uniqueByCat: Map<String, List<Channel>> = emptyMap(); private set
 
     var movieState by mutableStateOf(LoadState.IDLE); private set
     var movieCats by mutableStateOf<List<Cat>>(emptyList()); private set
@@ -116,7 +119,10 @@ class Vm(ctx: Context) {
         }
     }
 
-    private class LiveData(val cats: List<Cat>, val list: List<Channel>, val byId: Map<String, Channel>, val byCat: Map<String, List<Channel>>, val football: List<Channel>)
+    private class LiveData(
+        val cats: List<Cat>, val list: List<Channel>, val byId: Map<String, Channel>, val byCat: Map<String, List<Channel>>, val football: List<Channel>,
+        val unique: List<Channel>, val uniqueByCat: Map<String, List<Channel>>,
+    )
 
     fun loadLive(): Job = scope.launch {
         val src = source ?: return@launch
@@ -132,10 +138,11 @@ class Vm(ctx: Context) {
                     byCat.keys.filter { k -> cats0.none { it.id == k } }.map { Cat(it, if (it.isBlank()) "Outros" else it) }
                 val catNames = cats.associate { it.id to it.name }
                 val football = list.filter { c -> MatchLogic.isSportsName(c.name) || MatchLogic.isSportsName(catNames[c.catId].orEmpty()) }
-                LiveData(cats, list, list.associateBy { it.id }, byCat, football)
+                LiveData(cats, list, list.associateBy { it.id }, byCat, Quality.unique(football), Quality.unique(list), byCat.mapValues { Quality.unique(it.value) })
             }
         }.onSuccess { d ->
-            channelById = d.byId; channelsByCat = d.byCat; liveCats = d.cats; channels = d.list; footballChannels = d.football
+            channelById = d.byId; channelsByCat = d.byCat; uniqueChannels = d.unique; uniqueByCat = d.uniqueByCat
+            liveCats = d.cats; channels = d.list; footballChannels = d.football
             liveState = LoadState.READY
         }.onFailure { liveError = it.message ?: "Falha ao carregar os canais."; liveState = LoadState.ERROR }
     }

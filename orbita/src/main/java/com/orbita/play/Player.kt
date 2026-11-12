@@ -413,6 +413,22 @@ object Quality {
     private val fhd = Regex("""(?i)\b(fhd|full\s?hd|1080p?)\b""")
     private val hd = Regex("""(?i)\b(hd|720p?)\b""")
     private val sd = Regex("""(?i)\b(sd|480p?)\b""")
+    /**
+     * Uma linha por canal: "Globo SP FHD/FHD²/HD/SD" viram um só (a qualidade se escolhe no player).
+     * Fica a versão preferida (FHD, depois HD, 4K, sem marcação, SD; a principal antes da "²").
+     */
+    fun unique(list: List<Channel>): List<Channel> {
+        val groups = LinkedHashMap<String, MutableList<Channel>>()
+        for (c in list) groups.getOrPut(FootballApi.channelKey(c.name).ifEmpty { c.id }) { ArrayList() } += c
+        return groups.values.map { g -> if (g.size == 1) g[0] else g.minByOrNull { rank(it.name) }!! }
+    }
+
+    private fun rank(name: String): Int {
+        val q = when (of(name)) { "FHD" -> 0; "HD" -> 10; "UHD" -> 20; null -> 30; else -> 40 }
+        val alt = if (name.contains('²') || name.contains(Regex("""(?i)\b(alt|backup|2)\s*$"""))) 5 else 0
+        return q + alt
+    }
+
     fun of(name: String): String? = when {
         uhd.containsMatchIn(name) -> "UHD"
         fhd.containsMatchIn(name) -> "FHD"

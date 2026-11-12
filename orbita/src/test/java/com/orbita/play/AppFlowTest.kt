@@ -201,7 +201,7 @@ class AppFlowTest {
         click("Séries", exact = true)
         waitText("The Last of Us")
         shot("05-series")
-        rule.onAllNodesWithText("Ver episódios")[0].performClick()
+        rule.onAllNodesWithText("The Last of Us").let { it[it.fetchSemanticsNodes().size - 1] }.performClick()
         waitText("O Plantão")
         waitText("Sirene")
         shot("06-serie-episodios")

@@ -195,7 +195,7 @@ fun SearchScreen(vm: Vm, pb: Playback, ui: Ui) {
         res = withContext(Dispatchers.Default) {
             fun hit(n: String) = MatchLogic.norm(n).lowercase().contains(q)
             Results(
-                vm.channels.asSequence().filter { hit(it.name) || it.num.toString() == q }.take(40).toList(),
+                vm.uniqueChannels.asSequence().filter { hit(it.name) || it.num.toString() == q }.take(40).toList(),
                 vm.movies.asSequence().filter { hit(it.name) }.take(60).toList(),
                 vm.series.asSequence().filter { hit(it.name) }.take(60).toList(),
             )

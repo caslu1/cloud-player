@@ -42,9 +42,9 @@ private const val ALL = "__all"
 /** Canais da categoria escolhida (inclui Favoritos, Recentes e Todos). */
 fun channelsOf(vm: Vm, cat: String): List<Channel> = when (cat) {
     FAV -> vm.store.favChannels.mapNotNull { vm.channelById[it] }
-    RECENT -> vm.store.recentChannels.mapNotNull { vm.channelById[it] }
-    ALL -> vm.channels
-    else -> vm.channelsByCat[cat].orEmpty()
+    RECENT -> Quality.unique(vm.store.recentChannels.mapNotNull { vm.channelById[it] })
+    ALL -> vm.uniqueChannels
+    else -> vm.uniqueByCat[cat].orEmpty()
 }
 
 @Composable
@@ -127,11 +127,11 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
                         if (catQuery.isBlank()) {
                             item(key = FAV) { CatRow("★  Favoritos", favCount, ui.liveCat == FAV, "cat:$FAV", { pendingCat = FAV }, catReq) { ui.liveCat = FAV; runCatching { firstChannel.requestFocus() } } }
                             item(key = RECENT) { CatRow("🕘  Recentes", recentCount, ui.liveCat == RECENT, "cat:$RECENT", { pendingCat = RECENT }) { ui.liveCat = RECENT; runCatching { firstChannel.requestFocus() } } }
-                            item(key = ALL) { CatRow("Todos os canais", vm.channels.size, ui.liveCat == ALL, "cat:$ALL", { pendingCat = ALL }) { ui.liveCat = ALL; runCatching { firstChannel.requestFocus() } } }
+                            item(key = ALL) { CatRow("Todos os canais", vm.uniqueChannels.size, ui.liveCat == ALL, "cat:$ALL", { pendingCat = ALL }) { ui.liveCat = ALL; runCatching { firstChannel.requestFocus() } } }
                         }
                         items(cats, key = { "c" + it.id }) { c ->
                             val icon = if (c.name.contains("futebol", true)) "⚽  " else ""
-                            CatRow(icon + c.name, vm.channelsByCat[c.id]?.size ?: 0, ui.liveCat == c.id, "cat:${c.id}", { pendingCat = c.id }) {
+                            CatRow(icon + c.name, vm.uniqueByCat[c.id]?.size ?: 0, ui.liveCat == c.id, "cat:${c.id}", { pendingCat = c.id }) {
                                 ui.liveCat = c.id; runCatching { firstChannel.requestFocus() }
                             }
                         }
@@ -180,7 +180,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
 }
 
 @Composable
-private fun CatRow(label: String, count: Int, selected: Boolean, memKey: String, onFocus: () -> Unit, requester: FocusRequester? = null, onClick: () -> Unit) {
+internal fun CatRow(label: String, count: Int, selected: Boolean, memKey: String, onFocus: () -> Unit, requester: FocusRequester? = null, onClick: () -> Unit) {
     Focus(Modifier.fillMaxWidth().height(36.dp), onClick = onClick, onFocus = onFocus, memKey = memKey, requester = requester) { f ->
         Row(
             Modifier.fillMaxSize()
