@@ -209,6 +209,7 @@ class AppFlowTest {
         rule.onAllNodesWithText("Ribeirense", substring = true)[0].performClick() // segundo OK: tela cheia
         repeat(10) { pump() }
         shot("10-player")
+        back() // esconde as informações
         back() // sai da tela cheia
 
         // Buscar, Biblioteca, Configurações
