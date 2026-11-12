@@ -13,7 +13,6 @@
 </defs>
 <g mask="url(#cutFront)" fill="none" stroke="#fff" stroke-linecap="round">
   <circle cx="370.0" cy="370.0" r="307.5" stroke-width="125"/>
-  <path d="M277.75 499.15 L462.25 191.65" stroke-width="77.5"/>
 </g>
 <g mask="url(#cutBack)"><g transform="translate(370.0 370.0) rotate(-22)" fill="none" stroke="url(#ring)" stroke-width="56.25" stroke-linecap="round"><path d="M-584.25 0 A584.25 178.35 0 0 1 584.25 0"/></g></g>
 <g transform="translate(370.0 370.0) rotate(-22)" fill="none" stroke="url(#ring)" stroke-width="56.25" stroke-linecap="round">
