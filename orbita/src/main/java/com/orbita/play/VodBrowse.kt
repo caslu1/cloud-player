@@ -124,7 +124,7 @@ fun VodBrowse(
                 }
                 Row(Modifier.padding(end = 28.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Txt(if (searching) "Resultados para \"${catQuery.trim()}\"" else cats.firstOrNull { it.id == cat }?.name ?: "", F.s(12.sp, C.white, FontWeight.SemiBold), Modifier.weight(1f))
-                    Txt("${entries.size} títulos", F.s(9.sp, C.dim))
+                    Txt(if (entries.size == 1) "1 título" else "${entries.size} títulos", F.s(9.sp, C.dim))
                 }
                 if (entries.isEmpty()) {
                     if (searching) EmptyState("Nada encontrado", "Tente outro nome.", Modifier.fillMaxWidth().padding(top = 40.dp))
