@@ -261,7 +261,7 @@ private fun Logout(vm: Vm, pb: Playback, ui: Ui) {
     Txt("Você vai precisar entrar de novo com os dados do seu provedor.", F.s(9.5.sp, C.dim), maxLines = 2)
     Spacer(Modifier.height(12.dp))
     Option(if (confirm) "Confirmar: sair da conta" else "Sair da conta", danger = true, memKey = "logout") {
-        if (confirm) { pb.stop(); ui.stack.clear(); ui.tab = Tab.CANAIS; vm.logout() } else confirm = true
+        if (confirm) { pb.stop(); ui.stack.clear(); ui.tab = Tab.CANAIS; ui.home = true; vm.logout() } else confirm = true
     }
 }
 

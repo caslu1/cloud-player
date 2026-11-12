@@ -68,7 +68,7 @@ class OrbitaApp : Application(), ImageLoaderFactory {
         .build()
 }
 
-enum class Tab(val label: String) { CANAIS("TV"), FILMES("FILMES"), SERIES("SÉRIES"), FUTEBOL("FUTEBOL") }
+enum class Tab(val title: String) { CANAIS("CANAIS"), FILMES("FILMES"), SERIES("SÉRIES"), FUTEBOL("FUTEBOL") }
 
 /** Telas empilhadas por cima das abas. [returnKey] devolve o foco ao item que abriu a tela. */
 sealed class Route(val returnKey: String?) {
@@ -83,6 +83,8 @@ sealed class Route(val returnKey: String?) {
 @androidx.compose.runtime.Stable
 class Ui {
     var tab by mutableStateOf(Tab.CANAIS)
+    /** Tela inicial (blocos) aberta; as seções abrem a partir dela. */
+    var home by mutableStateOf(true)
     val stack = mutableStateListOf<Route>()
     var playerReturnKey: String? = null
     var liveCat by mutableStateOf("__all")
@@ -200,15 +202,19 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
     var toast by remember { mutableStateOf<String?>(null) }
     var exitAsk by remember { mutableStateOf(false) }
     val top = ui.stack.lastOrNull()
-    val tabReq = remember { FocusRequester() }
 
     BackHandler {
         when {
             ui.stack.isNotEmpty() -> ui.pop()
-            FocusMem.last?.startsWith("tab:") != true -> { FocusMem.restore = "tab:${ui.tab.name}"; runCatching { tabReq.requestFocus() } }
+            !ui.home -> { FocusMem.restore = "home:${ui.tab.name}"; ui.home = true }
             else -> exitAsk = true
         }
     }
+    val openSearch = { ui.push(Route.Search(FocusMem.last)) }
+    val openSettings = { ui.push(Route.Settings(FocusMem.last)) }
+    val reload = { vm.reloadAll(); toast = "Atualizando a lista…" }
+    // a prévia de canal não continua tocando por trás da tela inicial
+    LaunchedEffect(ui.home) { if (ui.home && !pb.fullscreen && pb.current?.kind == Kind.LIVE) pb.stop() }
     LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
     // devolve o foco ao item que abriu o pedido de senha
     var pinReturn by remember { mutableStateOf<String?>(null) }
@@ -224,14 +230,14 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
             is Route.CategoryGrid -> CategoryGrid(vm, pb, ui, top)
             is Route.Settings -> SettingsScreen(vm, pb, ui)
             is Route.Search -> SearchScreen(vm, pb, ui)
-            null -> {
+            null -> if (ui.home) HomeScreen(vm, pb, ui, openSearch, reload, openSettings) else {
                 when (ui.tab) {
                     Tab.CANAIS -> ChannelsScreen(vm, pb, ui)
                     Tab.FILMES -> MoviesScreen(vm, pb, ui)
                     Tab.SERIES -> SeriesScreen(vm, pb, ui)
                     Tab.FUTEBOL -> FootballScreen(vm, pb, ui)
                 }
-                TopBar(ui, tabReq, onSearch = { ui.push(Route.Search(FocusMem.last)) }) { ui.push(Route.Settings(FocusMem.last)) }
+                TopBar(ui, openSearch, reload, openSettings)
             }
         }
         ui.pinPrompt?.let { p -> PinDialog(p) { if (ui.pinPrompt === p) ui.pinPrompt = null } }
@@ -245,38 +251,22 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
 }
 
 @Composable
-fun TopBar(ui: Ui, tabReq: FocusRequester, onSearch: () -> Unit, onSettings: () -> Unit) {
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(10_000) } }
+fun TopBar(ui: Ui, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit) {
     Row(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 29.dp), verticalAlignment = Alignment.CenterVertically) {
         Logo()
-        Spacer(Modifier.width(26.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            for (t in Tab.entries) {
-                Pill(
-                    t.label, ui.tab == t, Modifier.padding(end = 6.dp), padH = 14.dp, icon = if (t == Tab.FUTEBOL) Ic.Soccer else null,
-                    requester = if (ui.tab == t) tabReq else null,
-                    onFocus = { FocusMem.last = "tab:${t.name}" }, // só troca de aba com OK
-                    onClick = { ui.tab = t }
-                )
-            }
-        }
-        Spacer(Modifier.weight(1f))
-        Focus(onClick = onSearch, memKey = "search") { f ->
-            Box(
-                Modifier.size(22.dp).background(if (f) C.accent else Color.Transparent, androidx.compose.foundation.shape.CircleShape),
-                contentAlignment = Alignment.Center
-            ) { Icon(Ic.Search, 14.dp, desc = "Buscar") }
-        }
-        Spacer(Modifier.width(8.dp))
-        Focus(onClick = onSettings, memKey = "settings") { f ->
-            Box(
-                Modifier.size(22.dp).background(if (f) C.accent else Color.Transparent, androidx.compose.foundation.shape.CircleShape),
-                contentAlignment = Alignment.Center
-            ) { Icon(Ic.Settings, 14.dp, desc = "Configurações") }
-        }
+        Spacer(Modifier.width(22.dp))
+        // volta para a tela inicial
+        Pill(
+            "INÍCIO", false, padH = 12.dp, icon = Ic.Home,
+            onFocus = { FocusMem.last = "tab:home" },
+            onClick = { FocusMem.restore = "home:${ui.tab.name}"; ui.home = true }
+        )
         Spacer(Modifier.width(10.dp))
-        Txt(hhmm(now), F.s(11.sp, C.white, FontWeight.Bold))
+        Box(Modifier.width(1.dp).height(14.dp).background(C.panelBorder))
+        Spacer(Modifier.width(12.dp))
+        Txt(ui.tab.title, F.s(12.sp, C.white, FontWeight.Bold, F.outfit, 1.sp))
+        Spacer(Modifier.weight(1f))
+        TopActions(onSearch, onReload, onSettings)
     }
 }
 

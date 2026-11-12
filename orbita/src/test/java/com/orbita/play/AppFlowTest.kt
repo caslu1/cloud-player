@@ -183,6 +183,13 @@ class AppFlowTest {
         fields[2].performTextInput("pass")
         click("Entrar")
 
+        // Tela inicial
+        waitText("CANAIS")
+        waitText("Ao vivo, hoje e amanhã")
+        settle(1500)
+        shot("00-inicio")
+        click("CANAIS", exact = true)
+
         // Canais
         waitText("Futebol 1 HD")
         waitText("Atlético Serrano x Ribeirense")
@@ -191,7 +198,9 @@ class AppFlowTest {
         click("Gol TV FHD") // toca na prévia
         repeat(10) { pump() }
 
-        // Filmes
+        // Filmes (volta ao início e abre o bloco)
+        back()
+        waitText("Ao vivo, hoje e amanhã")
         click("FILMES", exact = true)
         waitText("Duna")
         waitText("Lançamentos")
@@ -217,6 +226,9 @@ class AppFlowTest {
         shot("13-busca-filmes")
 
         // Séries
+        back()
+        waitText("Ao vivo, hoje e amanhã")
+        shot("15-inicio-continuar")
         click("SÉRIES", exact = true)
         waitText("The Last of Us")
         shot("05-series")
@@ -227,6 +239,8 @@ class AppFlowTest {
         back()
 
         // Futebol (jogos vindos do EPG)
+        back()
+        waitText("Ao vivo, hoje e amanhã")
         click("FUTEBOL", exact = true)
         waitText("Atlético Serrano")
         waitText("Ribeirense")
@@ -259,7 +273,9 @@ class AppFlowTest {
         waitText("Canais (")
         shot("14-busca")
         back()
-        click("TV", exact = true)
+        click("INÍCIO", exact = true)
+        waitText("Ao vivo, hoje e amanhã")
+        click("CANAIS", exact = true)
         waitText("Futebol 1 HD")
     }
 }

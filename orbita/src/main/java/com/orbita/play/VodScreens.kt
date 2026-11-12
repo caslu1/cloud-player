@@ -313,7 +313,7 @@ fun MoviesScreen(vm: Vm, pb: Playback, ui: Ui) {
     )
 }
 
-private fun movieHero(vm: Vm, m: Movie, label: String): HeroData {
+internal fun movieHero(vm: Vm, m: Movie, label: String): HeroData {
     val t = vm.metaOf(m)
     val info = vm.movieInfos[m.id]
     val dur = info?.durationSec?.takeIf { it > 0 } ?: t?.runtimeMin?.takeIf { it > 0 }?.times(60)
