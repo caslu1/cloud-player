@@ -252,6 +252,13 @@ class AppFlowTest {
         waitText("Ativa")
         shot("09-configuracoes")
         back()
+        // busca geral (lupa no topo)
+        rule.onNodeWithContentDescription("Buscar").performClick()
+        repeat(5) { pump() }
+        rule.onAllNodes(hasSetTextAction())[0].performTextInput("Fut")
+        waitText("Canais (")
+        shot("14-busca")
+        back(); back()
         click("TV", exact = true)
         waitText("Futebol 1 HD")
     }
