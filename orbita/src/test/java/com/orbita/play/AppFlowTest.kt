@@ -224,6 +224,9 @@ class AppFlowTest {
         sendKey(androidx.compose.ui.input.key.Key.DirectionDown) // seleciona "Áudio e legendas"
         repeat(3) { pump(50) }
         shot("18-player-serie", wait = false)
+        sendKey(androidx.compose.ui.input.key.Key.DirectionRight) // seleciona "Tela"
+        repeat(3) { pump(50) }
+        shot("27-player-tela", wait = false)
         back() // tira a seleção do botão
         back() // esconde os controles
         back() // fecha o player

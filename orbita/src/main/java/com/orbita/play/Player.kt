@@ -267,10 +267,15 @@ fun FullPlayer(vm: Vm, pb: Playback) {
     /** Botão selecionado na barra do filme/episódio (-1 = nenhum; ▼ seleciona). */
     var vodBtn by remember { mutableIntStateOf(-1) }
     val hasNext = !live && item.kind == Kind.EPISODE && pb.neighbor(1) != null
-    val vodButtons = buildList {
-        add(Ic.Settings to "Áudio e legendas")
-        if (hasNext) add(Ic.Forward to "Próximo episódio")
+    val screenModes = listOf(AspectRatioFrameLayout.RESIZE_MODE_FIT to "Original", AspectRatioFrameLayout.RESIZE_MODE_ZOOM to "Expandir", AspectRatioFrameLayout.RESIZE_MODE_FILL to "Esticar")
+    val screenName = screenModes.firstOrNull { it.first == pb.resize }?.second ?: "Original"
+    // botões do filme/episódio: id, ícone e texto
+    val vodActions = buildList {
+        add(Triple("opts", Ic.Settings, "Áudio e legendas"))
+        add(Triple("screen", Ic.Expand, "Tela: $screenName"))
+        if (hasNext) add(Triple("next", Ic.Forward, "Próximo episódio"))
     }
+    val vodButtons = vodActions.map { it.second to it.third }
     val root = remember { FocusRequester() }
     val qualityReq = remember { FocusRequester() }
     var rootFocused by remember { mutableStateOf(false) }
@@ -376,9 +381,15 @@ fun FullPlayer(vm: Vm, pb: Playback) {
                         AKey.KEYCODE_DPAD_DOWN -> true
                         AKey.KEYCODE_DPAD_CENTER, AKey.KEYCODE_ENTER, AKey.KEYCODE_NUMPAD_ENTER -> {
                             if (rep == 0) {
-                                val b = vodBtn
-                                vodBtn = -1
-                                if (b == 0) panel = PPanel.OPTIONS else pb.neighbor(1)?.let { pb.play(it, pb.list) }
+                                when (vodActions.getOrNull(vodBtn)?.first) {
+                                    // Original → Expandir → Esticar (o botão continua selecionado para trocar de novo)
+                                    "screen" -> {
+                                        val i = screenModes.indexOfFirst { it.first == pb.resize }
+                                        pb.resize = screenModes[(i + 1).mod(screenModes.size)].first
+                                    }
+                                    "opts" -> { vodBtn = -1; panel = PPanel.OPTIONS }
+                                    "next" -> { vodBtn = -1; pb.neighbor(1)?.let { pb.play(it, pb.list) } }
+                                }
                             }
                             true
                         }
@@ -438,7 +449,7 @@ fun FullPlayer(vm: Vm, pb: Playback) {
         if (overlay && panel == PPanel.NONE) {
             if (live) LiveOverlay(vm, pb, item, qualityReq, Modifier.fillMaxSize())
             else {
-                VodOverlay(item, if (seekTarget >= 0) seekTarget else pos, dur, pb.isPlaying, seekTarget >= 0, vodButtons, vodBtn, Modifier.align(Alignment.BottomCenter))
+                VodOverlay(item, if (seekTarget >= 0) seekTarget else pos, dur, pb.isPlaying, seekTarget >= 0, vodButtons, vodBtn, hasNext, Modifier.align(Alignment.BottomCenter))
                 if (seekTarget >= 0 && seekStart >= 0) SeekBadge(seekTarget - seekStart, Modifier.align(Alignment.Center))
                 Txt(hhmm(System.currentTimeMillis()), F.s(12.sp, C.white, FontWeight.Bold), Modifier.align(Alignment.TopEnd).padding(20.dp))
             }
@@ -610,7 +621,7 @@ private fun QualityPill(label: String, selected: Boolean, available: Boolean, re
 @Composable
 private fun VodOverlay(
     item: PlayItem, pos: Long, dur: Long, playing: Boolean, seeking: Boolean,
-    buttons: List<Pair<androidx.compose.ui.graphics.vector.ImageVector, String>>, selected: Int, modifier: Modifier,
+    buttons: List<Pair<androidx.compose.ui.graphics.vector.ImageVector, String>>, selected: Int, hasNext: Boolean, modifier: Modifier,
 ) {
     // Player de filmes e séries: capa + título à esquerda, barra de tempo larga, controles no centro
     // e os botões (Áudio e legendas / Próximo episódio) nas laterais, tudo num painel organizado.
@@ -631,7 +642,7 @@ private fun VodOverlay(
                     Spacer(Modifier.width(16.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Txt(if (ep) "SÉRIE" else "FILME", F.s(8.sp, C.cyan, FontWeight.Bold, spacing = 1.6.sp))
+                    Txt(if (ep) "SÉRIE" else "FILME", F.s(8.sp, Color(0xFFE5303A), FontWeight.Bold, spacing = 1.6.sp))
                     Spacer(Modifier.height(3.dp))
                     Txt(item.title, F.s(22.sp, C.white, FontWeight.Bold, F.outfit))
                     if (item.subtitle.isNotEmpty()) { Spacer(Modifier.height(2.dp)); Txt(item.subtitle, F.s(10.5.sp, C.text, FontWeight.Medium)) }
@@ -644,30 +655,33 @@ private fun VodOverlay(
             Spacer(Modifier.height(18.dp))
             SeekBar(if (dur > 0) pos.toFloat() / dur else 0f, seeking, Modifier.fillMaxWidth())
             Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
-                Txt(fmtTime(pos), F.s(10.sp, if (seeking) C.accentText else C.white, FontWeight.SemiBold))
+                Txt(fmtTime(pos), F.s(10.sp, C.white, FontWeight.SemiBold))
                 Spacer(Modifier.weight(1f))
                 if (dur > 0) Txt("-" + fmtTime((dur - pos).coerceAtLeast(0)), F.s(10.sp, C.dim, FontWeight.Medium))
             }
             Spacer(Modifier.height(8.dp))
             // linha de controles: botão da esquerda | ⏪ ▶ ⏩ | botão da direita
             Box(Modifier.fillMaxWidth().height(48.dp)) {
-                buttons.getOrNull(0)?.let { (icon, label) -> PlayerPill(icon, label, selected == 0, Modifier.align(Alignment.CenterStart)) }
+                // à esquerda: Áudio e legendas e Tela; à direita: Próximo episódio
+                val leftCount = if (hasNext) buttons.size - 1 else buttons.size
+                Row(Modifier.align(Alignment.CenterStart), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    for (i in 0 until leftCount) buttons[i].let { (icon, label) -> PlayerPill(icon, label, selected == i, Modifier) }
+                }
                 Row(Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(34.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0x26FFFFFF)), contentAlignment = Alignment.Center) {
                         Icon(Ic.Rewind, 17.dp, C.white)
                     }
                     Spacer(Modifier.width(18.dp))
                     Box(
-                        Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape)
-                            .background(Brush.linearGradient(listOf(Color(0xFFA36BFF), Color(0xFF7C5CFF), Color(0xFF3FA8F0)))),
+                        Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape).background(C.white),
                         contentAlignment = Alignment.Center
-                    ) { Icon(if (playing && !seeking) Ic.Pause else Ic.Play, 24.dp, C.white) }
+                    ) { Icon(if (playing && !seeking) Ic.Pause else Ic.Play, 24.dp, Color(0xFF0B0A12)) }
                     Spacer(Modifier.width(18.dp))
                     Box(Modifier.size(34.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0x26FFFFFF)), contentAlignment = Alignment.Center) {
                         Icon(Ic.Forward, 17.dp, C.white)
                     }
                 }
-                buttons.getOrNull(1)?.let { (icon, label) -> PlayerPill(icon, label, selected == 1, Modifier.align(Alignment.CenterEnd)) }
+                if (hasNext) buttons.last().let { (icon, label) -> PlayerPill(icon, label, selected == buttons.size - 1, Modifier.align(Alignment.CenterEnd)) }
             }
             Spacer(Modifier.height(6.dp))
             Txt(
@@ -699,11 +713,11 @@ private fun SeekBar(fraction: Float, seeking: Boolean, modifier: Modifier) {
     androidx.compose.foundation.layout.BoxWithConstraints(modifier.height(16.dp), contentAlignment = Alignment.CenterStart) {
         val f = fraction.coerceIn(0f, 1f)
         Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)).background(Color(0x40FFFFFF)))
-        Box(Modifier.fillMaxWidth(f).height(5.dp).clip(RoundedCornerShape(3.dp)).background(Brush.horizontalGradient(listOf(Color(0xFF7C5CFF), Color(0xFF3FA8F0)))))
+        Box(Modifier.fillMaxWidth(f).height(5.dp).clip(RoundedCornerShape(3.dp)).background(C.white))
         val d = if (seeking) 16.dp else 12.dp
         Box(
             Modifier.padding(start = (maxWidth - d) * f).size(d).clip(androidx.compose.foundation.shape.CircleShape)
-                .background(if (seeking) C.accentText else C.white)
+                .background(C.white)
         )
     }
 }
