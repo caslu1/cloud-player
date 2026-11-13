@@ -115,10 +115,13 @@ ${formHtml}
 }
 
 export const LANDING_CSS = `
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth}html,body{overflow-x:clip;max-width:100%}
+.g3>*,.g2>*,.g2s>*,.hgrid>*,.act>*,.sgrid>*{min-width:0}
 .lnav{position:sticky;top:0;z-index:20;background:rgba(7,6,13,.82);backdrop-filter:blur(12px);border-bottom:1px solid #16121f}
 .lnav .lnk{display:flex;gap:26px;margin-left:auto;margin-right:22px;color:var(--mut);font-weight:500}.lnav .lnk a:hover{color:#fff}
-.mmenu{display:none;margin-left:12px}@media (max-width:520px){.mmenu{margin-left:auto}}.mmenu summary{list-style:none;cursor:pointer;color:#fff;display:flex;padding:8px;border:1px solid var(--line2);border-radius:10px}
+.mmenu{display:none;margin-left:12px}@media (max-width:520px){
+ .inst .row.wrapf{flex-direction:column;align-items:stretch}.addr{min-width:0;width:100%;word-break:break-all;height:auto;min-height:46px;padding:10px 14px;font-size:13px}.inst .btn{width:100%}
+ .inst h3{font-size:16px}.pill{height:auto;min-height:40px;padding:8px 14px}.mmenu{margin-left:auto}}.mmenu summary{list-style:none;cursor:pointer;color:#fff;display:flex;padding:8px;border:1px solid var(--line2);border-radius:10px}
 .mmenu summary::-webkit-details-marker{display:none}
 .mmenu>div{position:absolute;right:16px;top:64px;background:#100d1c;border:1px solid var(--line2);border-radius:14px;padding:8px;display:grid;min-width:220px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
 .mmenu>div a{padding:12px 14px;border-radius:9px;color:#e6e1f5}.mmenu>div a:hover{background:#1d1638}
@@ -164,6 +167,8 @@ html{scroll-behavior:smooth}
  .lnav .btn.sm{padding:0 12px}.lnav .logo img{height:26px}
 }
 @media (max-width:520px){
+ .inst .row.wrapf{flex-direction:column;align-items:stretch}.addr{min-width:0;width:100%;word-break:break-all;height:auto;min-height:46px;padding:10px 14px;font-size:13px}.inst .btn{width:100%}
+ .inst h3{font-size:16px}.pill{height:auto;min-height:40px;padding:8px 14px}
  .lnav .btn.sm{display:none}
  .lead{font-size:15.5px}.btn.lg{width:100%}.note{font-size:13px}
  .step,.feat,.inst{padding:18px}
