@@ -3,14 +3,14 @@ sub init()
     r = m.top.findNode("root")
     addLabel(r, "Buscar", 60, 60, OUTF(), 48, "0xFFFFFFFF")
     addLabel(r, "Canais, filmes e séries da sua lista", 60, 124, IREG(), 20, "0x9D9ABBFF")
-    m.status = addLabel(r, "Carregando o catálogo…", 620, 120, ISEM(), 20, "0x9D9ABBFF", 1240)
+    m.status = addLabel(r, "Carregando o catálogo…", 652, 120, ISEM(), 20, "0x9D9ABBFF", 1240)
     m.kb = m.top.findNode("kb")
     m.kb.observeField("text", "onText")
     m.grid = m.top.findNode("grid")
     m.grid.observeField("itemSelected", "onPick")
     m.task = CreateObject("roSGNode", "SearchTask")
     m.task.creds = m.global.creds
-    m.task.observeField("state", "onState")
+    m.task.observeField("phase", "onState")
     m.task.observeField("results", "onResults")
     m.task.control = "RUN"
     m.results = []
@@ -22,12 +22,12 @@ sub onFocus()
 end sub
 
 sub onState()
-    if m.task.state = "ready" then onText()
+    if m.task.phase = "ready" then onText()
 end sub
 
 sub onText()
     q = m.kb.text
-    if m.task.state <> "ready"
+    if m.task.phase <> "ready"
         m.status.text = "Carregando o catálogo… (" + q + ")"
         return
     end if
