@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="PinBox" extends="Group">
+    <interface>
+        <!-- setup = { title, subtitle } ; result = senha de 4 números ou "cancel" ; error = mensagem (limpa os números) -->
+        <field id="setup" type="assocarray" onChange="onSetup" />
+        <field id="result" type="string" alwaysNotify="true" />
+        <field id="error" type="string" alwaysNotify="true" onChange="onError" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/common.brs" />
+    <script type="text/brightscript" uri="pkg:/components/PinBox.brs" />
+</component>

@@ -21,6 +21,7 @@
         <Group id="epg" />
         <Timer id="epgTimer" duration="0.6" />
         <Timer id="rowEpgTimer" duration="0.5" />
+        <Timer id="pvAutoTimer" duration="1.5" />
     </children>
     <script type="text/brightscript" uri="pkg:/components/common.brs" />
     <script type="text/brightscript" uri="pkg:/components/ChannelsScreen.brs" />

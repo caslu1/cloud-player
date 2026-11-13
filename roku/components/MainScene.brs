@@ -11,11 +11,12 @@ sub init()
     m.live = m.top.findNode("liveUI")
     m.live.observeField("action", "onLiveAction")
     m.playing = invalid
-    m.global.addFields({ creds: {} })
+    m.global.addFields({ creds: {}, adultUnlocked: false })
+    m.top.findNode("bg").uri = "pkg:/images/wall_" + prefGet("wall", "1") + ".png"
     reg = CreateObject("roRegistrySection", "orbita")
     if reg.Exists("server")
         m.global.creds = { server: reg.Read("server"), user: reg.Read("user"), pass: reg.Read("pass") }
-        pushScreen("HomeScreen", {})
+        pushScreen(homeName(), {})
         startActTask(false)
     else
         pushScreen("LoginScreen", {})
@@ -38,9 +39,20 @@ sub popScreen()
     if s.subtype() = "ChannelsScreen" then s.callFunc("cleanup", {})
     m.screens.removeChild(s)
     top = m.stack.Peek()
+    ' layout da tela inicial trocado nas Configurações
+    st = top.subtype()
+    if (st = "HomeScreen" or st = "HomeLite") and st <> homeName() and m.stack.Count() = 1
+        resetTo(homeName())
+        return
+    end if
     top.visible = true
     top.setFocus(true)
 end sub
+
+function homeName() as string
+    if prefGet("layout", "default") = "lite" then return "HomeLite"
+    return "HomeScreen"
+end function
 
 sub resetTo(name as string)
     while m.stack.Count() > 0
@@ -57,7 +69,7 @@ sub onAction(event as object)
     else if a.type = "play"
         play(a)
     else if a.type = "home"
-        resetTo("HomeScreen")
+        resetTo(homeName())
     else if a.type = "logout"
         reg = CreateObject("roRegistrySection", "orbita")
         for each k in ["server", "user", "pass", "progress", "favs", "recents"]
@@ -203,6 +215,19 @@ sub onVideoState(event as object)
         showError("Não foi possível abrir o vídeo." + Chr(10) + "Erro " + m.video.errorCode.ToStr() + ": " + m.video.errorMsg)
         stopVideo()
     else if st = "finished"
+        a = m.playing
+        ' próximo episódio automático (Configurações → Reprodução)
+        if a <> invalid and a.queue <> invalid and a.queue.Count() > 0 and prefGet("autoNext", "1") = "1"
+            regRemove("progress", a.key)
+            nxt = a.queue[0]
+            rest = []
+            for i = 1 to a.queue.Count() - 1
+                rest.Push(a.queue[i])
+            end for
+            nxt.queue = rest
+            play(nxt)
+            return
+        end if
         stopVideo()
     end if
 end sub
@@ -270,7 +295,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
             return true
         end if
         ' na tela inicial: pergunta antes de sair do app (igual ao Android)
-        if m.exitBox = invalid and m.stack.Count() = 1 and m.stack[0].subtype() = "HomeScreen"
+        if m.exitBox = invalid and m.stack.Count() = 1 and (m.stack[0].subtype() = "HomeScreen" or m.stack[0].subtype() = "HomeLite")
             d = CreateObject("roSGNode", "ConfirmBox")
             d.setup = { title: "Sair do Orbita Play?", message: "O que estiver tocando será fechado.", confirm: "Sair", icon: "ic_logout", danger: false }
             d.observeField("result", "onExitAsk")

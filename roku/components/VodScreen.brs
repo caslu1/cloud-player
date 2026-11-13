@@ -88,18 +88,33 @@ sub buildCats()
     n.icon = "ic_bookmark"
     n.count = mine.Count().ToStr()
     m.catNodes["__mine"] = n
+    hidden = hiddenSet()
+    kind = "vod"
+    if m.series then kind = "series"
+    m.locked = {}
+    m.blockedIds = {}
     for each c in m.catData
-        n = root.createChild("ItemData")
-        n.key = asText(c.category_id)
-        n.title = asText(c.category_name)
-        m.catNodes[n.key] = n
+        id = asText(c.category_id)
+        nm = asText(c.category_name)
+        if not catVisible(kind, id, nm, hidden)
+            m.blockedIds[id] = true
+        else
+            n = root.createChild("ItemData")
+            n.key = id
+            n.title = nm
+            if catLocked(nm)
+                m.locked[id] = true
+                n.icon = "ic_lock"
+            end if
+            m.catNodes[n.key] = n
+        end if
     end for
     m.cats.content = root
     m.catCount.text = m.catData.Count().ToStr()
     if root.getChildCount() > 0
         first = root.getChild(0).key
         i = 0
-        while i < root.getChildCount() - 1 and (root.getChild(i).key = "__cont" or root.getChild(i).key = "__mine")
+        while i < root.getChildCount() - 1 and (root.getChild(i).key = "__cont" or root.getChild(i).key = "__mine" or m.locked.DoesExist(root.getChild(i).key))
             i = i + 1
         end while
         first = root.getChild(i).key
@@ -195,8 +210,43 @@ end sub
 
 sub onCat()
     n = m.cats.content.getChild(m.cats.itemSelected)
+    if m.locked.DoesExist(n.key) and m.global.adultUnlocked <> true
+        askUnlock(n.key)
+        return
+    end if
     choose(n.key, true)
 end sub
+
+' ---------------------------------------------------------------- categoria adulta bloqueada
+sub askUnlock(key as string)
+    m.unlockKey = key
+    d = CreateObject("roSGNode", "PinBox")
+    d.setup = { title: "Conteúdo bloqueado", subtitle: "Digite a senha para ver o conteúdo adulto." }
+    d.observeField("result", "onUnlock")
+    m.top.appendChild(d)
+    m.pinBox = d
+    d.setFocus(true)
+end sub
+
+sub onUnlock()
+    v = m.pinBox.result
+    if v = "cancel"
+        m.top.removeChild(m.pinBox)
+        m.pinBox = invalid
+        m.cats.setFocus(true)
+        return
+    end if
+    if v <> pinGet()
+        m.pinBox.error = "Senha incorreta"
+        return
+    end if
+    m.top.removeChild(m.pinBox)
+    m.pinBox = invalid
+    m.global.adultUnlocked = true
+    buildCats()
+    choose(m.unlockKey, true)
+end sub
+
 
 sub onItemFocus()
     hero(m.grid.itemFocused)
@@ -276,6 +326,7 @@ end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
+    if m.pinBox <> invalid then return true
     if key = "right" and m.cats.hasFocus() and m.items.Count() > 0
         m.focusList = m.grid
         m.grid.jumpToItem = 0

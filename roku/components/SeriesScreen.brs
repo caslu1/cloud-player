@@ -223,13 +223,28 @@ sub applyFocus()
     if m.zone = "eps" then m.eps.setFocus(true) else m.top.setFocus(true)
 end sub
 
-sub playEpisode(e as object, start as integer)
+function epAction(e as object, season as string, start as integer) as object
     ext = asText(e.container_extension)
     if ext = "" then ext = "mp4"
     img = m.cover
     if type(e.info) = "roAssociativeArray" and asText(e.info.movie_image) <> "" then img = asText(e.info.movie_image)
-    subtitle = "T" + m.seasonKeys[m.sIdx] + " · E" + asText(e.episode_num)
-    m.top.action = { type: "play", key: "ep:" + asText(e.id), kind: "episode", title: m.top.params.name, subtitle: subtitle, image: img, url: streamUrl("series", asText(e.id), ext), format: formatFor(ext), live: false, start: start, seriesId: m.top.params.id, seriesName: m.top.params.name }
+    subtitle = "T" + season + " · E" + asText(e.episode_num)
+    return { type: "play", key: "ep:" + asText(e.id), kind: "episode", title: m.top.params.name, subtitle: subtitle, image: img, url: streamUrl("series", asText(e.id), ext), format: formatFor(ext), live: false, start: start, seriesId: m.top.params.id, seriesName: m.top.params.name }
+end function
+
+sub playEpisode(e as object, start as integer)
+    a = epAction(e, m.seasonKeys[m.sIdx], start)
+    ' próximos episódios (para o "Próximo episódio automático")
+    q = []
+    found = false
+    for si = 0 to m.seasonKeys.Count() - 1
+        for each x in m.data[m.seasonKeys[si]]
+            if found and q.Count() < 30 then q.Push(epAction(x, m.seasonKeys[si], 0))
+            if asText(x.id) = asText(e.id) then found = true
+        end for
+    end for
+    a.queue = q
+    m.top.action = a
 end sub
 
 sub onEpisode()

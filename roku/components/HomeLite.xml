@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="HomeLite" extends="Group">
+    <interface>
+        <field id="params" type="assocarray" />
+        <field id="action" type="assocarray" />
+    </interface>
+    <children>
+        <Group id="root" />
+        <Timer id="timer" repeat="true" duration="20" />
+    </children>
+    <script type="text/brightscript" uri="pkg:/components/common.brs" />
+    <script type="text/brightscript" uri="pkg:/components/Buttons.brs" />
+    <script type="text/brightscript" uri="pkg:/components/DeviceId.brs" />
+    <script type="text/brightscript" uri="pkg:/components/HomeLite.brs" />
+</component>

@@ -38,7 +38,10 @@ end function
 
 ' Endereços para tentar num canal ao vivo: m3u8 (HLS) e depois .ts.
 function liveSources(id as string) as object
-    return [{ url: streamUrl("live", id, "m3u8"), format: "hls" }, { url: streamUrl("live", id, "ts"), format: "ts" }]
+    hls = { url: streamUrl("live", id, "m3u8"), format: "hls" }
+    ts = { url: streamUrl("live", id, "ts"), format: "ts" }
+    if prefGet("fmt", "m3u8") = "ts" then return [ts, hls]
+    return [hls, ts]
 end function
 
 ' Dispara uma consulta à API em segundo plano; a resposta chega em onApi(event).
@@ -264,3 +267,49 @@ sub startActTask(wantQr as boolean)
     t.control = "RUN"
     m.actTask = t
 end sub
+
+' --- preferências (iguais às do Android) -----------------------------------
+
+function prefGet(k as string, def as string) as string
+    reg = CreateObject("roRegistrySection", "prefs")
+    if reg.Exists(k) then return reg.Read(k)
+    return def
+end function
+
+sub prefSet(k as string, v as string)
+    reg = CreateObject("roRegistrySection", "prefs")
+    reg.Write(k, v)
+    reg.Flush()
+end sub
+
+function pinGet() as string
+    return prefGet("pin", "0000")
+end function
+
+' Conteúdo adulto pelo nome da categoria (mesma regra do Android)
+function isAdult(name as string) as boolean
+    rx = CreateObject("roRegex", "(adult|adulto|xxx|\+18|18\+|\[18\]|porn|sexy|\bhot\b|er[oó]tic)", "i")
+    return rx.IsMatch(name)
+end function
+
+function hiddenSet() as object
+    out = {}
+    for each k in regRead("hiddenCats")
+        out[k.key] = true
+    end for
+    return out
+end function
+
+' Aparece na lista (pode estar com cadeado)
+function catVisible(kind as string, id as string, name as string, hidden as object) as boolean
+    if hidden.DoesExist(kind + ":" + id) then return false
+    if isAdult(name) and prefGet("adult", "lock") = "hide" then return false
+    return true
+end function
+
+' Precisa da senha para abrir
+function catLocked(name as string) as boolean
+    if not isAdult(name) then return false
+    if prefGet("adult", "lock") <> "lock" then return false
+    return m.global.adultUnlocked <> true
+end function

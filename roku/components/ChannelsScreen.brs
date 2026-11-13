@@ -43,6 +43,7 @@ sub init()
     m.starMode = false
     m.epgCache = {}
     m.top.findNode("rowEpgTimer").observeField("fire", "loadRowEpg")
+    m.top.findNode("pvAutoTimer").observeField("fire", "autoPreview")
     m.items = []
     m.shown = []
     m.catId = "__all"
@@ -86,7 +87,7 @@ end function
 sub buildCats()
     root = CreateObject("roSGNode", "ContentNode")
     m.catNodes = {}
-    fixed = [["__fav", "Favoritos", "ic_star", regRead("favs").Count()], ["__recent", "Recentes", "ic_history", regRead("recents").Count()], ["__all", "Todos os canais", "ic_livetv", m.items.Count()]]
+    fixed = [["__fav", "Favoritos", "ic_star", regRead("favs").Count()], ["__recent", "Recentes", "ic_history", regRead("recents").Count()], ["__all", "Todos os canais", "ic_livetv", 0]]
     for each f in fixed
         n = root.createChild("ItemData")
         n.key = f[0]
@@ -95,15 +96,34 @@ sub buildCats()
         n.count = fmtCount(f[3])
         m.catNodes[f[0]] = n
     end for
+    ' categorias ocultas/bloqueadas (Configurações → Controle parental e Ocultar categorias)
+    hidden = hiddenSet()
+    m.blocked = {}
+    m.locked = {}
     for each c in m.catData
-        n = root.createChild("ItemData")
-        n.key = c.id
-        n.title = c.name
-        n.count = fmtCount(c.count)
-        m.catNodes[c.id] = n
+        if not catVisible("live", c.id, c.name, hidden)
+            m.blocked[c.id] = true
+        else
+            n = root.createChild("ItemData")
+            n.key = c.id
+            n.title = c.name
+            if catLocked(c.name)
+                m.blocked[c.id] = true
+                m.locked[c.id] = true
+                n.icon = "ic_lock"
+            else
+                n.count = fmtCount(c.count)
+            end if
+            m.catNodes[c.id] = n
+        end if
     end for
+    allowed = 0
+    for each it in m.items
+        if not m.blocked.DoesExist(it.cat) then allowed = allowed + 1
+    end for
+    m.catNodes["__all"].count = fmtCount(allowed)
     m.cats.content = root
-    m.catCount.text = m.catData.Count().ToStr()
+    m.catCount.text = (root.getChildCount() - 3).ToStr()
     m.cats.jumpToItem = 2
 end sub
 
@@ -120,7 +140,7 @@ sub choose(id as string, focusList as boolean)
     else
         src = []
         for each it in m.items
-            if id = "__all" or it.cat = id then src.Push(it)
+            if (id = "__all" and not m.blocked.DoesExist(it.cat)) or it.cat = id then src.Push(it)
         end for
     end if
     if m.sortAZ
@@ -169,11 +189,52 @@ end sub
 
 sub onCat()
     n = m.cats.content.getChild(m.cats.itemSelected)
+    if m.locked.DoesExist(n.key) and m.global.adultUnlocked <> true
+        askUnlock(n.key)
+        return
+    end if
     choose(n.key, true)
 end sub
 
+' ---------------------------------------------------------------- categoria adulta bloqueada
+sub askUnlock(key as string)
+    m.unlockKey = key
+    d = CreateObject("roSGNode", "PinBox")
+    d.setup = { title: "Conteúdo bloqueado", subtitle: "Digite a senha para ver o conteúdo adulto." }
+    d.observeField("result", "onUnlock")
+    m.top.appendChild(d)
+    m.pinBox = d
+    d.setFocus(true)
+end sub
+
+sub onUnlock()
+    v = m.pinBox.result
+    if v = "cancel"
+        m.top.removeChild(m.pinBox)
+        m.pinBox = invalid
+        m.cats.setFocus(true)
+        return
+    end if
+    if v <> pinGet()
+        m.pinBox.error = "Senha incorreta"
+        return
+    end if
+    m.top.removeChild(m.pinBox)
+    m.pinBox = invalid
+    m.global.adultUnlocked = true
+    buildCats()
+    choose(m.unlockKey, true)
+end sub
+
+
 sub onChFocus()
     showChannel(m.list.itemFocused)
+    ' prévia automática (Configurações → Reprodução)
+    if prefGet("preview", "0") = "1"
+        t = m.top.findNode("pvAutoTimer")
+        t.control = "stop"
+        t.control = "start"
+    end if
     if m.starMode then setStar(true)
     t = m.top.findNode("rowEpgTimer")
     t.control = "stop"
@@ -325,7 +386,15 @@ sub onChannel()
         m.live.visible = false
         m.playingId = ""
         markPlaying()
-        m.top.action = { type: "play", streamId: c.id, title: c.name, live: true, list: m.shown, index: m.list.itemSelected, epg: m.epgCache, all: m.items, cats: m.catData, variants: m.variants, catId: m.catId }
+        allowedCats = []
+        for each cc in m.catData
+            if not m.blocked.DoesExist(cc.id) then allowedCats.Push(cc)
+        end for
+        allowedItems = []
+        for each it in m.items
+            if not m.blocked.DoesExist(it.cat) then allowedItems.Push(it)
+        end for
+        m.top.action = { type: "play", streamId: c.id, title: c.name, live: true, list: m.shown, index: m.list.itemSelected, epg: m.epgCache, all: allowedItems, cats: allowedCats, variants: m.variants, catId: m.catId }
         return
     end if
     addRecent(c)
@@ -338,6 +407,21 @@ sub onChannel()
     m.playingId = c.id
     markPlaying()
     m.list.setFocus(true)
+end sub
+
+sub autoPreview()
+    i = m.list.itemFocused
+    if not m.list.hasFocus() or i < 0 or i >= m.shown.Count() then return
+    c = m.shown[i]
+    if m.playingId = c.id then return
+    m.pvSources = liveSources(c.id)
+    m.pvTry = 0
+    m.pvErr.text = ""
+    startPreview()
+    m.pvLogo.visible = false
+    m.live.visible = true
+    m.playingId = c.id
+    markPlaying()
 end sub
 
 sub startPreview()
@@ -378,6 +462,7 @@ end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
+    if m.pinBox <> invalid then return true
     if m.zone = "sort"
         if key = "OK"
             m.sortAZ = not m.sortAZ
