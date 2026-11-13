@@ -64,7 +64,10 @@ class AppFlowTest {
     /** Resposta no formato da API api.futebols.com.br (escudo em base64 incluído, como na API real). */
     private fun apiGames(): String {
         val iso = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
-        fun t(minFromNow: Int) = iso.format(java.util.Date(System.currentTimeMillis() + minFromNow * 60_000L))
+        // mantém todos os jogos no mesmo dia, mesmo quando o teste roda perto da meia-noite
+        val day = java.util.Calendar.getInstance().apply { set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0); set(java.util.Calendar.SECOND, 0); set(java.util.Calendar.MILLISECOND, 0) }.timeInMillis
+        val base = System.currentTimeMillis().coerceIn(day + 301 * 60_000L, day + (24 * 60 - 121) * 60_000L)
+        fun t(minFromNow: Int) = iso.format(java.util.Date(base + minFromNow * 60_000L))
         fun g(id: Int, a: String, b: String, ga: Int, gb: Int, st: String, desc: String, min: String?, start: String, camp: String, chs: List<String>) = """
             {"id":$id,"timeA":"$a","timeB":"$b","golsA":$ga,"golsB":$gb,"golsPenaltiA":null,"golsPenaltiB":null,
              "logoA":"data:image/png;base64,AAAA","logoB":"data:image/png;base64,AAAA","logoA_url":null,"logoB_url":null,
