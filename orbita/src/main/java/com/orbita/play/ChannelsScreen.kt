@@ -202,10 +202,11 @@ private fun FavButton(fav: Boolean, memKey: String, onClick: () -> Unit) {
     Focus(onClick = onClick, memKey = memKey) { f ->
         val shape = RoundedCornerShape(8.dp)
         Box(
-            Modifier.size(32.dp, 34.dp).clip(shape).background(if (f) C.focusBg else Color(0x14FFFFFF))
-                .border(if (f) 1.5.dp else 1.dp, if (f) C.accent else Color(0x22FFFFFF), shape),
+            // mesma altura e estilo da linha do canal
+            Modifier.padding(vertical = 0.5.dp).size(44.dp).clip(shape).background(if (f) C.focusBg else Color(0x0FFFFFFF))
+                .border(if (f) 1.5.dp else 1.dp, if (f) C.accent else Color(0x14FFFFFF), shape),
             contentAlignment = Alignment.Center
-        ) { Icon(if (fav) Ic.Star else Ic.StarOutline, 15.dp, if (fav) C.star else if (f) C.white else C.dim) }
+        ) { Icon(if (fav) Ic.Star else Ic.StarOutline, 18.dp, if (fav) C.star else if (f) C.white else C.dim) }
     }
 }
 
