@@ -254,8 +254,11 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
             is Route.Settings -> SettingsScreen(vm, pb, ui)
             is Route.Search -> SearchScreen(vm, pb, ui)
             null -> if (ui.home) {
-                if (vm.store.homeLayout.value == "lite") HomeLite(vm, pb, ui, openSearch, reload, openSettings)
-                else HomeScreen(vm, pb, ui, openSearch, reload, openSettings)
+                when (vm.store.homeLayout.value) {
+                    "lite" -> HomeLite(vm, pb, ui, openSearch, reload, openSettings)
+                    "cards" -> HomeCards(vm, pb, ui, openSearch, reload, openSettings)
+                    else -> HomeScreen(vm, pb, ui, openSearch, reload, openSettings)
+                }
             } else {
                 when (ui.tab) {
                     Tab.CANAIS -> ChannelsScreen(vm, pb, ui)

@@ -317,5 +317,17 @@ class AppFlowTest {
         shot("19-inicio-lite")
         click("Filmes", exact = true)
         waitText("Lançamentos")
+
+        // layout Vitrine da tela inicial
+        back()
+        waitText("Recarregar")
+        click("Configurações", exact = true)
+        repeat(5) { pump() }
+        click("Layout da tela inicial", exact = true)
+        click("Vitrine", exact = true)
+        back()
+        waitText("Canais ao vivo")
+        settle(800)
+        shot("21-inicio-vitrine")
     }
 }
