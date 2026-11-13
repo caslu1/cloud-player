@@ -46,9 +46,9 @@ export function landing(env, { formHtml, plansHtml, logged, host }) {
   const name = esc(env.SITE_NAME);
   const nav = `<header class="lnav"><div class="wrap row" style="height:72px">
 <a href="/" class="logo"><img src="${WORDMARK}" alt="${name}" height="32"></a>
-<nav class="lnk"><a href="#como">Como funciona</a><a href="#telas">Telas</a><a href="#recursos">Recursos</a><a href="#instalar">Instalar</a><a href="#planos">Planos</a><a href="/ajuda">Ajuda</a></nav>
+<nav class="lnk"><a href="#como">Como funciona</a><a href="#recursos">Recursos</a><a href="#instalar">Instalar</a><a href="#planos">Planos</a><a href="/ajuda">Ajuda</a></nav>
 ${logged ? `<a class="btn sm" href="/aparelho">Minhas listas</a>` : `<a class="btn sm" href="#entrar">Ativar aparelho</a>`}
-<details class="mmenu"><summary aria-label="Menu">${li("grid", 22)}</summary><div><a href="#como">Como funciona</a><a href="#telas">Telas do app</a><a href="#recursos">Recursos</a><a href="#instalar">Instalar</a><a href="#planos">Planos</a><a href="/ajuda">Ajuda</a>${logged ? `<a href="/sair">Sair</a>` : ""}</div></details>
+<details class="mmenu"><summary aria-label="Menu">${li("grid", 22)}</summary><div><a href="#como">Como funciona</a><a href="#recursos">Recursos</a><a href="#instalar">Instalar</a><a href="#planos">Planos</a><a href="/ajuda">Ajuda</a>${logged ? `<a href="/sair">Sair</a>` : ""}</div></details>
 </div></header>`;
 
   const hero = `<section class="hero"><div class="wrap hgrid">
@@ -59,7 +59,6 @@ ${logged ? `<a class="btn sm" href="/aparelho">Minhas listas</a>` : `<a class="b
  <div class="row wrapf" style="gap:12px;margin-top:26px"><a class="btn lg" href="#entrar">Ativar meu aparelho</a><a class="btn g lg" href="#como">Como funciona</a></div>
  <div class="note">${li("info", 18)}<div><b>O ${name} não inclui nenhum conteúdo.</b> Não fornece, não vende e não hospeda vídeos: só reproduz o que vem da lista que você mesmo adiciona.</div></div>
 </div>
-<div class="hshot">${shot("inicio", "Tela inicial do app")}<div class="cap">Tela inicial do aplicativo · tema Vitrine</div></div>
 </div></section>
 <section class="strip"><div class="wrap sgrid">
 ${[["tv", "Feito para TV", "Navegação rápida com o controle remoto."], ["shield", "Sem conteúdo próprio", "Você usa só a sua própria lista."], ["phone", "Configure pelo celular", "Leia o QR code e pronto."]]
@@ -126,7 +125,7 @@ ${formHtml}
 <nav class="row wrapf" style="gap:18px;margin-left:auto"><a href="#entrar">Ativar aparelho</a><a href="/aparelho">Minhas listas</a><a href="#planos">Planos</a><a href="/ajuda">Ajuda</a><a href="${APK_URL}">Baixar APK</a></nav>
 </div><div class="wrap dim" style="font-size:12px;margin-top:14px">${name} é um player de mídia e não fornece conteúdo.</div></footer>`;
 
-  return nav + hero + steps + gallery + features + install + activate + notice + footer;
+  return nav + hero + steps + features + install + activate + notice + footer;
 }
 
 export const LANDING_CSS = `
@@ -150,7 +149,7 @@ html{scroll-behavior:smooth}html,body{overflow-x:clip;max-width:100%}
 .wrapf{flex-wrap:wrap}
 .hero{padding:64px 0 56px;position:relative}
 .hero:after{content:"";position:absolute;right:0;top:-60px;width:60%;height:120%;background:radial-gradient(ellipse at 60% 40%,rgba(124,92,255,.28),transparent 60%);pointer-events:none;z-index:-1}
-.hgrid{display:grid;grid-template-columns:1fr 1.08fr;gap:48px;align-items:center}
+.hgrid{display:grid;grid-template-columns:1fr;max-width:820px;gap:48px;align-items:center}
 .note{display:flex;gap:12px;margin-top:26px;padding:16px 18px;border-radius:14px;background:rgba(29,22,56,.6);border:1px solid var(--line2);color:var(--mut);font-size:14px;line-height:1.55;max-width:560px}.note svg{flex:none;color:#9b84ff;margin-top:2px}.note b{color:#fff}
 .tvf{border-radius:16px;padding:8px;background:linear-gradient(160deg,#2a2440,#100d1c);border:1px solid #2a2440;box-shadow:0 30px 80px rgba(0,0,0,.55)}
 .tvf img{display:block;width:100%;height:auto;border-radius:10px;aspect-ratio:16/9;object-fit:cover;background:#050409}
