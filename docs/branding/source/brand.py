@@ -67,6 +67,7 @@ def svg(kind, scheme, bg=None, pad=0.08, square=False, radius=0.22):
        'dark':('#0B0716','#0B0716','#0B0716','#0B0716'),
        'violet':('#7C5CFF','#7C5CFF','#7C5CFF','#7C5CFF'),
        'color':('url(#go{u})','url(#gr{u})','#FFFFFF','#A08BFF'),
+       'white-violet':('#FFFFFF','#8B6CFF','#FFFFFF','#FFFFFF'),
        'color-white':('url(#go{u})','url(#gr{u})','#FFFFFF','#FFFFFF'),
        'color-light':('url(#go{u})','url(#gr{u})','#0B0716','#7C5CFF')}[scheme]
     oC,ringC,t1,t2=[c.replace('{u}',u) for c in S]
@@ -98,7 +99,7 @@ def svg(kind, scheme, bg=None, pad=0.08, square=False, radius=0.22):
 if __name__=='__main__':
     out=sys.argv[1]; os.makedirs(out,exist_ok=True)
     jobs={}
-    for sc in ['white','dark','violet','color','color-white','color-light']:
+    for sc in ['white','dark','violet','color','color-white','white-violet','color-light']:
         jobs[f'logo/orbitaplay-logo-{sc}']=svg('logo',sc)
         jobs[f'icon/orbitaplay-icon-{sc}']=svg('icon',sc,pad=0.04)
     jobs['icon/orbitaplay-appicon']=svg('icon','color',bg='brand',square=True,pad=0.16)

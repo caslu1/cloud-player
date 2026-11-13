@@ -35,6 +35,7 @@ Fundo do ícone do app: `#241356 → #140B36 → #0B0716`
 
 - **color**: "O" em degradê lavanda/violeta, órbita violeta→turquesa, "orbita" branco e "play" lavanda (fundo escuro)
 - **color-white**: só o ícone colorido (violeta/azul), letras todas brancas (fundo escuro)
+- **white-violet**: letras e "O" brancos, só a órbita roxa `#8B6CFF` (fundo escuro)
 - **color-light**: igual, com "orbita" escuro e "play" violeta (fundo claro)
 - **white**: tudo branco (fundo escuro ou violeta)
 - **dark**: tudo `#0B0716` (fundo claro)
