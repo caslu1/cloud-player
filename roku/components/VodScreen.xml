@@ -12,7 +12,7 @@
         <MarkupList id="cats" translation="[56,110]" itemComponentName="CatItem" itemSize="[394,72]" itemSpacing="[0,2]" numRows="12"
             drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
         <MarkupGrid id="grid" translation="[504,428]" itemComponentName="PosterItem" itemSize="[304,510]" itemSpacing="[45,26]" numColumns="4" numRows="2"
-            drawFocusFeedback="false" vertFocusAnimationStyle="fixedFocusWrap" />
+            drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
         <Timer id="heroTimer" duration="0.45" />
     </children>
     <script type="text/brightscript" uri="pkg:/components/common.brs" />

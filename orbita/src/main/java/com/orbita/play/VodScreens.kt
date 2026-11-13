@@ -85,12 +85,21 @@ fun openTrailer(ctx: Context, trailer: String?, title: String) {
 
 fun stars(r: Float) = String.format(Locale("pt", "BR"), "★ %.1f", r)
 
-/** Rolagem estilo TV: o item com foco fica sempre perto do início (a linha/pôster não "pula" pela tela). */
+/**
+ * Rolagem estilo TV: a tela fica parada e só o quadro do foco anda com as setas.
+ * A lista só rola quando o item com foco chega na borda (e rola só o necessário para mostrá-lo).
+ */
 @OptIn(ExperimentalFoundationApi::class)
 private val tvPivot = object : BringIntoViewSpec {
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
-        val target = containerSize * 0.035f
-        return offset - target
+        val margin = containerSize * 0.035f
+        val end = offset + size
+        return when {
+            size >= containerSize - 2 * margin -> offset - margin
+            offset < margin -> offset - margin
+            end > containerSize - margin -> end - (containerSize - margin)
+            else -> 0f
+        }
     }
 }
 
