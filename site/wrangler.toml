@@ -4,6 +4,10 @@ account_id = "ba148b95a1617379822bbe7f4c2dcae7"
 main = "src/index.js"
 compatibility_date = "2025-09-01"
 
+# fotos do app usadas no site
+[assets]
+directory = "./public"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "orbita"

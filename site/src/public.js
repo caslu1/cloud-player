@@ -2,6 +2,8 @@
 import { esc, html, redirect, json, now, DAY, normMac, normKey, fmtDate, money, makeCookie, clearCookie, readCookie, settings, deviceStatus, STATUS_LABEL } from "./util.js";
 import { page, publicNav, ic } from "./ui.js";
 import { createPix, getPayment } from "./mp.js";
+import { landing, LANDING_CSS, APK_URL, PLAN_FIX } from "./landing.js";
+export { APK_URL };
 
 const site = (env) => ({ siteName: env.SITE_NAME });
 
@@ -26,27 +28,18 @@ function plansHtml(s) {
 export async function home(env, req, msg = "", prefill = {}) {
   const s = await settings(env);
   const logged = !!(await currentDevice(env, req));
-  const body = `${publicNav("/", logged)}
-<div class="wrap" style="padding-top:54px;padding-bottom:60px">
-<div class="grid2">
- <div style="padding-top:10px">
-  <span class="chip" style="background:var(--soft);color:#c9bbff">Android TV · Fire TV · TV Box · Roku</span>
-  <h1 style="font-size:clamp(34px,5vw,52px);line-height:1.08;margin-top:18px">Ative seu aparelho e adicione sua lista em segundos</h1>
-  <p class="mut" style="font-size:17px;line-height:1.6;margin-top:16px">Abra o ${esc(env.SITE_NAME)} na TV, anote o <b style="color:#fff">MAC</b> e a <b style="color:#fff">chave do aparelho</b> que aparecem na tela e informe aqui — ou aponte a câmera do celular para o QR code da TV.</p>
-  <div class="row" style="gap:22px;margin-top:30px;flex-wrap:wrap">${[[1, "Informe MAC e chave"], [2, "Adicione sua lista"], [3, "A TV atualiza sozinha"]].map(([n, t]) => `<div class="row" style="gap:10px"><div class="o" style="width:34px;height:34px;border-radius:50%;background:var(--soft);color:var(--accent2);display:flex;align-items:center;justify-content:center">${n}</div><div style="font-size:13px;color:#cfc8ea;width:130px">${t}</div></div>`).join("")}</div>
- </div>
- <form id="entrar" class="card" style="padding:32px" method="post" action="/entrar">
+  const formHtml = `<form class="card" style="padding:30px" method="post" action="/entrar">
   <div class="o" style="font-size:22px">Acessar meu aparelho</div><div class="mut" style="font-size:13px;margin-top:4px">Os dados aparecem na tela de login do app.</div>
   ${msg ? `<div class="alert err" style="margin:16px 0 0">${esc(msg)}</div>` : ""}
-  <div style="margin-top:22px"><label class="lab" for="mac">ENDEREÇO MAC</label><input class="in mono" id="mac" name="mac" placeholder="00:1A:79:XX:XX:XX" value="${esc(prefill.mac || "")}" autocomplete="off" required></div>
-  <div style="margin-top:16px"><label class="lab" for="key">CHAVE DO APARELHO</label><input class="in mono" id="key" name="key" inputmode="numeric" placeholder="000000" value="${esc(prefill.key || "")}" autocomplete="off" required style="letter-spacing:3px"></div>
+  <div style="margin-top:22px"><label class="lab" for="mac">ENDEREÇO MAC</label><input class="in mono" id="mac" name="mac" placeholder="00:1A:79:XX:XX:XX" value="${esc(prefill.mac || "")}" autocomplete="off" autocapitalize="characters" required></div>
+  <div style="margin-top:16px"><label class="lab" for="key">CHAVE DO DISPOSITIVO</label><input class="in mono" id="key" name="key" inputmode="numeric" placeholder="000000" value="${esc(prefill.key || "")}" autocomplete="off" required style="letter-spacing:3px"></div>
   <button class="btn full" style="margin-top:22px">Entrar ${ic("play", 14, "#fff")}</button>
   <div class="row" style="gap:8px;margin-top:16px;font-size:12px;color:var(--dim)">${ic("lock", 14, "#6d6788")}Sua lista fica protegida e só aparece no seu aparelho.</div>
- </form>
-</div>
-<div id="planos" style="margin-top:56px"><div class="o" style="font-size:20px;margin-bottom:14px">Planos</div><div class="plans">${plansHtml(s)}</div></div>
-</div>`;
-  return html(page("Ativar aparelho", body, site(env)));
+ </form>`;
+  let host = new URL(req.url).host;
+  if (host === "x") host = "orbita-ativar.suporteyosepay.workers.dev";
+  const body = `<style>${LANDING_CSS}${PLAN_FIX}</style>` + landing(env, { formHtml, plansHtml: plansHtml(s), logged, host });
+  return html(page("Player de mídia para TV", body, site(env)));
 }
 
 export async function login(env, req) {

@@ -20,6 +20,8 @@ export default {
       if ((r = p.match(/^\/api\/pagamento\/(\d+)$/))) return pub.paymentStatus(env, req, Number(r[1]));
       // cliente
       if (p === "/" && m === "GET") return pub.home(env, req);
+      // atalho para o app Downloader (Fire TV / TV Box)
+      if (p === "/android" || p === "/apk") return Response.redirect(pub.APK_URL, 302);
       if (p === "/entrar" && m === "POST") return pub.login(env, req);
       if (p === "/ativar") return pub.doLogin(env, url.searchParams.get("mac"), url.searchParams.get("key"));
       if (p === "/sair") return pub.logout();
