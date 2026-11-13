@@ -62,6 +62,7 @@ fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(10_000) } }
     val nf = remember { NumberFormat.getIntegerInstance(Locale("pt", "BR")) }
+    fun cats(n: Int) = if (n == 1) "1 categoria" else "$n categorias"
     fun cnt(n: Int, one: String, many: String) = if (n == 0) "Carregando…" else "${nf.format(n)} " + (if (n == 1) one else many)
 
     Box(Modifier.fillMaxSize()) {
@@ -84,9 +85,9 @@ fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -
         }
 
         val cards = listOf(
-            VitrineCard("CANAIS", "Canais ao vivo", cnt(vm.channels.size, "canal", "canais"), "${vm.liveCats.size} categorias", DuoIc.Tv) { ui.openSection(Tab.CANAIS) },
-            VitrineCard("FILMES", "Filmes", cnt(vm.movies.size, "filme", "filmes"), "${vm.movieCats.size} categorias", DuoIc.Camera) { ui.openSection(Tab.FILMES) },
-            VitrineCard("SERIES", "Séries", cnt(vm.series.size, "série", "séries"), "${vm.seriesCats.size} categorias", DuoIc.Series) { ui.openSection(Tab.SERIES) },
+            VitrineCard("CANAIS", "Canais ao vivo", cnt(vm.channels.size, "canal", "canais"), cats(vm.liveCats.size), DuoIc.Tv) { ui.openSection(Tab.CANAIS) },
+            VitrineCard("FILMES", "Filmes", cnt(vm.movies.size, "filme", "filmes"), cats(vm.movieCats.size), DuoIc.Camera) { ui.openSection(Tab.FILMES) },
+            VitrineCard("SERIES", "Séries", cnt(vm.series.size, "série", "séries"), cats(vm.seriesCats.size), DuoIc.Series) { ui.openSection(Tab.SERIES) },
             VitrineCard("FUTEBOL", "Futebol", if (vm.matches.isEmpty()) "Jogos de hoje" else cnt(vm.matches.size, "jogo", "jogos"), "Ao vivo, hoje e amanhã", DuoIc.Ball) { ui.openSection(Tab.FUTEBOL) },
         )
         val first = remember { FocusRequester() }
