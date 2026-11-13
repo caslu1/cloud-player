@@ -28,6 +28,7 @@ export default {
         return new Response(bin, { headers: { "content-type": "image/webp", "cache-control": "public, max-age=604800" } });
       }
       // atalho para o app Downloader (Fire TV / TV Box)
+      if (p === "/download" || p === "/downloads") return pub.downloads(env, req);
       if (p === "/android" || p === "/apk") return Response.redirect(pub.APK_URL, 302);
       if (p === "/entrar" && m === "POST") return pub.login(env, req);
       if (p === "/ativar") return pub.doLogin(env, url.searchParams.get("mac"), url.searchParams.get("key"));

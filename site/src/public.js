@@ -2,7 +2,7 @@
 import { esc, html, redirect, json, now, DAY, normMac, normKey, fmtDate, money, makeCookie, clearCookie, readCookie, settings, deviceStatus, STATUS_LABEL } from "./util.js";
 import { page, publicNav, ic } from "./ui.js";
 import { createPix, getPayment } from "./mp.js";
-import { landing, LANDING_CSS, APK_URL, PLAN_FIX } from "./landing.js";
+import { landing, LANDING_CSS, APK_URL, downloadsPage, siteNav, siteFooter } from "./landing.js";
 export { APK_URL };
 
 const site = (env) => ({ siteName: env.SITE_NAME });
@@ -38,7 +38,7 @@ export async function home(env, req, msg = "", prefill = {}) {
  </form>`;
   let host = new URL(req.url).host;
   if (host === "x") host = "orbita-ativar.suporteyosepay.workers.dev";
-  const body = `<style>${LANDING_CSS}${PLAN_FIX}</style>` + landing(env, { formHtml, plansHtml: plansHtml(s), logged, host });
+  const body = `<style>${LANDING_CSS}</style>` + landing(env, { formHtml, plansHtml: plansHtml(s), logged, host });
   return html(page("Player de mídia para TV", body, site(env)));
 }
 
@@ -87,7 +87,7 @@ ${i > 0 ? `<form method="post" action="/aparelho/lista/${l.id}/usar"><button cla
 <form method="post" action="/aparelho/lista/${l.id}/remover" onsubmit="return confirm('Remover esta lista?')"><button class="btn g sm red">Remover</button></form></div>`).join("");
   const v = (k) => esc(ed ? ed[k] : "");
   const isM3u = ed && ed.type === "m3u";
-  const body = `${publicNav("/aparelho", true)}
+  const body = `<style>${LANDING_CSS}</style>${siteNav(env, "/aparelho", true)}
 <div class="wrap" style="padding-top:40px;padding-bottom:60px">
  <div class="row" style="gap:20px;flex-wrap:wrap"><div style="flex:1;min-width:260px"><h1 style="font-size:30px">Meu aparelho</h1><div class="mut" style="margin-top:4px">MAC <span class="mono">${esc(d.mac)}</span>${d.model ? " · " + esc(d.model) : ""}</div></div>${statusBox(d, st)}</div>
  ${msg ? `<div class="alert ${msg.ok ? "ok" : "err"}" style="margin-top:20px">${esc(msg.text)}</div>` : ""}
@@ -195,7 +195,7 @@ export async function payPage(env, req) {
     : `<div class="row" style="gap:8px;justify-content:center;font-weight:600">${ic("pix", 18, "#32bcad")}Pagamento por Pix</div>
 <p class="mut" style="text-align:center;margin:16px 0;font-size:13px;line-height:1.6">Escolha o plano e gere o código. A ativação é automática quando o pagamento for confirmado.</p>
 ${err ? `<div class="alert err">${esc(err)}</div>` : ""}<a class="btn full" href="/pagar?plano=${plan}&gerar=1">Gerar Pix de ${money(amount)}</a>`;
-  const body = `${publicNav("/pagar", true)}<div class="wrap" style="padding:40px 24px 60px"><div class="card" style="max-width:920px;margin:0 auto;padding:34px;display:flex;gap:34px;flex-wrap:wrap">
+  const body = `<style>${LANDING_CSS}</style>${siteNav(env, "/pagar", true)}<div class="wrap" style="padding:40px 24px 60px"><div class="card" style="max-width:920px;margin:0 auto;padding:34px;display:flex;gap:34px;flex-wrap:wrap">
 <div style="flex:1;min-width:260px"><h1 style="font-size:26px">Ativar aparelho</h1><div class="mut mono" style="margin-top:4px">MAC ${esc(d.mac)}</div>
 <div style="margin-top:22px;display:grid;gap:10px">${opt("annual", "Anual", "1 ano de uso neste aparelho", s.price_annual)}${opt("lifetime", "Vitalício", "Pagamento único", s.price_lifetime)}</div>
 <div class="row" style="gap:10px;margin-top:22px;font-size:13px;color:#cfc8ea">${ic("check", 16, "#7ee2a8")}A ativação é automática assim que o Pix for confirmado.</div>
@@ -249,7 +249,13 @@ export async function help(env, req) {
     ["Como funciona o teste grátis?", "Ao abrir o app pela primeira vez o aparelho ganha dias de teste com todas as funções."],
     ["Paguei, e agora?", "A ativação é automática assim que o Pix é confirmado. Feche e abra o app se ele já estava aberto."],
     ["O app fornece canais?", "Não. O app é um player: você usa a lista do seu provedor, da qual tem direito de uso."]];
-  const body = `${publicNav("/ajuda", logged)}<div class="wrap" style="padding:40px 24px 60px;max-width:820px"><h1 style="font-size:30px">Ajuda</h1>
+  const body = `<style>${LANDING_CSS}</style>${siteNav(env, "/ajuda", logged)}<div class="wrap" style="padding:40px 24px 60px;max-width:820px"><h1 style="font-size:30px">Ajuda</h1>
 ${q.map(([a, b]) => `<div class="card" style="padding:20px;margin-top:14px"><b>${a}</b><p class="mut" style="margin-top:6px;line-height:1.6">${b}</p></div>`).join("")}</div>`;
   return html(page("Ajuda", body, site(env)));
+}
+
+export async function downloads(env, req) {
+  const logged = !!(await currentDevice(env, req));
+  const host = new URL(req.url).host;
+  return html(page("Downloads", `<style>${LANDING_CSS}</style>` + downloadsPage(env, { logged, host }), site(env)));
 }
