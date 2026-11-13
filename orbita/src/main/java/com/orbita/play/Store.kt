@@ -49,6 +49,9 @@ class Store(ctx: Context) {
     /** Layout da tela inicial: "default" (Padrão) ou "lite". */
     val homeLayout = mutableStateOf(p.getString("homeLayout", "default") ?: "default")
 
+    /** Listas salvas no aparelho (tela Playlists). A que está em uso é a conta atual (acc.*). */
+    val playlists = mutableStateListOf<Playlist>()
+
     init { reload(); Wall.index = p.getInt("wallpaper", 1) }
 
     fun reload() {
@@ -57,6 +60,11 @@ class Store(ctx: Context) {
         myList.clear(); myList += list("myList")
         followedTeams.clear(); followedTeams += list("teams")
         hiddenCats.clear(); hiddenCats += list("hiddenCats")
+        playlists.clear()
+        runCatching {
+            val a = JSONArray(p.getString("playlists", "[]"))
+            for (i in 0 until a.length()) a.optJSONObject(i)?.let { Playlist.of(it) }?.let { playlists += it }
+        }
         progress.clear()
         runCatching {
             val a = JSONArray(p.getString("progress", "[]"))
@@ -78,6 +86,18 @@ class Store(ctx: Context) {
 
     fun saveAccount(a: Account) = p.edit().putString("acc.type", a.type).putString("acc.server", a.server).putString("acc.user", a.user)
         .putString("acc.pass", a.pass).putString("acc.m3u", a.m3uUrl).apply()
+
+    private fun savePlaylists() = p.edit().putString("playlists", JSONArray(playlists.map { it.json() }).toString()).apply()
+
+    /** Guarda (ou renomeia) a lista; sem nome usa o que já tinha ou "Lista N". */
+    fun upsertPlaylist(name: String?, a: Account) {
+        val i = playlists.indexOfFirst { it.same(a) }
+        val n = name?.trim()?.takeIf { it.isNotEmpty() } ?: playlists.getOrNull(i)?.name ?: "Lista ${playlists.size + 1}"
+        if (i >= 0) playlists[i] = Playlist(n, a) else playlists += Playlist(n, a)
+        savePlaylists()
+    }
+
+    fun removePlaylist(pl: Playlist) { playlists.removeAll { it.same(pl.acc) }; savePlaylists() }
 
     fun logout() {
         // o MAC e a chave do aparelho continuam (são usados no site de ativação)
@@ -157,4 +177,12 @@ class Store(ctx: Context) {
     fun setLiveFormat(f: String) { liveFormat.value = f; p.edit().putString("liveFormat", f).apply() }
     fun setAutoNext(b: Boolean) { autoNext.value = b; p.edit().putBoolean("autoNext", b).apply() }
     fun setPreviewAutoplay(b: Boolean) { previewAutoplay.value = b; p.edit().putBoolean("previewAutoplay", b).apply() }
+}
+
+class Playlist(val name: String, val acc: Account) {
+    fun same(a: Account) = acc.type == a.type && acc.server == a.server && acc.user == a.user && acc.m3uUrl == a.m3uUrl
+    fun json(): JSONObject = JSONObject().put("n", name).put("t", acc.type).put("s", acc.server).put("u", acc.user).put("p", acc.pass).put("m", acc.m3uUrl)
+    companion object {
+        fun of(o: JSONObject) = Playlist(o.optString("n"), Account(o.optString("t"), o.optString("s"), o.optString("u"), o.optString("p"), o.optString("m")))
+    }
 }

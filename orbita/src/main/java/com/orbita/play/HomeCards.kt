@@ -88,16 +88,17 @@ fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -
             VitrineCard("CANAIS", "Canais ao vivo", cnt(vm.channels.size, "canal", "canais"), cats(vm.liveCats.size), DuoIc.Tv) { ui.openSection(Tab.CANAIS) },
             VitrineCard("FILMES", "Filmes", cnt(vm.movies.size, "filme", "filmes"), cats(vm.movieCats.size), DuoIc.Camera) { ui.openSection(Tab.FILMES) },
             VitrineCard("SERIES", "Séries", cnt(vm.series.size, "série", "séries"), cats(vm.seriesCats.size), DuoIc.Series) { ui.openSection(Tab.SERIES) },
-            VitrineCard("FUTEBOL", "Futebol", if (vm.matches.isEmpty()) "Jogos de hoje" else cnt(vm.matches.size, "jogo", "jogos"), "Ao vivo, hoje e amanhã", DuoIc.Ball) { ui.openSection(Tab.FUTEBOL) },
+            VitrineCard("PLAYLISTS", "Playlists", vm.store.playlists.size.let { if (it == 1) "1 playlist" else "$it playlists" },
+                vm.store.playlists.firstOrNull { p -> vm.account?.let { p.same(it) } == true }?.let { "Em uso: ${it.name}" } ?: "Suas listas", DuoIc.Lists) { ui.push(Route.Playlists("home:PLAYLISTS")) },
         )
         val first = remember { FocusRequester() }
         InitialFocus(first)
-        LazyRow(
-            Modifier.align(Alignment.TopStart).padding(top = 118.dp).fillMaxWidth().height(250.dp),
-            contentPadding = PaddingValues(start = 60.dp, end = 60.dp, top = 34.dp),
+        // 4 cartões sempre centralizados na tela
+        Row(
+            Modifier.align(Alignment.TopCenter).padding(top = 152.dp),
             horizontalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            items(cards, key = { it.key }) { c -> GlassCard(c, if (c.key == ui.tab.name) first else null) }
+            cards.forEach { c -> GlassCard(c, if (c.key == ui.tab.name) first else null) }
         }
 
         // rodapé: relógio, data e aparelho
@@ -198,6 +199,9 @@ private object DuoIc {
     val Series by lazy { duo("dser",
         "M7,3 H17 A4,4 0 0 1 21,7 V17 A4,4 0 0 1 17,21 H7 A4,4 0 0 1 3,17 V7 A4,4 0 0 1 7,3 Z M3,8.5 H21 M8.2,3.2 L10.2,8.5 M13.6,3.2 L15.6,8.5",
         "M10.2,11.6 C10.2,11 10.8,10.7 11.3,11 L15.3,13.6 C15.8,13.9 15.8,14.6 15.3,14.9 L11.3,17.5 C10.8,17.8 10.2,17.5 10.2,16.9 Z") }
+    val Lists by lazy { duo("dlist",
+        "M4,5.5 H20 M4,10.5 H20 M4,15.5 H12.5",
+        "M15,13.2 C15,12.6 15.6,12.3 16.1,12.6 L20.6,15.4 C21.1,15.7 21.1,16.4 20.6,16.7 L16.1,19.5 C15.6,19.8 15,19.5 15,18.9 Z") }
     val Ball by lazy { duo("dball",
         "M12,3 A9,9 0 1 0 12.01,3 Z M12.00,8.70 L12.00,5.70 M8.05,3.91 L12.00,5.70 L15.95,3.91 M15.14,10.98 L17.99,10.05 M18.47,5.75 L17.99,10.05 L20.91,13.25 M13.94,14.67 L15.70,17.10 M19.95,16.23 L15.70,17.10 L13.56,20.86 M10.06,14.67 L8.30,17.10 M10.44,20.86 L8.30,17.10 L4.05,16.23 M8.86,10.98 L6.01,10.05 M3.09,13.25 L6.01,10.05 L5.53,5.75",
         "M12.00,8.70 L15.14,10.98 L13.94,14.67 L10.06,14.67 L8.86,10.98 Z") }

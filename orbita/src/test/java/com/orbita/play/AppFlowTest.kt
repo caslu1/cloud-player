@@ -185,9 +185,10 @@ class AppFlowTest {
         shot("01-login")
 
         val fields = rule.onAllNodes(hasSetTextAction())
-        fields[0].performTextInput(server.url("/").toString())
-        fields[1].performTextInput("user")
-        fields[2].performTextInput("pass")
+        fields[0].performTextInput("Minha lista")
+        fields[1].performTextInput(server.url("/").toString())
+        fields[2].performTextInput("user")
+        fields[3].performTextInput("pass")
         click("Entrar")
 
         // Tela inicial
@@ -332,5 +333,16 @@ class AppFlowTest {
         waitText("Canais ao vivo")
         settle(800)
         shot("21-inicio-vitrine")
+
+        // Playlists (tema Vitrine): lista salva e tela de adicionar
+        click("Playlists", exact = true)
+        waitText("Em uso")
+        settle(500)
+        shot("22-playlists")
+        rule.onNodeWithContentDescription("Adicionar playlist").performClick()
+        repeat(5) { pump() }
+        waitText("NOME DA LISTA")
+        settle(500)
+        shot("23-adicionar-playlist")
     }
 }

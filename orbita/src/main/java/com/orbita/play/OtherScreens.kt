@@ -66,8 +66,9 @@ import java.util.Locale
 // ---------------------------------------------------------------- Login
 
 @Composable
-fun LoginScreen(vm: Vm) {
+fun LoginScreen(vm: Vm, adding: Boolean = false, onDone: () -> Unit = {}) {
     var xtream by remember { mutableStateOf(true) }
+    var name by remember { mutableStateOf("") }
     var server by remember { mutableStateOf("") }
     var user by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
@@ -97,7 +98,9 @@ fun LoginScreen(vm: Vm) {
         }
         busy = true
         scope.launch {
-            runCatching { vm.login(acc) }.onFailure { error = it.message ?: "Não foi possível conectar." }
+            runCatching { if (adding) vm.switchTo(acc, name) else vm.login(acc, name) }
+                .onSuccess { if (adding) onDone() }
+                .onFailure { error = it.message ?: "Não foi possível conectar." }
             busy = false
         }
     }
@@ -110,7 +113,7 @@ fun LoginScreen(vm: Vm) {
         Column(Modifier.fillMaxSize().padding(start = 48.dp, end = 48.dp, top = 30.dp, bottom = 24.dp)) {
             Logo(size = 15f)
             Spacer(Modifier.height(18.dp))
-            Txt("Bem-vindo ao Orbita Play", F.s(27.sp, C.white, FontWeight.Bold, F.outfit))
+            Txt(if (adding) "Adicionar playlist" else "Bem-vindo ao Orbita Play", F.s(27.sp, C.white, FontWeight.Bold, F.outfit))
             Spacer(Modifier.height(3.dp))
             Txt(if (site) "Ative pelo celular em segundos ou conecte sua lista direto na TV." else "Conecte sua lista para começar.", F.s(11.sp, C.dim))
             Spacer(Modifier.height(20.dp))
@@ -137,12 +140,16 @@ fun LoginScreen(vm: Vm) {
                         LoginTab("Lista M3U", !xtream, Modifier.weight(1f)) { xtream = false }
                     }
                     if (xtream) {
-                        LoginField("SERVIDOR", server, { server = it }, "http://servidor.exemplo:8080", keyboard = KeyboardType.Uri, requester = serverReq) { runCatching { userReq.requestFocus() } }
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(0.4f)) { NameField(name, { name = it }) { runCatching { serverReq.requestFocus() } } }
+                            Box(Modifier.weight(0.6f)) { LoginField("SERVIDOR", server, { server = it }, "http://servidor.exemplo:8080", keyboard = KeyboardType.Uri, requester = serverReq) { runCatching { userReq.requestFocus() } } }
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             Box(Modifier.weight(1f)) { LoginField("USUÁRIO", user, { user = it }, "seu usuário", requester = userReq) { runCatching { passReq.requestFocus() } } }
                             Box(Modifier.weight(1f)) { LoginField("SENHA", pass, { pass = it }, "••••••••", password = true, requester = passReq) { runCatching { enterReq.requestFocus() } } }
                         }
                     } else {
+                        NameField(name, { name = it }) { runCatching { m3uReq.requestFocus() } }
                         LoginField("ENDEREÇO DA LISTA (URL)", m3u, { m3u = it }, "http://servidor/get.php?username=…", keyboard = KeyboardType.Uri, requester = m3uReq) { runCatching { enterReq.requestFocus() } }
                         Spacer(Modifier.height(6.dp))
                         Txt("Listas get.php do Xtream são convertidas automaticamente para login com guia (EPG).", F.s(8.sp, C.faint), maxLines = 2)
@@ -168,6 +175,10 @@ fun LoginScreen(vm: Vm) {
         if (busy) Box(Modifier.fillMaxSize().background(Color(0x99000000)), contentAlignment = Alignment.Center) { Loading("Conectando ao servidor…") }
     }
 }
+
+@Composable
+private fun NameField(value: String, onChange: (String) -> Unit, onNext: () -> Unit) =
+    LoginField("NOME DA LISTA", value, onChange, "Ex.: Minha lista", onNext = onNext)
 
 /** Campo do login: rótulo em maiúsculas e caixa maior, com borda roxa no foco. */
 @Composable

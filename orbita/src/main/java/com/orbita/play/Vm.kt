@@ -86,15 +86,36 @@ class Vm(ctx: Context) {
     fun sourceFor(a: Account): Source = if (a.type == "xtream") XtreamSource(a) { liveExt() } else M3uSource(a.m3uUrl)
 
     /** Tenta entrar. Lança exceção com mensagem em português se der errado. */
-    suspend fun login(a: Account) {
+    suspend fun login(a: Account, name: String? = null) {
         withContext(Dispatchers.IO) {
             val src = sourceFor(a)
             if (src is XtreamSource) status = src.verify() else src.loadLive()
             source = src
         }
         store.saveAccount(a)
+        store.upsertPlaylist(name, a)
         account = a
         startLoading()
+    }
+
+    /** Troca para outra lista (tela Playlists): testa a nova antes de largar a atual. */
+    suspend fun switchTo(a: Account, name: String? = null) {
+        val src = withContext(Dispatchers.IO) { sourceFor(a).also { if (it is XtreamSource) status = it.verify() else it.loadLive() } }
+        clearData()
+        source = src
+        store.saveAccount(a)
+        store.upsertPlaylist(name, a)
+        account = a
+        startLoading()
+    }
+
+    /** Apaga uma lista; se era a que está em uso, passa para a próxima ou volta ao login. */
+    fun removePlaylist(pl: Playlist) {
+        store.removePlaylist(pl)
+        if (account?.let { pl.same(it) } == true) {
+            val next = store.playlists.firstOrNull()
+            if (next == null) logout() else scope.launch { runCatching { switchTo(next.acc) } }
+        }
     }
 
     /** Consulta o site: situação do aparelho e listas cadastradas. Sem conta, entra com a 1ª lista do site. */
@@ -116,6 +137,7 @@ class Vm(ctx: Context) {
 
     fun resume(): Boolean {
         val a = store.account() ?: return false
+        if (store.playlists.none { it.same(a) }) store.upsertPlaylist(null, a)
         account = a
         source = sourceFor(a)
         startLoading()
@@ -124,9 +146,14 @@ class Vm(ctx: Context) {
     }
 
     fun logout() {
-        matchJob?.cancel()
         store.logout()
-        source = null; account = null; status = null
+        clearData()
+        account = null
+    }
+
+    private fun clearData() {
+        matchJob?.cancel()
+        source = null; status = null
         liveState = LoadState.IDLE; movieState = LoadState.IDLE; seriesState = LoadState.IDLE; matchState = LoadState.IDLE
         channels = emptyList(); movies = emptyList(); series = emptyList(); matches = emptyList()
         liveCats = emptyList(); movieCats = emptyList(); seriesCats = emptyList()
@@ -162,11 +189,11 @@ class Vm(ctx: Context) {
                 val football = list.filter { c -> MatchLogic.isSportsName(c.name) || MatchLogic.isSportsName(catNames[c.catId].orEmpty()) }
                 LiveData(cats, list, list.associateBy { it.id }, byCat, Quality.unique(football), Quality.unique(list), byCat.mapValues { Quality.unique(it.value) })
             }
-        }.onSuccess { d ->
+        }.onSuccess { d -> if (source !== src) return@launch;
             channelById = d.byId; channelsByCat = d.byCat; uniqueChannels = d.unique; uniqueByCat = d.uniqueByCat
             liveCats = d.cats; channels = d.list; footballChannels = d.football
             liveState = LoadState.READY
-        }.onFailure { liveError = it.message ?: "Falha ao carregar os canais."; liveState = LoadState.ERROR }
+        }.onFailure { if (source !== src) return@launch; liveError = it.message ?: "Falha ao carregar os canais."; liveState = LoadState.ERROR }
     }
 
     fun loadMovies(): Job = scope.launch {
@@ -180,10 +207,10 @@ class Vm(ctx: Context) {
                 val byCat = list.groupBy { it.catId }
                 Triple(rawCats.distinctBy { it.id }.filter { byCat.containsKey(it.id) }, list, byCat) to list.associateBy { it.id }
             }
-        }.onSuccess { (t, byId) ->
+        }.onSuccess { (t, byId) -> if (source !== src) return@launch;
             movieById = byId; moviesByCat = t.third; movieCats = t.first; movies = t.second
             movieState = LoadState.READY
-        }.onFailure { movieState = LoadState.ERROR }
+        }.onFailure { if (source === src) movieState = LoadState.ERROR }
     }
 
     fun loadSeries(): Job = scope.launch {
@@ -197,10 +224,10 @@ class Vm(ctx: Context) {
                 val byCat = list.groupBy { it.catId }
                 Triple(rawCats.distinctBy { it.id }.filter { byCat.containsKey(it.id) }, list, byCat) to list.associateBy { it.id }
             }
-        }.onSuccess { (t, byId) ->
+        }.onSuccess { (t, byId) -> if (source !== src) return@launch;
             seriesById = byId; seriesByCat = t.third; seriesCats = t.first; series = t.second
             seriesState = LoadState.READY
-        }.onFailure { seriesState = LoadState.ERROR }
+        }.onFailure { if (source === src) seriesState = LoadState.ERROR }
     }
 
     fun reloadAll() {

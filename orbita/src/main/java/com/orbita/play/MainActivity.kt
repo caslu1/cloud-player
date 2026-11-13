@@ -77,6 +77,8 @@ sealed class Route(val returnKey: String?) {
     class CategoryGrid(val movies: Boolean, val cat: Cat, rk: String?) : Route(rk)
     class Settings(rk: String?) : Route(rk)
     class Search(rk: String?) : Route(rk)
+    class Playlists(rk: String?) : Route(rk)
+    class AddPlaylist(rk: String?) : Route(rk)
 }
 
 /** Estado de navegação/telas que sobrevive enquanto o app está aberto. */
@@ -253,6 +255,8 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
             is Route.CategoryGrid -> CategoryGrid(vm, pb, ui, top)
             is Route.Settings -> SettingsScreen(vm, pb, ui)
             is Route.Search -> SearchScreen(vm, pb, ui)
+            is Route.Playlists -> PlaylistsScreen(vm, ui)
+            is Route.AddPlaylist -> LoginScreen(vm, adding = true) { ui.stack.clear(); ui.home = true }
             null -> if (ui.home) {
                 when (vm.store.homeLayout.value) {
                     "lite" -> HomeLite(vm, pb, ui, openSearch, reload, openSettings)
