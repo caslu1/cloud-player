@@ -161,7 +161,7 @@ class AppFlowTest {
         waitText("Aviso importante")
         shot("29-aviso")
         click("Entendo", exact = true)
-        waitText("Conectar lista")
+        waitText("Conta XC")
         shot("01-login")
         // teclado do app
         click("Ex.: Minha lista")
