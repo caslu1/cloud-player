@@ -65,3 +65,12 @@ Som (original, sintetizado): duas batidas graves ("tum-TUM") em 0,2 s e 0,5 s, d
 
 Para gerar de novo: `python3 source/sound.py som.wav`, `python3 source/anim.py anim.html`, `node source/rec.js` (frames) e depois
 `ffmpeg -framerate 30 -i frames/f%04d.png -i som.wav -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest splash.mp4`.
+
+### Abertura 2: "Órbita" (cometa)
+
+- `motion/orbitaplay-splash-orbita-1080p.mp4`: 1920×1080, 30 fps, 5 s, H.264 + AAC
+- `motion/orbitaplay-splash-orbita-sound.wav` e `motion/orbitaplay-splash-orbita-preview.gif`
+
+Visual: o "O" branco aparece no centro; um cometa roxo corre pela órbita em volta do "O", passando pela frente e por trás e desenhando o anel; ele para na posição do planeta com um flash e uma onda; o logo desliza e o texto se revela da esquerda para a direita; um brilho passa pelo texto.
+Som (original, sintetizado): "whoosh" que acompanha o cometa e passa de um lado para o outro no estéreo, um tom que sobe, chegada com grave e sino brilhante, arpejo enquanto o texto aparece e acorde maior suave no final.
+Gerar de novo: `python3 source/sound2.py som.wav`, `python3 source/anim2.py anim2.html`, `node source/rec2.js` e o mesmo comando `ffmpeg`.
