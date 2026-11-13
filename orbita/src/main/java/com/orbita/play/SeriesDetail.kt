@@ -154,7 +154,7 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
                                     Modifier.size(46.dp).clip(CircleShape).background(Brush.linearGradient(listOf(C.hash(p.name), C.hash(p.name + "x")))),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Txt(MatchLogic.initials(p.name), F.s(10.sp, C.white, FontWeight.Bold))
+                                    Txt(Names.initials(p.name), F.s(10.sp, C.white, FontWeight.Bold))
                                     p.photo?.let { AsyncImage(it, p.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
                                 }
                                 Spacer(Modifier.height(5.dp))
@@ -173,7 +173,7 @@ fun SeriesDetail(vm: Vm, pb: Playback, ui: Ui, s: Series) {
                                 Box(
                                     Modifier.size(40.dp).clip(CircleShape).background(Brush.linearGradient(listOf(C.hash(n), C.hash(n + "x")))),
                                     contentAlignment = Alignment.Center
-                                ) { Txt(MatchLogic.initials(n), F.s(10.sp, C.white, FontWeight.Bold)) }
+                                ) { Txt(Names.initials(n), F.s(10.sp, C.white, FontWeight.Bold)) }
                                 Spacer(Modifier.height(5.dp))
                                 Txt(n, F.s(7.sp, C.text), maxLines = 2, align = androidx.compose.ui.text.style.TextAlign.Center)
                             }

@@ -54,42 +54,18 @@ private class LiteTile(val key: String, val label: String, val icon: ImageVector
  */
 @Composable
 fun HomeLite(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit) {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(10_000) } }
-    Box(Modifier.fillMaxSize()) {
-        ScreenBackground()
-
-        // relógio no canto
-        Column(Modifier.align(Alignment.TopEnd).padding(top = 18.dp, end = 30.dp), horizontalAlignment = Alignment.End) {
-            Txt(hhmm(now), F.s(15.sp, C.white, FontWeight.Bold, F.outfit))
-            Txt(remember(now / 3_600_000) { SimpleDateFormat("EEE, d MMM", Locale("pt", "BR")).format(Date(now)) }, F.s(7.5.sp, C.dim))
+    HomeFrame(vm, onSearch, onReload, onSettings) {
+        val tiles = listOf(
+            LiteTile("CANAIS", "Canais", LineIc.Tv) { ui.openSection(Tab.CANAIS) },
+            LiteTile("FILMES", "Filmes", LineIc.Film) { ui.openSection(Tab.FILMES) },
+            LiteTile("SERIES", "Séries", LineIc.Series) { ui.openSection(Tab.SERIES) },
+            LiteTile("PLAYLISTS", "Playlists", Ic.Sort) { ui.push(Route.Playlists("home:PLAYLISTS")) },
+        )
+        val first = remember { FocusRequester() }
+        InitialFocus(first)
+        Row(Modifier.align(Alignment.TopCenter).padding(top = 160.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+            tiles.forEach { t -> SquareTile(t, if (t.key == ui.tab.name) first else null) }
         }
-
-        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.height(31.dp))
-            Logo(size = 24f)
-            Spacer(Modifier.height(52.dp))
-            val tiles = listOf(
-                LiteTile("CANAIS", "Canais", LineIc.Tv) { ui.openSection(Tab.CANAIS) },
-                LiteTile("FILMES", "Filmes", LineIc.Film) { ui.openSection(Tab.FILMES) },
-                LiteTile("SERIES", "Séries", LineIc.Series) { ui.openSection(Tab.SERIES) },
-                LiteTile("FUTEBOL", "Futebol", LineIc.Ball) { ui.openSection(Tab.FUTEBOL) },
-                LiteTile("settings", "Configurações", LineIc.Sliders, onSettings),
-            )
-            val first = remember { FocusRequester() }
-            InitialFocus(first)
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                tiles.forEach { t -> SquareTile(t, if (t.key == ui.tab.name) first else null) }
-            }
-            Spacer(Modifier.height(30.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                WideButton(Ic.Search, "Buscar", "home:search", onSearch)
-                WideButton(Ic.Refresh, "Recarregar", "home:reload", onReload)
-            }
-        }
-
-        DeviceFooter(vm, Modifier.align(Alignment.BottomCenter).padding(horizontal = 10.dp))
     }
 }
 
@@ -118,7 +94,7 @@ private fun PosterWall(vm: Vm) {
 
 @Composable
 private fun SquareTile(t: LiteTile, requester: FocusRequester?) {
-    Focus(Modifier.size(124.dp), onClick = t.onClick, requester = requester, memKey = "home:${t.key}") { f ->
+    Focus(Modifier.size(150.dp), onClick = t.onClick, requester = requester, memKey = "home:${t.key}") { f ->
         val sc by animateFloatAsState(if (f) 1.08f else 1f, tween(120), label = "s")
         val shape = RoundedCornerShape(10.dp)
         Column(

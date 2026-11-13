@@ -73,45 +73,27 @@ private fun RoundAction(icon: ImageVector, desc: String, key: String, onClick: (
     }
 }
 
-private class HomeTile(val tab: Tab, val label: String, val icon: ImageVector, val sub: String)
+private class HomeTile(val key: String, val label: String, val icon: ImageVector, val sub: String, val onClick: () -> Unit)
 
-/** Tela inicial: papel de parede escolhido, saudação, 4 blocos grandes e "Continuar assistindo". */
+/** Tela inicial Padrão: moldura comum, 4 blocos grandes e "Continuar assistindo". */
 @Composable
 fun HomeScreen(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit) {
-    Box(Modifier.fillMaxSize()) {
-        ScreenBackground()
-        Column(Modifier.padding(start = 28.dp, top = 62.dp)) {
-            val h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-            Txt(if (h < 5) "Boa noite" else if (h < 12) "Bom dia" else if (h < 18) "Boa tarde" else "Boa noite", F.s(22.sp, C.white, FontWeight.Bold, F.outfit))
-            Spacer(Modifier.height(2.dp))
-            Txt("O que vamos assistir hoje?", F.s(10.sp, C.dim))
-        }
-
-        // topo: logo + ações
-        Row(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 28.dp), verticalAlignment = Alignment.CenterVertically) {
-            Logo()
-            Spacer(Modifier.weight(1f))
-            TopActions(onSearch, onReload, onSettings, showDate = true)
-        }
-
-        Column(Modifier.fillMaxSize().padding(top = 134.dp)) {
+    HomeFrame(vm, onSearch, onReload, onSettings) {
+        Column(Modifier.fillMaxSize().padding(top = 132.dp)) {
             val tiles = listOf(
-                HomeTile(Tab.CANAIS, "CANAIS", Ic.LiveTv, countLabel(vm.allowedChannels().size, "canal", "canais", vm.liveState == LoadState.READY)),
-                HomeTile(Tab.FILMES, "FILMES", Ic.Movie, countLabel(vm.movies.size, "título", "títulos", vm.movieState == LoadState.READY)),
-                HomeTile(Tab.SERIES, "SÉRIES", Ic.Series, countLabel(vm.series.size, "título", "títulos", vm.seriesState == LoadState.READY)),
-                HomeTile(Tab.FUTEBOL, "FUTEBOL", Ic.Soccer, "Ao vivo, hoje e amanhã"),
+                HomeTile("CANAIS", "CANAIS", Ic.LiveTv, countLabel(vm.allowedChannels().size, "canal", "canais", vm.liveState == LoadState.READY)) { ui.openSection(Tab.CANAIS) },
+                HomeTile("FILMES", "FILMES", Ic.Movie, countLabel(vm.movies.size, "título", "títulos", vm.movieState == LoadState.READY)) { ui.openSection(Tab.FILMES) },
+                HomeTile("SERIES", "SÉRIES", Ic.Series, countLabel(vm.series.size, "título", "títulos", vm.seriesState == LoadState.READY)) { ui.openSection(Tab.SERIES) },
+                HomeTile("PLAYLISTS", "PLAYLISTS", Ic.Sort, vm.store.playlists.size.let { if (it == 1) "1 playlist" else "$it playlists" }) { ui.push(Route.Playlists("home:PLAYLISTS")) },
             )
             val first = remember { FocusRequester() }
             InitialFocus(first)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)) {
-                tiles.forEach { t ->
-                    BigTile(t, if (t.tab == ui.tab) first else null) { ui.openSection(t.tab) }
-                }
+                tiles.forEach { t -> BigTile(t, if (t.key == ui.tab.name) first else null) }
             }
-            Spacer(Modifier.height(26.dp))
+            Spacer(Modifier.height(22.dp))
             ContinueRow(vm, pb, ui)
         }
-        DeviceFooter(vm, Modifier.align(Alignment.BottomCenter).padding(horizontal = 8.dp))
     }
 }
 
@@ -119,8 +101,8 @@ private fun countLabel(n: Int, one: String, many: String, ready: Boolean) =
     if (!ready) "Carregando…" else if (n == 1) "1 $one" else "${fmtCount(n)} $many"
 
 @Composable
-private fun BigTile(t: HomeTile, requester: FocusRequester?, onClick: () -> Unit) {
-    Focus(Modifier.width(194.dp), onClick = onClick, requester = requester, memKey = "home:${t.tab.name}") { f ->
+private fun BigTile(t: HomeTile, requester: FocusRequester?) {
+    Focus(Modifier.width(194.dp), onClick = t.onClick, requester = requester, memKey = "home:${t.key}") { f ->
         val sc by animateFloatAsState(if (f) 1.07f else 1f, tween(140), label = "s")
         val shape = RoundedCornerShape(16.dp)
         Box(

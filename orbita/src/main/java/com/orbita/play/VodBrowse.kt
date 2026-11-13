@@ -82,7 +82,7 @@ fun VodBrowse(
     LaunchedEffect(focused) { val f = focused ?: return@LaunchedEffect; delay(280); heroEntry = f }
 
     val visibleCats = remember(cats, catQuery) {
-        if (catQuery.isBlank()) cats else cats.filter { MatchLogic.norm(it.name).contains(MatchLogic.norm(catQuery), true) }
+        if (catQuery.isBlank()) cats else cats.filter { Names.norm(it.name).contains(Names.norm(catQuery), true) }
     }
     val gridReq = remember { FocusRequester() }
     val scope = androidx.compose.runtime.rememberCoroutineScope()

@@ -20,14 +20,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 enum class LoadState { IDLE, LOADING, READY, ERROR }
 
-class Match(
-    val home: String, val away: String, val comp: String?, val start: Long, val end: Long,
-    val desc: String, val channels: MutableList<Channel>,
-) {
-    fun isLive(now: Long = System.currentTimeMillis()) = now in start until end
-    fun isOver(now: Long = System.currentTimeMillis()) = now >= end
-}
-
 /** Estado do app: conta, catálogo (canais, filmes, séries), guia e jogos. */
 @androidx.compose.runtime.Stable
 class Vm(ctx: Context) {
@@ -75,11 +67,6 @@ class Vm(ctx: Context) {
     val movieInfos = StateMap<MovieInfo>()
     val seriesInfos = StateMap<SeriesInfo>()
 
-    var matchState by mutableStateOf(LoadState.IDLE); private set
-    var matches by mutableStateOf<List<Match>>(emptyList()); private set
-    var matchProgress by mutableStateOf(0f); private set
-    var footballChannels by mutableStateOf<List<Channel>>(emptyList()); private set
-    private var matchJob: Job? = null
 
     fun liveExt() = if (store.liveFormat.value == "m3u8") "m3u8" else "ts"
 
@@ -152,10 +139,9 @@ class Vm(ctx: Context) {
     }
 
     private fun clearData() {
-        matchJob?.cancel()
         source = null; status = null
-        liveState = LoadState.IDLE; movieState = LoadState.IDLE; seriesState = LoadState.IDLE; matchState = LoadState.IDLE
-        channels = emptyList(); movies = emptyList(); series = emptyList(); matches = emptyList()
+        liveState = LoadState.IDLE; movieState = LoadState.IDLE; seriesState = LoadState.IDLE
+        channels = emptyList(); movies = emptyList(); series = emptyList()
         liveCats = emptyList(); movieCats = emptyList(); seriesCats = emptyList()
         epg.clear(); epgTime.clear(); movieInfos.clear(); seriesInfos.clear()
     }
@@ -169,7 +155,7 @@ class Vm(ctx: Context) {
     }
 
     private class LiveData(
-        val cats: List<Cat>, val list: List<Channel>, val byId: Map<String, Channel>, val byCat: Map<String, List<Channel>>, val football: List<Channel>,
+        val cats: List<Cat>, val list: List<Channel>, val byId: Map<String, Channel>, val byCat: Map<String, List<Channel>>,
         val unique: List<Channel>, val uniqueByCat: Map<String, List<Channel>>,
     )
 
@@ -186,12 +172,11 @@ class Vm(ctx: Context) {
                 val cats = cats0.filter { byCat.containsKey(it.id) } +
                     byCat.keys.filter { k -> cats0.none { it.id == k } }.map { Cat(it, if (it.isBlank()) "Outros" else it) }
                 val catNames = cats.associate { it.id to it.name }
-                val football = list.filter { c -> MatchLogic.isSportsName(c.name) || MatchLogic.isSportsName(catNames[c.catId].orEmpty()) }
-                LiveData(cats, list, list.associateBy { it.id }, byCat, Quality.unique(football), Quality.unique(list), byCat.mapValues { Quality.unique(it.value) })
+                LiveData(cats, list, list.associateBy { it.id }, byCat, Quality.unique(list), byCat.mapValues { Quality.unique(it.value) })
             }
         }.onSuccess { d -> if (source !== src) return@launch;
             channelById = d.byId; channelsByCat = d.byCat; uniqueChannels = d.unique; uniqueByCat = d.uniqueByCat
-            liveCats = d.cats; channels = d.list; footballChannels = d.football
+            liveCats = d.cats; channels = d.list
             liveState = LoadState.READY
         }.onFailure { if (source !== src) return@launch; liveError = it.message ?: "Falha ao carregar os canais."; liveState = LoadState.ERROR }
     }
@@ -231,7 +216,7 @@ class Vm(ctx: Context) {
     }
 
     fun reloadAll() {
-        epg.clear(); epgTime.clear(); matchState = LoadState.IDLE
+        epg.clear(); epgTime.clear()
         val a = account ?: return
         source = sourceFor(a)
         movieState = LoadState.IDLE; seriesState = LoadState.IDLE
@@ -312,39 +297,6 @@ class Vm(ctx: Context) {
 
     fun catName(id: String) = liveCats.firstOrNull { it.id == id }?.name.orEmpty()
 
-    /** Procura jogos no guia dos canais de esporte. */
-    fun loadMatches(force: Boolean = false) {
-        if (!force && (matchState == LoadState.LOADING || matchState == LoadState.READY)) return
-        val src = source
-        if (src !is XtreamSource) { matches = emptyList(); matchState = LoadState.READY; return }
-        matchJob?.cancel()
-        matchJob = scope.launch {
-            matchState = LoadState.LOADING; matchProgress = 0f
-            val list = footballChannels.distinctBy { it.id }.sortedBy { if (it.name.contains("futebol", true) || it.name.contains("premiere", true)) 0 else 1 }.take(90)
-            val gate = Semaphore(6)
-            var done = 0
-            val found = HashMap<String, Match>()
-            list.map { c ->
-                async {
-                    val progs = gate.withPermit { withContext(Dispatchers.IO) { runCatching { src.epg(c, 40) }.getOrNull() } }
-                    done++; matchProgress = done.toFloat() / list.size
-                    if (progs != null) {
-                        if (!epg.containsKey(c.id)) { epg[c.id] = normalizeEpg(progs); epgTime[c.id] = System.currentTimeMillis() }
-                        for (p in progs) {
-                            if (p.end < System.currentTimeMillis() - 6 * 3600_000L) continue
-                            val t = MatchLogic.parseTitle(p.title) ?: continue
-                            val k = MatchLogic.key(t.home, t.away, p.start)
-                            val m = found.getOrPut(k) { Match(t.home, t.away, t.comp, p.start, p.end, p.desc, ArrayList()) }
-                            if (m.channels.none { it.id == c.id }) m.channels += c
-                        }
-                    }
-                }
-            }.awaitAll()
-            matches = found.values.sortedWith(compareBy({ it.start }, { it.home }))
-            matchState = LoadState.READY
-        }
-    }
-
     // ---- TMDB (logo, fundo, sinopse)
     val meta = StateMap<Tmdb.Meta>()
     private val metaMiss = ConcurrentHashMap.newKeySet<String>()
@@ -368,30 +320,14 @@ class Vm(ctx: Context) {
         }
     }
 
-    // ---- API de futebol (placar ao vivo)
-    val apiDays = mutableStateMapOf<Int, List<FootballApi.Game>>()
-    val apiErrors = mutableStateMapOf<Int, String>()
-    private val apiLoading = HashSet<Int>()
+    // ---- canais da lista agrupados pelo nome (versões FHD/HD/SD do mesmo canal)
     private var indexOf: List<Channel>? = null
     private var index: Map<String, List<Channel>> = emptyMap()
 
     /** Canais da lista indexados pelo nome normalizado (para achar "Sportv 2" na lista do usuário). */
     fun channelIndex(): Map<String, List<Channel>> {
-        if (indexOf !== channels) { index = channels.groupBy { FootballApi.channelKey(it.name) }; indexOf = channels }
+        if (indexOf !== channels) { index = channels.groupBy { Names.channelKey(it.name) }; indexOf = channels }
         return index
-    }
-
-    fun loadApiDay(day: Int, force: Boolean = false) {
-        if (!force && apiDays.containsKey(day)) return
-        if (!apiLoading.add(day)) return
-        scope.launch {
-            try {
-                val games = withContext(Dispatchers.IO) { FootballApi.day(day) }
-                apiDays[day] = games; apiErrors.remove(day)
-            } catch (e: Exception) {
-                apiErrors[day] = e.message ?: "Falha ao carregar os jogos."
-            } finally { apiLoading.remove(day) }
-        }
     }
 
     fun play(item: PlayItem) {

@@ -58,22 +58,11 @@ private class VitrineCard(val key: String, val title: String, val count: String,
  */
 @Composable
 fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit, style: String = "cards") {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(10_000) } }
     val nf = remember { NumberFormat.getIntegerInstance(Locale("pt", "BR")) }
     fun cats(n: Int) = if (n == 1) "1 categoria" else "$n categorias"
     fun cnt(n: Int, one: String, many: String) = if (n == 0) "Carregando…" else "${nf.format(n)} " + (if (n == 1) one else many)
 
-    Box(Modifier.fillMaxSize()) {
-        ScreenBackground()
-        // topo: logo no centro, botões redondos à direita
-        Logo(Modifier.align(Alignment.TopCenter).padding(top = 58.dp), size = 20f)
-        Row(Modifier.align(Alignment.TopEnd).padding(top = 22.dp, end = 30.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            RoundBtn(Ic.Search, "Buscar", "home:search", onSearch)
-            RoundBtn(Ic.Refresh, "Recarregar", "home:reload", onReload)
-            RoundBtn(Ic.Settings, "Configurações", "home:settings", onSettings)
-        }
+    HomeFrame(vm, onSearch, onReload, onSettings) {
 
         val cards = listOf(
             VitrineCard("CANAIS", "Canais ao vivo", cnt(vm.channels.size, "canal", "canais"), cats(vm.liveCats.size), DuoIc.Tv) { ui.openSection(Tab.CANAIS) },
@@ -96,13 +85,31 @@ fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -
         ) {
             cards.forEach { c -> BadgeTile(c, style == "round", if (c.key == ui.tab.name) first else null) }
         }
+    }
+}
 
-        // relógio no canto e rodapé padrão
+/**
+ * Moldura comum de todos os temas da tela inicial (igual à Vitrine): papel de parede, relógio no canto
+ * superior esquerdo, logo no centro, Buscar/Recarregar/Configurações à direita e o rodapé padrão.
+ */
+@Composable
+fun HomeFrame(vm: Vm, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit, content: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit) {
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(10_000) } }
+    Box(Modifier.fillMaxSize()) {
+        ScreenBackground()
+        Logo(Modifier.align(Alignment.TopCenter).padding(top = 58.dp), size = 20f)
+        Row(Modifier.align(Alignment.TopEnd).padding(top = 22.dp, end = 30.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            RoundBtn(Ic.Search, "Buscar", "home:search", onSearch)
+            RoundBtn(Ic.Refresh, "Recarregar", "home:reload", onReload)
+            RoundBtn(Ic.Settings, "Configurações", "home:settings", onSettings)
+        }
         Column(Modifier.align(Alignment.TopStart).padding(top = 22.dp, start = 30.dp)) {
             Txt(hhmm(now), F.s(17.sp, C.white, FontWeight.Bold, F.outfit))
             Txt(remember(now / 3_600_000) { SimpleDateFormat("EEE, d MMM", Locale("pt", "BR")).format(Date(now)) }, F.s(7.5.sp, C.dim))
         }
         DeviceFooter(vm, Modifier.align(Alignment.BottomCenter).padding(horizontal = 10.dp))
+        content()
     }
 }
 

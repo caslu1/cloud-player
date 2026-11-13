@@ -160,8 +160,8 @@ class Playback(ctx: Context, private val vm: Vm) {
         var i = list.indexOfFirst { it.key == cur.key }
         // trocou de qualidade (canal fora da lista): usa a posição do canal "irmão"
         if (i < 0 && cur.channel != null) {
-            val k = FootballApi.channelKey(cur.channel.name)
-            i = list.indexOfFirst { it.channel?.let { c -> FootballApi.channelKey(c.name) } == k }
+            val k = Names.channelKey(cur.channel.name)
+            i = list.indexOfFirst { it.channel?.let { c -> Names.channelKey(c.name) } == k }
         }
         if (i < 0) return null
         val n = i + delta
@@ -457,7 +457,7 @@ object Quality {
      */
     fun unique(list: List<Channel>): List<Channel> {
         val groups = LinkedHashMap<String, MutableList<Channel>>()
-        for (c in list) groups.getOrPut(FootballApi.channelKey(c.name).ifEmpty { c.id }) { ArrayList() } += c
+        for (c in list) groups.getOrPut(Names.channelKey(c.name).ifEmpty { c.id }) { ArrayList() } += c
         return groups.values.map { g -> if (g.size == 1) g[0] else g.minByOrNull { rank(it.name) }!! }
     }
 
@@ -487,9 +487,9 @@ private fun LiveOverlay(vm: Vm, pb: Playback, item: PlayItem, qualityReq: FocusR
     val now = progs.firstOrNull { it.isNow(nowMs) }
     val next = progs.firstOrNull { it.start >= (now?.end ?: nowMs) }
     val list = pb.list
-    val pos = list.indexOfFirst { it.key == item.key }.let { if (it < 0) list.indexOfFirst { p -> p.channel?.let { ch -> FootballApi.channelKey(ch.name) } == FootballApi.channelKey(c.name) } else it }
+    val pos = list.indexOfFirst { it.key == item.key }.let { if (it < 0) list.indexOfFirst { p -> p.channel?.let { ch -> Names.channelKey(ch.name) } == Names.channelKey(c.name) } else it }
     val variants = remember(c.id, vm.channels) {
-        vm.channelIndex()[FootballApi.channelKey(c.name)].orEmpty().mapNotNull { ch -> Quality.of(ch.name)?.let { it to ch } }.distinctBy { it.first }.toMap()
+        vm.channelIndex()[Names.channelKey(c.name)].orEmpty().mapNotNull { ch -> Quality.of(ch.name)?.let { it to ch } }.distinctBy { it.first }.toMap()
     }
     val q = Quality.of(c.name)
 

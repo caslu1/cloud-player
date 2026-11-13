@@ -68,7 +68,7 @@ class OrbitaApp : Application(), ImageLoaderFactory {
         .build()
 }
 
-enum class Tab(val title: String) { CANAIS("CANAIS"), FILMES("FILMES"), SERIES("SÉRIES"), FUTEBOL("FUTEBOL") }
+enum class Tab(val title: String) { CANAIS("CANAIS"), FILMES("FILMES"), SERIES("SÉRIES") }
 
 /** Telas empilhadas por cima das abas. [returnKey] devolve o foco ao item que abriu a tela. */
 sealed class Route(val returnKey: String?) {
@@ -90,8 +90,6 @@ class Ui {
     val stack = mutableStateListOf<Route>()
     var playerReturnKey: String? = null
     var liveCat by mutableStateOf("__all")
-    var footballMenu by mutableIntStateOf(0)
-    var footballMenuChosen = false
     /** Pedido de senha em aberto (controle parental). */
     var pinPrompt by mutableStateOf<PinPrompt?>(null)
     /** Janela do Recarregar: 0 fechada, 1 carregando, 2 concluído. */
@@ -103,7 +101,6 @@ class Ui {
             if (pin == vm.store.pin()) { vm.adultUnlocked = true; then(); null } else "Senha incorreta"
         }
     }
-    var footballDay by mutableIntStateOf(0)
     var query by mutableStateOf("")
     var libraryMenu by mutableIntStateOf(0)
     var liveCatShown: String? = null
@@ -117,13 +114,11 @@ class Ui {
     var chList = androidx.compose.foundation.lazy.LazyListState()
     var movieRows = androidx.compose.foundation.lazy.LazyListState()
     var seriesRows = androidx.compose.foundation.lazy.LazyListState()
-    var matchList = androidx.compose.foundation.lazy.LazyListState()
 
     /** Abre uma seção a partir do início sempre do começo (categoria padrão, listas no topo). */
     fun openSection(t: Tab) {
         liveCat = "__all"; liveCatShown = null
         movieCat = null; seriesCat = null
-        footballMenu = 0; footballMenuChosen = false; footballDay = 0
         movieGrid = androidx.compose.foundation.lazy.grid.LazyGridState()
         seriesGrid = androidx.compose.foundation.lazy.grid.LazyGridState()
         movieCatList = androidx.compose.foundation.lazy.LazyListState()
@@ -132,7 +127,6 @@ class Ui {
         chList = androidx.compose.foundation.lazy.LazyListState()
         movieRows = androidx.compose.foundation.lazy.LazyListState()
         seriesRows = androidx.compose.foundation.lazy.LazyListState()
-        matchList = androidx.compose.foundation.lazy.LazyListState()
         FocusMem.restore = null
         tab = t; home = false
     }
@@ -275,7 +269,6 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
                     Tab.CANAIS -> ChannelsScreen(vm, pb, ui)
                     Tab.FILMES -> MoviesScreen(vm, pb, ui)
                     Tab.SERIES -> SeriesScreen(vm, pb, ui)
-                    Tab.FUTEBOL -> FootballScreen(vm, pb, ui)
                 }
             }
         }

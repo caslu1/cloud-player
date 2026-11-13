@@ -75,7 +75,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
 
     val visibleCats = vm.liveCats.filter { vm.catVisible("live", it) }
     val cats = remember(visibleCats, catQuery) {
-        if (catQuery.isBlank()) visibleCats else visibleCats.filter { MatchLogic.norm(it.name).contains(MatchLogic.norm(catQuery), true) }
+        if (catQuery.isBlank()) visibleCats else visibleCats.filter { Names.norm(it.name).contains(Names.norm(catQuery), true) }
     }
     val favCount = vm.store.favChannels.size
     val recentCount = vm.store.recentChannels.size
@@ -83,10 +83,10 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
     val allowed = vm.allowedChannels()
     val list = remember(ui.liveCat, chQuery, vm.channels, favCount, recentCount, sortAZ, allowed) {
         var l = channelsOf(vm, ui.liveCat)
-        if (sortAZ) l = l.sortedBy { MatchLogic.norm(it.name).lowercase() }
+        if (sortAZ) l = l.sortedBy { Names.norm(it.name).lowercase() }
         if (chQuery.isBlank()) l else {
-            val q = MatchLogic.norm(chQuery)
-            l.filter { MatchLogic.norm(it.name).contains(q, true) || it.num.toString() == chQuery.trim() }
+            val q = Names.norm(chQuery)
+            l.filter { Names.norm(it.name).contains(q, true) || it.num.toString() == chQuery.trim() }
         }
     }
     val catTitle = when (ui.liveCat) { FAV -> "Favoritos"; RECENT -> "Recentes"; ALL -> "Todos os canais"; else -> vm.catName(ui.liveCat) }

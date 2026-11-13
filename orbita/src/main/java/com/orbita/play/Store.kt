@@ -36,7 +36,6 @@ class Store(ctx: Context) {
     val favChannels = mutableStateListOf<String>()
     val recentChannels = mutableStateListOf<String>()
     val myList = mutableStateListOf<String>() // "m:<id>" filmes, "s:<id>" séries
-    val followedTeams = mutableStateListOf<String>()
     val progress = mutableStateMapOf<String, Progress>()
     val liveFormat = mutableStateOf(p.getString("liveFormat", "ts") ?: "ts")
     val autoNext = mutableStateOf(p.getBoolean("autoNext", true))
@@ -58,7 +57,6 @@ class Store(ctx: Context) {
         favChannels.clear(); favChannels += list("fav")
         recentChannels.clear(); recentChannels += list("recent")
         myList.clear(); myList += list("myList")
-        followedTeams.clear(); followedTeams += list("teams")
         hiddenCats.clear(); hiddenCats += list("hiddenCats")
         playlists.clear()
         runCatching {
@@ -135,12 +133,6 @@ class Store(ctx: Context) {
     }
 
     // Times seguidos
-    fun follows(team: String) = followedTeams.any { it.equals(team, true) }
-    fun toggleTeam(team: String) {
-        val e = followedTeams.firstOrNull { it.equals(team, true) }
-        if (e != null) followedTeams.remove(e) else followedTeams.add(team)
-        save("teams", followedTeams.toList())
-    }
 
     // Progresso
     fun saveProgress(pr: Progress) {

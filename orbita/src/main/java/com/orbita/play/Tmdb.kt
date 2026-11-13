@@ -118,7 +118,7 @@ object Tmdb {
     fun find(name: String, tv: Boolean, hintId: String? = null): Meta? {
         if (!enabled) return null
         val (title, year) = clean(name)
-        val key = (if (tv) "t2:" else "m2:") + MatchLogic.norm(title).lowercase() + "|" + (year ?: "")
+        val key = (if (tv) "t2:" else "m2:") + Names.norm(title).lowercase() + "|" + (year ?: "")
         cache[key]?.let { return if (it.isEmpty()) null else runCatching { Meta.of(JSONObject(it)) }.getOrNull() }
 
         var id = hintId?.trim()?.toIntOrNull()?.takeIf { it > 0 }
@@ -135,12 +135,12 @@ object Tmdb {
         val results = get(path)?.optJSONArray("results") ?: return null
         if (results.length() == 0) return null
         // pontua: mesmo título + mesmo ano > mesmo ano > mesmo título > ordem do TMDB (relevância)
-        val norm = MatchLogic.norm(title).lowercase()
+        val norm = Names.norm(title).lowercase()
         var best: JSONObject? = null
         var bestScore = -1
         for (i in 0 until minOf(results.length(), 8)) {
             val r = results.optJSONObject(i) ?: continue
-            val names = listOf("title", "name", "original_title", "original_name").map { MatchLogic.norm(r.optString(it)).lowercase() }
+            val names = listOf("title", "name", "original_title", "original_name").map { Names.norm(r.optString(it)).lowercase() }
             val y = (r.optString("release_date").ifBlank { r.optString("first_air_date") }).take(4).toIntOrNull()
             val sameTitle = names.any { it == norm }
             val sameYear = year != null && y != null && kotlin.math.abs(y - year.toInt()) <= 1

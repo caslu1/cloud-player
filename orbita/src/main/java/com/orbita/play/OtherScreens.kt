@@ -253,7 +253,7 @@ fun SearchScreen(vm: Vm, pb: Playback, ui: Ui) {
     ScreenBackground()
     var res by remember { mutableStateOf<Results?>(null) }
     LaunchedEffect(ui.query, vm.channels, vm.movies, vm.series) {
-        val q = MatchLogic.norm(ui.query).lowercase()
+        val q = Names.norm(ui.query).lowercase()
         if (q.length < 2) { res = null; return@LaunchedEffect }
         delay(250)
         // respeita categorias ocultas e o controle parental
@@ -261,7 +261,7 @@ fun SearchScreen(vm: Vm, pb: Playback, ui: Ui) {
         val badMovie = vm.movieCats.filter { !vm.catAllowed("vod", it) }.map { it.id }.toSet()
         val badSeries = vm.seriesCats.filter { !vm.catAllowed("series", it) }.map { it.id }.toSet()
         res = withContext(Dispatchers.Default) {
-            fun hit(n: String) = MatchLogic.norm(n).lowercase().contains(q)
+            fun hit(n: String) = Names.norm(n).lowercase().contains(q)
             Results(
                 chans.asSequence().filter { hit(it.name) || it.num.toString() == q }.take(40).toList(),
                 vm.movies.asSequence().filter { it.catId !in badMovie && hit(it.name) }.take(60).toList(),

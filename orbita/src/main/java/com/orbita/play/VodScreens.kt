@@ -313,8 +313,8 @@ fun MoviesScreen(vm: Vm, pb: Playback, ui: Ui) {
         },
         empty = "Nenhum filme nesta categoria",
         search = { q ->
-            val n = MatchLogic.norm(q).lowercase()
-            vm.movies.asSequence().filter { it.catId !in blockedMovie && MatchLogic.norm(it.name).lowercase().contains(n) }.take(150).map(::entry).toList()
+            val n = Names.norm(q).lowercase()
+            vm.movies.asSequence().filter { it.catId !in blockedMovie && Names.norm(it.name).lowercase().contains(n) }.take(150).map(::entry).toList()
         },
         searchHint = "Buscar filme ou categoria",
         locked = { id -> vm.movieCats.firstOrNull { it.id == id }?.let { vm.catLocked(it) } ?: false },
@@ -488,8 +488,8 @@ fun SeriesScreen(vm: Vm, pb: Playback, ui: Ui) {
         },
         empty = "Nenhuma série nesta categoria",
         search = { q ->
-            val n = MatchLogic.norm(q).lowercase()
-            vm.series.asSequence().filter { it.catId !in blockedSeries && MatchLogic.norm(it.name).lowercase().contains(n) }.take(150).map(::entry).toList()
+            val n = Names.norm(q).lowercase()
+            vm.series.asSequence().filter { it.catId !in blockedSeries && Names.norm(it.name).lowercase().contains(n) }.take(150).map(::entry).toList()
         },
         searchHint = "Buscar série ou categoria",
         locked = { id -> vm.seriesCats.firstOrNull { it.id == id }?.let { vm.catLocked(it) } ?: false },

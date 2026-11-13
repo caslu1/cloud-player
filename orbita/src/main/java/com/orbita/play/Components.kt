@@ -426,26 +426,6 @@ fun MetaChip(text: String, color: Color = C.white, bg: Color = Color(0x33FFFFFF)
     }
 }
 
-/** Escudo do time (formato de escudo, cor estável, iniciais). */
-private val shieldShape: Shape = GenericShape { size, _ ->
-    moveTo(0f, 0f); lineTo(size.width, 0f); lineTo(size.width, size.height * 0.62f)
-    lineTo(size.width / 2f, size.height); lineTo(0f, size.height * 0.62f); close()
-}
-
-@Composable
-fun TeamShield(team: String, size: Dp = 24.dp, logo: String? = null) {
-    if (logo != null) {
-        Box(Modifier.width(size).height(size * 1.12f), contentAlignment = Alignment.Center) {
-            AsyncImage(logo, null, Modifier.size(size), contentScale = ContentScale.Fit)
-        }
-        return
-    }
-    val c = C.hash(MatchLogic.norm(team).lowercase())
-    Box(Modifier.width(size).height(size * 1.12f).clip(shieldShape).background(c), contentAlignment = Alignment.Center) {
-        Txt(MatchLogic.initials(team), F.s((size.value * 0.3f).sp, C.white, FontWeight.Bold, F.outfit), Modifier.padding(bottom = size * 0.15f))
-    }
-}
-
 /** Barra inferior de dicas do controle: "OK Tela cheia  ▲▼ Trocar canal ..." */
 @Composable
 fun HintBar(hints: List<Pair<String, String>>, modifier: Modifier = Modifier) {

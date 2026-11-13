@@ -43,33 +43,17 @@ class LogicTest {
         assertNull(M3u.xtreamFromUrl("http://srv/lista.m3u"))
     }
 
-    @Test fun findsMatches() {
-        val t = MatchLogic.parseTitle("Campeonato Brasileiro: Flamengo x Palmeiras (Ao Vivo)")!!
-        assertEquals("Flamengo", t.home); assertEquals("Palmeiras", t.away); assertEquals("Campeonato Brasileiro", t.comp)
-        val t2 = MatchLogic.parseTitle("Real Madrid vs Barcelona - LaLiga")!!
-        assertEquals("Real Madrid", t2.home); assertEquals("Barcelona", t2.away); assertEquals("LaLiga", t2.comp)
-        assertNull(MatchLogic.parseTitle("Reprise: Flamengo x Palmeiras"))
-        assertNull(MatchLogic.parseTitle("Jornal da Noite"))
-        assertNull(MatchLogic.parseTitle("Mesa Redonda"))
-    }
-
     @Test fun initialsAndServer() {
-        assertEquals("AS", MatchLogic.initials("Atlético Serrano"))
-        assertEquals("RI", MatchLogic.initials("Ribeirense"))
+        assertEquals("AS", Names.initials("Atlético Serrano"))
+        assertEquals("RI", Names.initials("Ribeirense"))
         assertEquals("http://srv:8080", Net.normalizeServer(" srv:8080/ "))
         assertEquals("https://a.b", Net.normalizeServer("https://a.b/player_api.php"))
     }
 
-    @Test fun matchesApiChannelNames() {
-        fun ch(id: String, n: String) = Channel(id, 1, n, null, "1", null, "u")
-        val list = listOf(ch("1", "SPORTV 2 FHD"), ch("2", "BR: Premiere 1 HD"), ch("3", "ESPN 4"), ch("4", "Sportv"), ch("5", "Disney+ HD"))
-        val index = list.groupBy { FootballApi.channelKey(it.name) }
-        assertEquals(listOf("1"), FootballApi.matchChannels(listOf("Sportv 2"), index).map { it.id })
-        assertEquals(listOf("4"), FootballApi.matchChannels(listOf("Sportv"), index).map { it.id })
-        assertEquals(listOf("2"), FootballApi.matchChannels(listOf("Premiere"), index).map { it.id })
-        assertEquals(listOf("3"), FootballApi.matchChannels(listOf("ESPN 4"), index).map { it.id })
-        assertEquals(listOf("5"), FootballApi.matchChannels(listOf("Disney+ Brazil"), index).map { it.id })
-        assertEquals(emptyList<String>(), FootballApi.matchChannels(listOf("Prime Video"), index).map { it.id })
+    @Test fun groupsChannelVersionsByName() {
+        assertEquals(Names.channelKey("Sportv 2"), Names.channelKey("SPORTV 2 FHD"))
+        assertEquals(Names.channelKey("Premiere 1"), Names.channelKey("BR: Premiere 1 HD"))
+        assertEquals(Names.channelKey("Disney+"), Names.channelKey("Disney+ HD"))
     }
 
     @Test fun cleansProviderTitlesForTmdb() {

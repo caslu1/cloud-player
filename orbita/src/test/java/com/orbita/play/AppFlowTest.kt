@@ -61,29 +61,6 @@ class AppFlowTest {
         File(dir, "$name.png").outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
     }
 
-    /** Resposta no formato da API api.futebols.com.br (escudo em base64 incluído, como na API real). */
-    private fun apiGames(): String {
-        val iso = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
-        // mantém todos os jogos no mesmo dia, mesmo quando o teste roda perto da meia-noite
-        val day = java.util.Calendar.getInstance().apply { set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0); set(java.util.Calendar.SECOND, 0); set(java.util.Calendar.MILLISECOND, 0) }.timeInMillis
-        val base = System.currentTimeMillis().coerceIn(day + 301 * 60_000L, day + (24 * 60 - 121) * 60_000L)
-        fun t(minFromNow: Int) = iso.format(java.util.Date(base + minFromNow * 60_000L))
-        fun g(id: Int, a: String, b: String, ga: Int, gb: Int, st: String, desc: String, min: String?, start: String, camp: String, chs: List<String>) = """
-            {"id":$id,"timeA":"$a","timeB":"$b","golsA":$ga,"golsB":$gb,"golsPenaltiA":null,"golsPenaltiB":null,
-             "logoA":"data:image/png;base64,AAAA","logoB":"data:image/png;base64,AAAA","logoA_url":null,"logoB_url":null,
-             "description":"$desc","status":"$st","start":"$start","tempo_atual":${min?.let { "\"$it\"" } ?: "null"},"visible":true,
-             "campeonato":{"id":1,"campName":"$camp","logoCamp":"data:image/png;base64,AAAA"},
-             "canais":[],"canais_ia":[],"canais_simples":[${chs.joinToString(",") { "{\"channel_id\":1,\"channel_name\":\"$it\"}" }}]}"""
-        return listOf(
-            g(1, "Atlético Serrano", "Ribeirense", 2, 1, "inprogress", "2nd half", "67", t(-70), "Série A", listOf("Futebol 2", "Premiere")),
-            g(2, "União Vale", "Porto Alegre", 0, 0, "inprogress", "1st half", "23", t(-25), "Série A", listOf("Futebol 1")),
-            g(3, "Real Cerrado", "Operário Sul", 0, 0, "notstarted", "Not started", null, t(90), "Série B", listOf("Gol TV")),
-            g(4, "Náutico Mar", "Estrela do Norte", 0, 0, "notstarted", "Not started", null, t(120), "Copa Continental", listOf("Campo 4K")),
-            g(5, "Vila Nova Paz", "Cruzeiro do Leste", 0, 0, "notstarted", "Not started", null, t(120), "Copa Continental", listOf("Canal Pago XYZ")),
-            g(6, "Porto Alegre", "Vila Nova Paz", 3, 2, "finished", "Ended", null, t(-300), "Estadual", listOf("Placar")),
-        ).joinToString(",", "[", "]")
-    }
-
     private fun b64(s: String) = Base64.encodeToString(s.toByteArray(), Base64.NO_WRAP)
 
     @Before fun setUp() {
@@ -91,7 +68,6 @@ class AppFlowTest {
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 val path = request.path.orEmpty()
-                if (path.startsWith("/api/buscarJogos")) return MockResponse().setBody(apiGames()).setHeader("Content-Type", "application/json")
                 if (path.startsWith("/api/app/")) return MockResponse().setHeader("Content-Type", "application/json").setBody(
                     """{"mac":"0A:1B:2C:3D:4E:5F","key":"581378","status":"trial","plan":"trial","days_left":7,"activate_url":"https://ativar.exemplo/ativar?mac=0A:1B:2C:3D:4E:5F&key=581378","support":"","playlists":[]}"""
                 )
@@ -135,7 +111,6 @@ class AppFlowTest {
             }
         }
         server.start()
-        FootballApi.baseUrl = server.url("/").toString().trimEnd('/')
         Activation.site = server.url("/").toString().trimEnd('/')
     }
 
@@ -193,7 +168,7 @@ class AppFlowTest {
 
         // Tela inicial
         waitText("CANAIS")
-        waitText("Ao vivo, hoje e amanhã")
+        waitText("PLAYLISTS")
         settle(1500)
         shot("00-inicio")
         click("CANAIS", exact = true)
@@ -208,7 +183,7 @@ class AppFlowTest {
 
         // Filmes (volta ao início e abre o bloco)
         back()
-        waitText("Ao vivo, hoje e amanhã")
+        waitText("PLAYLISTS")
         click("FILMES", exact = true)
         waitText("Duna")
         waitText("Lançamentos")
@@ -235,7 +210,7 @@ class AppFlowTest {
 
         // Séries
         back()
-        waitText("Ao vivo, hoje e amanhã")
+        waitText("PLAYLISTS")
         shot("15-inicio-continuar")
         click("SÉRIES", exact = true)
         waitText("The Last of Us")
@@ -255,18 +230,14 @@ class AppFlowTest {
         settle(400)
         back()
 
-        // Futebol (jogos vindos do EPG)
+        // Canal em tela cheia e lista lateral
         back()
-        waitText("Ao vivo, hoje e amanhã")
-        click("FUTEBOL", exact = true)
-        waitText("Atlético Serrano")
-        waitText("Ribeirense")
-        waitText("AO VIVO 67'")
-        waitText("2 × 1")
-        rule.onAllNodesWithText("Ribeirense", substring = true)[0].performClick() // seleciona / prévia
+        waitText("PLAYLISTS")
+        click("CANAIS", exact = true)
+        waitText("Gol TV")
+        click("Gol TV FHD") // prévia
         repeat(10) { pump() }
-        shot("07-futebol")
-        rule.onAllNodesWithText("Ribeirense", substring = true)[0].performClick() // segundo OK: tela cheia
+        click("Gol TV FHD") // segundo OK: tela cheia
         repeat(10) { pump() }
         shot("10-player")
         settle(6000) // as informações somem sozinhas
@@ -276,7 +247,7 @@ class AppFlowTest {
         back() // fecha a lista
         back() // sai da tela cheia
         back() // volta ao início
-        waitText("Ao vivo, hoje e amanhã")
+        waitText("PLAYLISTS")
 
         // Buscar, Biblioteca, Configurações
         rule.onNodeWithContentDescription("Configurações").performClick()
@@ -302,7 +273,7 @@ class AppFlowTest {
         waitText("Canais (")
         shot("14-busca")
         back()
-        waitText("Ao vivo, hoje e amanhã")
+        waitText("PLAYLISTS")
         settle(500)
         shot("17-inicio-nebulosa")
         click("CANAIS", exact = true)
@@ -310,13 +281,13 @@ class AppFlowTest {
 
         // layout Lite da tela inicial
         back()
-        waitText("Ao vivo, hoje e amanhã")
+        waitText("PLAYLISTS")
         rule.onNodeWithContentDescription("Configurações").performClick()
         repeat(5) { pump() }
         click("Layout da tela inicial", exact = true)
         click("Lite", exact = true)
         back()
-        waitText("Recarregar")
+        waitText("Playlists")
         settle(800)
         shot("19-inicio-lite")
         click("Filmes", exact = true)
@@ -324,8 +295,8 @@ class AppFlowTest {
 
         // layout Vitrine da tela inicial
         back()
-        waitText("Recarregar")
-        click("Configurações", exact = true)
+        waitText("Playlists")
+        rule.onNodeWithContentDescription("Configurações").performClick()
         repeat(5) { pump() }
         click("Layout da tela inicial", exact = true)
         click("Vitrine", exact = true)
