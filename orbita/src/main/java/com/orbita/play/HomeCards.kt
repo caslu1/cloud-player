@@ -53,7 +53,7 @@ import java.util.Locale
 private class VitrineCard(val key: String, val title: String, val count: String, val sub: String, val icon: ImageVector, val onClick: () -> Unit)
 
 /**
- * Tela inicial Vitrine: logo no centro, cartões de vidro grandes (o focado inclina e ganha a aba roxa),
+ * Tela inicial Vitrine: logo no centro, cartões de vidro grandes (o focado cresce e ganha o círculo em degradê),
  * botões redondos no topo e relógio + dados do aparelho no rodapé.
  */
 @Composable
@@ -153,13 +153,8 @@ private fun GlassCard(c: VitrineCard, requester: FocusRequester?) {
         val k by animateFloatAsState(if (f) 1f else 0f, tween(160), label = "k")
         val shape = RoundedCornerShape(12.dp)
         Box(Modifier.fillMaxSize().graphicsLayer {
-            rotationZ = -3.5f * k; scaleX = 1f + 0.07f * k; scaleY = 1f + 0.07f * k; translationY = -10f * k * density
+            scaleX = 1f + 0.06f * k; scaleY = 1f + 0.06f * k
         }) {
-            // aba roxa em cima do cartão focado
-            if (f) Box(
-                Modifier.align(Alignment.TopStart).offset(x = 70.dp, y = (-5).dp).size(56.dp, 10.dp)
-                    .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)).background(C.accent)
-            )
             Box(
                 Modifier.fillMaxSize().clip(shape)
                     .background(Brush.linearGradient(

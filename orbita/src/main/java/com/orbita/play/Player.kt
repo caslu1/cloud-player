@@ -1,5 +1,6 @@
 package com.orbita.play
 
+import androidx.compose.ui.focus.onFocusChanged
 import android.content.Context
 import android.view.KeyEvent as AKey
 import androidx.activity.compose.BackHandler
@@ -271,6 +272,7 @@ fun FullPlayer(vm: Vm, pb: Playback) {
     }
     val root = remember { FocusRequester() }
     val qualityReq = remember { FocusRequester() }
+    var rootFocused by remember { mutableStateOf(false) }
 
     fun showOverlay() { overlay = true; overlayTick = System.currentTimeMillis() }
     fun close() {
@@ -285,8 +287,12 @@ fun FullPlayer(vm: Vm, pb: Playback) {
     // ao vivo: com as informações abertas o foco vai para a qualidade; ao fechar, volta para o player
     LaunchedEffect(overlay, panel) {
         if (!live || panel != PPanel.NONE) return@LaunchedEffect
-        delay(30)
-        runCatching { if (overlay) qualityReq.requestFocus() else root.requestFocus() }
+        // na primeira abertura os botões de qualidade ainda estão sendo montados: tenta algumas vezes
+        repeat(20) {
+            delay(if (it == 0) 30 else 60)
+            val ok = runCatching { if (overlay) qualityReq.requestFocus() else root.requestFocus() }.isSuccess
+            if (ok) return@LaunchedEffect
+        }
     }
     LaunchedEffect(overlay) { if (!overlay) vodBtn = -1 }
     LaunchedEffect(overlayTick, overlay, vodBtn) {
@@ -344,11 +350,17 @@ fun FullPlayer(vm: Vm, pb: Playback) {
     Box(
         Modifier.fillMaxSize().background(Color.Black)
             .focusRequester(root)
+            .onFocusChanged { rootFocused = it.isFocused }
             .onPreviewKeyEvent { ev ->
                 if (panel != PPanel.NONE) return@onPreviewKeyEvent false
                 // ao vivo com informações abertas: ◀▶ e OK ficam com os botões de qualidade
                 if (live && overlay && (isSelectKey(ev.key) || ev.key == Key.DirectionLeft || ev.key == Key.DirectionRight)) {
                     if (ev.type == KeyEventType.KeyDown) showOverlay()
+                    // o foco ainda está no player (não nos botões): leva para a qualidade na hora
+                    if (rootFocused) {
+                        if (ev.type == KeyEventType.KeyDown) runCatching { qualityReq.requestFocus() }
+                        return@onPreviewKeyEvent true
+                    }
                     return@onPreviewKeyEvent false
                 }
                 if (ev.type != KeyEventType.KeyDown) return@onPreviewKeyEvent isSelectKey(ev.key)

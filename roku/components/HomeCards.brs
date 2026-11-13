@@ -12,7 +12,6 @@ sub init()
         if m.style = "cards"
             g.translation = [122 + i * 428, 304]
             g.scaleRotateCenter = [196, 176]
-            t.tab = addPoster(g, "pkg:/images/vit_tab.png", 140, -12, 112, 20)
             t.bg = addPoster(g, "pkg:/images/vit_card_n.png", 0, 0, 392, 352)
             addLabel(g, it.title, 32, 28, OUTF(), 30, "0xFFFFFFFF", 340)
             t.badge = addPoster(g, "pkg:/images/badge_n.png", 188, 102, 172, 172)
@@ -64,18 +63,15 @@ sub paint()
         t = m.tiles[i]
         f = (m.zone = "tiles" and i = m.idx)
         if m.style = "cards"
-            t.tab.visible = f
             if f
                 t.bg.uri = "pkg:/images/vit_card_f.png"
                 t.badge.uri = "pkg:/images/badge_f.png"
-                t.group.scale = [1.07, 1.07]
-                t.group.rotation = 0.061
+                t.group.scale = [1.06, 1.06]
                 t.sub.color = "0xE7E5F7FF"
             else
                 t.bg.uri = "pkg:/images/vit_card_n.png"
                 t.badge.uri = "pkg:/images/badge_n.png"
                 t.group.scale = [1.0, 1.0]
-                t.group.rotation = 0
                 t.sub.color = "0x9D9ABBFF"
             end if
         else
