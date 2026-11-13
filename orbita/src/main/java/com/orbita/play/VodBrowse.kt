@@ -93,7 +93,7 @@ fun VodBrowse(
 
     val h = hero(heroEntry)
     Box(Modifier.fillMaxSize()) {
-        Backdrop(h.backdrop, h.title)
+        Backdrop(h.backdrop, h.title, dim = true)
         Row(Modifier.fillMaxSize().padding(top = 18.dp, start = 24.dp, end = 0.dp)) {
             // categorias
             Panel(Modifier.width(206.dp).fillMaxHeight().padding(bottom = 14.dp)) {

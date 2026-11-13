@@ -109,11 +109,13 @@ fun TvScroll(content: @Composable () -> Unit) = CompositionLocalProvider(LocalBr
 
 /** Fundo com a imagem do destaque à direita, escurecida para o texto ficar legível. */
 @Composable
-fun Backdrop(image: String?, seed: String) {
+fun Backdrop(image: String?, seed: String, dim: Boolean = false) {
     Box(Modifier.fillMaxSize().background(C.bg)) {
         val c = C.hash(seed)
         Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF0A0717), c.copy(alpha = 0.45f), Color(0xFF0B0614)))))
-        if (image != null) AsyncImage(image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop, alpha = 0.9f)
+        // nas listas de filmes/séries o fundo fica mais escuro para as capas aparecerem melhor
+        if (image != null) AsyncImage(image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop, alpha = if (dim) 0.45f else 0.9f)
+        if (dim) Box(Modifier.fillMaxSize().background(Color(0x66050409)))
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF5050409), 0.42f to Color(0xB0050409), 0.75f to Color(0x33050409), 1f to Color(0x10050409))))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x99050409), 0.2f to Color.Transparent, 0.45f to Color(0x55050409), 0.62f to Color(0xEE050409), 1f to C.bg)))
     }

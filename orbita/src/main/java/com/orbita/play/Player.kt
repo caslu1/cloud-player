@@ -66,6 +66,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -611,48 +612,84 @@ private fun VodOverlay(
     item: PlayItem, pos: Long, dur: Long, playing: Boolean, seeking: Boolean,
     buttons: List<Pair<androidx.compose.ui.graphics.vector.ImageVector, String>>, selected: Int, modifier: Modifier,
 ) {
+    // Player de filmes e séries: capa + título à esquerda, barra de tempo larga, controles no centro
+    // e os botões (Áudio e legendas / Próximo episódio) nas laterais, tudo num painel organizado.
+    val ep = item.kind == Kind.EPISODE
     Box(
         modifier.fillMaxWidth()
-            .background(Brush.verticalGradient(0f to Color.Transparent, 0.4f to Color(0xB3050409), 1f to Color(0xF5050409)))
-            .padding(start = 36.dp, end = 36.dp, top = 50.dp, bottom = 28.dp)
+            .background(Brush.verticalGradient(0f to Color.Transparent, 0.35f to Color(0xCC050409), 1f to Color(0xFA050409)))
+            .padding(start = 40.dp, end = 40.dp, top = 70.dp, bottom = 26.dp)
     ) {
         Column {
-            Txt(item.title, F.s(19.sp, C.white, FontWeight.Bold, F.outfit))
-            if (item.subtitle.isNotEmpty()) { Spacer(Modifier.height(2.dp)); Txt(item.subtitle, F.s(10.sp, C.dim)) }
-            Spacer(Modifier.height(16.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Ic.Rewind, 18.dp, C.white.copy(alpha = 0.75f))
-                Spacer(Modifier.width(12.dp))
-                Box(Modifier.size(34.dp).clip(androidx.compose.foundation.shape.CircleShape).background(C.white), contentAlignment = Alignment.Center) {
-                    Icon(if (playing && !seeking) Ic.Pause else Ic.Play, 18.dp, Color(0xFF0B0A14))
+            Row(verticalAlignment = Alignment.Bottom) {
+                if (!item.image.isNullOrBlank()) {
+                    AsyncImage(
+                        item.image, null, Modifier.size(62.dp, 92.dp).clip(RoundedCornerShape(8.dp)).background(C.item)
+                            .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(Modifier.width(16.dp))
                 }
-                Spacer(Modifier.width(12.dp))
-                Icon(Ic.Forward, 18.dp, C.white.copy(alpha = 0.75f))
-                Spacer(Modifier.width(20.dp))
-                Txt(fmtTime(pos), F.s(10.sp, if (seeking) C.accentText else C.white, FontWeight.SemiBold), Modifier.width(62.dp))
-                SeekBar(if (dur > 0) pos.toFloat() / dur else 0f, seeking, Modifier.weight(1f))
-                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Txt(if (ep) "SÉRIE" else "FILME", F.s(8.sp, C.cyan, FontWeight.Bold, spacing = 1.6.sp))
+                    Spacer(Modifier.height(3.dp))
+                    Txt(item.title, F.s(22.sp, C.white, FontWeight.Bold, F.outfit))
+                    if (item.subtitle.isNotEmpty()) { Spacer(Modifier.height(2.dp)); Txt(item.subtitle, F.s(10.5.sp, C.text, FontWeight.Medium)) }
+                }
+                if (dur > 0) Column(horizontalAlignment = Alignment.End) {
+                    Txt("Termina às " + hhmm(System.currentTimeMillis() + (dur - pos).coerceAtLeast(0)), F.s(10.sp, C.text, FontWeight.SemiBold))
+                    Txt("Duração " + fmtTime(dur), F.s(8.5.sp, C.dim))
+                }
+            }
+            Spacer(Modifier.height(18.dp))
+            SeekBar(if (dur > 0) pos.toFloat() / dur else 0f, seeking, Modifier.fillMaxWidth())
+            Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+                Txt(fmtTime(pos), F.s(10.sp, if (seeking) C.accentText else C.white, FontWeight.SemiBold))
+                Spacer(Modifier.weight(1f))
                 if (dur > 0) Txt("-" + fmtTime((dur - pos).coerceAtLeast(0)), F.s(10.sp, C.dim, FontWeight.Medium))
             }
-            Spacer(Modifier.height(14.dp))
-            // botões com ícone (▼ para escolher, OK para abrir)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                buttons.forEachIndexed { i, (icon, label) ->
-                    val sel = i == selected
-                    val shape = RoundedCornerShape(18.dp)
-                    Row(
-                        Modifier.clip(shape).background(if (sel) C.accent else Color(0x33FFFFFF))
-                            .then(if (sel) Modifier.border(1.5.dp, C.white, shape) else Modifier)
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(icon, 13.dp, if (sel) C.white else C.text)
-                        Spacer(Modifier.width(6.dp))
-                        Txt(label, F.s(9.sp, if (sel) C.white else C.text, FontWeight.SemiBold))
+            Spacer(Modifier.height(8.dp))
+            // linha de controles: botão da esquerda | ⏪ ▶ ⏩ | botão da direita
+            Box(Modifier.fillMaxWidth().height(48.dp)) {
+                buttons.getOrNull(0)?.let { (icon, label) -> PlayerPill(icon, label, selected == 0, Modifier.align(Alignment.CenterStart)) }
+                Row(Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(34.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0x26FFFFFF)), contentAlignment = Alignment.Center) {
+                        Icon(Ic.Rewind, 17.dp, C.white)
+                    }
+                    Spacer(Modifier.width(18.dp))
+                    Box(
+                        Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(Brush.linearGradient(listOf(Color(0xFFA36BFF), Color(0xFF7C5CFF), Color(0xFF3FA8F0)))),
+                        contentAlignment = Alignment.Center
+                    ) { Icon(if (playing && !seeking) Ic.Pause else Ic.Play, 24.dp, C.white) }
+                    Spacer(Modifier.width(18.dp))
+                    Box(Modifier.size(34.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0x26FFFFFF)), contentAlignment = Alignment.Center) {
+                        Icon(Ic.Forward, 17.dp, C.white)
                     }
                 }
+                buttons.getOrNull(1)?.let { (icon, label) -> PlayerPill(icon, label, selected == 1, Modifier.align(Alignment.CenterEnd)) }
             }
+            Spacer(Modifier.height(6.dp))
+            Txt(
+                if (selected >= 0) "OK abre a opção  ·  ◀ ▶ trocam  ·  ▲ volta" else "OK pausa  ·  ◀ ▶ voltam/avançam  ·  ▼ opções",
+                F.s(8.sp, C.faint), Modifier.align(Alignment.CenterHorizontally)
+            )
         }
+    }
+}
+
+@Composable
+private fun PlayerPill(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, sel: Boolean, modifier: Modifier) {
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        modifier.clip(shape).background(if (sel) C.white else Color(0x26FFFFFF))
+            .border(1.dp, if (sel) C.white else Color(0x33FFFFFF), shape)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, 14.dp, if (sel) Color(0xFF0B0A12) else C.white)
+        Spacer(Modifier.width(7.dp))
+        Txt(label, F.s(9.5.sp, if (sel) Color(0xFF0B0A12) else C.white, FontWeight.SemiBold))
     }
 }
 
@@ -661,8 +698,8 @@ private fun VodOverlay(
 private fun SeekBar(fraction: Float, seeking: Boolean, modifier: Modifier) {
     androidx.compose.foundation.layout.BoxWithConstraints(modifier.height(16.dp), contentAlignment = Alignment.CenterStart) {
         val f = fraction.coerceIn(0f, 1f)
-        Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color(0x40FFFFFF)))
-        Box(Modifier.fillMaxWidth(f).height(4.dp).clip(RoundedCornerShape(2.dp)).background(C.accent))
+        Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)).background(Color(0x40FFFFFF)))
+        Box(Modifier.fillMaxWidth(f).height(5.dp).clip(RoundedCornerShape(3.dp)).background(Brush.horizontalGradient(listOf(Color(0xFF7C5CFF), Color(0xFF3FA8F0)))))
         val d = if (seeking) 16.dp else 12.dp
         Box(
             Modifier.padding(start = (maxWidth - d) * f).size(d).clip(androidx.compose.foundation.shape.CircleShape)
