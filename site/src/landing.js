@@ -30,9 +30,9 @@ export function siteNav(env, active, logged) {
   return `<header class="lnav"><div class="wrap navrow">
 <a href="/" class="logo"><img src="${WORDMARK}" alt="${name}" height="30"></a>
 <nav class="lnk">${LINKS.map(([h, t]) => a(h, t)).join("")}</nav>
-<a class="btn sm navcta" href="${logged ? "/aparelho" : "/#entrar"}">${logged ? "Minhas listas" : "Ativar aparelho"}</a>
+<a class="btn sm navcta" href="${logged ? "/aparelho" : "/#entrar"}">${logged ? "Minhas listas" : "Gerenciar meu aparelho"}</a>
 <input type="checkbox" id="mm" class="mmchk" aria-label="Abrir menu"><label for="mm" class="burger" aria-hidden="true"><span></span><span></span><span></span></label>
-<div class="mpanel">${LINKS.map(([h, t]) => a(h, t)).join("")}<a href="${logged ? "/aparelho" : "/#entrar"}" class="btn full" style="margin-top:8px">${logged ? "Minhas listas" : "Ativar aparelho"}</a>${logged ? `<a href="/sair">Sair</a>` : ""}</div>
+<div class="mpanel">${LINKS.map(([h, t]) => a(h, t)).join("")}<a href="${logged ? "/aparelho" : "/#entrar"}" class="btn full" style="margin-top:8px">${logged ? "Minhas listas" : "Gerenciar meu aparelho"}</a>${logged ? `<a href="/sair">Sair</a>` : ""}</div>
 </div></header>`;
 }
 
@@ -40,7 +40,7 @@ export function siteFooter(env) {
   const name = esc(env.SITE_NAME);
   return `<footer class="foot"><div class="wrap frow">
 <div><a href="/" class="logo"><img src="${WORDMARK}" alt="${name}" height="26"></a><p class="dim" style="font-size:13px;margin-top:10px;max-width:320px">${name} é um player de mídia e não fornece conteúdo.</p></div>
-<nav class="fnav">${[["/#entrar", "Ativar aparelho"], ["/aparelho", "Minhas listas"], ["/download", "Downloads"], ["/#planos", "Planos"], ["/ajuda", "Ajuda"]].map(([h, t]) => `<a href="${h}">${t}</a>`).join("")}</nav>
+<nav class="fnav">${[["/#entrar", "Gerenciar meu aparelho"], ["/aparelho", "Minhas listas"], ["/download", "Downloads"], ["/#planos", "Planos"], ["/ajuda", "Ajuda"]].map(([h, t]) => `<a href="${h}">${t}</a>`).join("")}</nav>
 </div></footer>`;
 }
 
@@ -53,8 +53,8 @@ export function landing(env, { formHtml, plansHtml, logged }) {
 <div>
  <div class="eyebrow">PLAYER DE MÍDIA PARA TV</div>
  <h1 class="h1">Sua lista na TV, <span class="hl">do seu jeito.</span></h1>
- <p class="lead">O ${name} é um player para Android TV, TV Box, Fire TV e Roku, feito para o controle remoto. Você adiciona a lista que já é sua e assiste com uma interface simples, rápida e bonita.</p>
- <div class="row wrapf" style="gap:12px;margin-top:28px"><a class="btn lg" href="#entrar">Ativar meu aparelho</a><a class="btn g lg" href="/download">${li("down", 18)} Baixar o app</a></div>
+ <p class="lead">O ${name} é um player para Android TV, TV Box, Fire TV e Roku. Você adiciona a lista que já é sua e assiste com uma interface simples, rápida e bonita.</p>
+ <div class="row wrapf" style="gap:12px;margin-top:28px"><a class="btn lg" href="#entrar">Gerenciar meu aparelho</a><a class="btn g lg" href="/download">${li("down", 18)} Baixar o app</a></div>
  <div class="note">${li("info", 18)}<div><b>O ${name} não inclui nenhum conteúdo.</b> Não fornece, não vende e não hospeda vídeos: só reproduz o que vem da lista que você mesmo adiciona.</div></div>
 </div>
 ${ORBIT}
@@ -80,7 +80,7 @@ ${[["Instale na sua TV", `Baixe o ${name} na página de <a class="lnk2" href="/d
 <a class="btn lg" href="/download">${li("down", 18)} Ver downloads</a></div></div></section>`;
 
   const activate = `<section id="entrar" class="sec"><div class="wrap g2 act">
-<div><div class="eyebrow">ATIVAR APARELHO</div><h2 class="h2">Já instalou o app?</h2>
+<div><div class="eyebrow">GERENCIAR APARELHO</div><h2 class="h2">Já instalou o app?</h2>
 <p class="lead sm">Abra o ${name} na TV, anote o <b>endereço MAC</b> e a <b>chave do dispositivo</b> que aparecem na tela e entre aqui. Ou aponte a câmera do celular para o QR code da TV.</p>
 <div class="g3m">${["Informe MAC e chave", "Adicione sua lista", "A TV atualiza sozinha"].map((t, i) => `<div class="row" style="gap:12px"><span class="num sm">${i + 1}</span><span class="mut">${t}</span></div>`).join("")}</div></div>
 ${formHtml}
