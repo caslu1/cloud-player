@@ -75,3 +75,12 @@ Fundo: espaço quase preto com estrelas piscando (leve aproximação), nebulosas
 Visual: o "O" branco aparece no centro; um cometa roxo corre pela órbita em volta do "O", passando pela frente e por trás e desenhando o anel; ele para na posição do planeta com um flash e uma onda; o logo desliza e o texto se revela da esquerda para a direita; um brilho passa pelo texto.
 Som (original, simples e baixo, -28 LUFS): um único tom suave e contínuo que gira junto com o cometa em volta do "O" (passa da esquerda para a direita no estéreo, mais presente quando o cometa passa pela frente e abafado quando passa por trás, subindo levemente de tom); na chegada, uma nota suave.
 Gerar de novo: `python3 source/sound5.py bruto.wav` e `ffmpeg -i bruto.wav -af loudnorm=I=-28:TP=-9 som.wav`, `python3 source/anim2.py anim2.html`, `node source/rec2.js` e o mesmo comando `ffmpeg`.
+
+### Abertura 3: "Play" (tum-TUM)
+
+- `motion/orbitaplay-splash-play-1080p.mp4`: 1920×1080, 30 fps, 5,5 s, H.264 + AAC
+- `motion/orbitaplay-splash-play-sound.wav` e `motion/orbitaplay-splash-play-preview.gif`
+
+Visual: igual à abertura 2 (cometa girando em volta do "O", fundo de espaço), mas "orbita" aparece primeiro e, depois de uma pausa curta, "play" surge com um leve "pulo" e um brilho roxo.
+Som (original, baixo, -26 LUFS): sopro de ar suave que acompanha o cometa em volta do "O" (estéreo); quando "play" aparece, duas batidas graves ("tum-TUM", em 2,95 s e 3,12 s) que abrem um acorde quente (Fá maior) sumindo devagar.
+Gerar de novo: `python3 source/sound7.py bruto.wav`, `ffmpeg -i bruto.wav -af loudnorm=I=-26:TP=-8 som.wav`, `python3 source/anim3.py anim3.html`, `node source/rec3.js` e o mesmo comando `ffmpeg`.
