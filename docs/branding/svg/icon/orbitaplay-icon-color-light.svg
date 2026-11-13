@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-270.0 -180.0 1490.0 1350.0"><defs><linearGradient id="goicol" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1000" y2="1000"><stop offset="0" stop-color="#9B82FF"/><stop offset="1" stop-color="#5B3BE0"/></linearGradient><linearGradient id="gricol" gradientUnits="userSpaceOnUse" x1="-200" y1="1100" x2="1150" y2="-100"><stop offset="0" stop-color="#7C5CFF"/><stop offset=".5" stop-color="#3FA8F0"/><stop offset="1" stop-color="#00D4C8"/></linearGradient>
+  <mask id="cficol" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="12000" height="7000"><rect x="-3000" y="-3000" width="12000" height="7000" fill="#fff"/>
+    <path transform="translate(500.0 500.0) rotate(-47) translate(20.0 0)" d="M-770.0 0 A770.0 140.0 0 0 0 770.0 0" fill="none" stroke="#000" stroke-width="112.5"/></mask>
+  <mask id="outicol" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="12000" height="7000"><rect x="-3000" y="-3000" width="12000" height="7000" fill="#fff"/>
+    <circle cx="500.0" cy="500.0" r="550.0" fill="#000"/></mask>
+  <clipPath id="holeicol"><circle cx="500.0" cy="500.0" r="292.5"/></clipPath>
+</defs><circle cx="500.0" cy="500.0" r="416.2" fill="none" stroke="url(#goicol)" stroke-width="167.5" mask="url(#cficol)"/>
+<g mask="url(#outicol)"><path transform="translate(500.0 500.0) rotate(-47) translate(20.0 0)" d="M-770.0 0 A770.0 140.0 0 0 1 770.0 0" fill="none" stroke="url(#gricol)" stroke-width="42.5" stroke-linecap="round"/></g>
+<g clip-path="url(#holeicol)"><path transform="translate(500.0 500.0) rotate(-47) translate(20.0 0)" d="M-770.0 0 A770.0 140.0 0 0 1 770.0 0" fill="none" stroke="url(#gricol)" stroke-width="50.0"/></g>
+<g transform="translate(500.0 500.0) rotate(-47) translate(20.0 0)"><path d="M-770.0 0 A770.0 140.0 0 0 0 770.0 0" fill="none" stroke="url(#gricol)" stroke-width="42.5" stroke-linecap="round"/>
+<path d="M645.8 76.2 A770.0 140.0 0 0 0 770.0 0" fill="none" stroke="url(#gricol)" stroke-width="65.9" stroke-linecap="round"/>
+<circle cx="645.8" cy="76.2" r="52.5" fill="url(#gricol)"/></g></svg>

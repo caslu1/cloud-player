@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-442.4 -422.4 1834.8 1834.8"><defs>
+  <mask id="cfiwhi" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="12000" height="7000"><rect x="-3000" y="-3000" width="12000" height="7000" fill="#fff"/>
+    <path transform="translate(500.0 500.0) rotate(-47) translate(20.0 0)" d="M-770.0 0 A770.0 140.0 0 0 0 770.0 0" fill="none" stroke="#000" stroke-width="112.5"/></mask>
+  <mask id="outiwhi" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="12000" height="7000"><rect x="-3000" y="-3000" width="12000" height="7000" fill="#fff"/>
+    <circle cx="500.0" cy="500.0" r="550.0" fill="#000"/></mask>
+  <clipPath id="holeiwhi"><circle cx="500.0" cy="500.0" r="292.5"/></clipPath>
+</defs><rect x="-442.4" y="-422.4" width="1834.8" height="1834.8" rx="403.7" fill="#7C5CFF"/><circle cx="500.0" cy="500.0" r="416.2" fill="none" stroke="#FFFFFF" stroke-width="167.5" mask="url(#cfiwhi)"/>
+<g mask="url(#outiwhi)"><path transform="translate(500.0 500.0) rotate(-47) translate(20.0 0)" d="M-770.0 0 A770.0 140.0 0 0 1 770.0 0" fill="none" stroke="#FFFFFF" stroke-width="42.5" stroke-linecap="round"/></g>
+<g clip-path="url(#holeiwhi)"><path transform="translate(500.0 500.0) rotate(-47) translate(20.0 0)" d="M-770.0 0 A770.0 140.0 0 0 1 770.0 0" fill="none" stroke="#FFFFFF" stroke-width="50.0"/></g>
+<g transform="translate(500.0 500.0) rotate(-47) translate(20.0 0)"><path d="M-770.0 0 A770.0 140.0 0 0 0 770.0 0" fill="none" stroke="#FFFFFF" stroke-width="42.5" stroke-linecap="round"/>
+<path d="M645.8 76.2 A770.0 140.0 0 0 0 770.0 0" fill="none" stroke="#FFFFFF" stroke-width="65.9" stroke-linecap="round"/>
+<circle cx="645.8" cy="76.2" r="52.5" fill="#FFFFFF"/></g></svg>
