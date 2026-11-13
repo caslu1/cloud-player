@@ -38,9 +38,16 @@ export function siteNav(env, active, logged) {
 
 export function siteFooter(env) {
   const name = esc(env.SITE_NAME);
-  return `<footer class="foot"><div class="wrap frow">
-<div><a href="/" class="logo"><img src="${WORDMARK}" alt="${name}" height="26"></a><p class="dim" style="font-size:13px;margin-top:10px;max-width:320px">${name} é um player de mídia e não fornece conteúdo.</p></div>
-<nav class="fnav">${[["/#entrar", "Gerenciar meu aparelho"], ["/aparelho", "Minhas listas"], ["/download", "Downloads"], ["/#planos", "Planos"], ["/ajuda", "Ajuda"]].map(([h, t]) => `<a href="${h}">${t}</a>`).join("")}</nav>
+  const col = (t, links) => `<div class="fcol"><b>${t}</b>${links.map(([h, x]) => `<a href="${h}">${x}</a>`).join("")}</div>`;
+  return `<footer class="foot"><div class="wrap">
+<div class="ftop">
+ <div class="fbrand"><a href="/" class="logo"><img src="${WORDMARK}" alt="${name}" height="28"></a>
+  <p>Player de mídia para Android TV, TV Box, Fire TV e Roku. Você usa a sua própria lista.</p>
+  <a class="btn sm" href="/download">${li("down", 16)} Baixar o app</a></div>
+ ${col("Aplicativo", [["/download", "Downloads"], ["/#como", "Como funciona"], ["/#planos", "Planos"]])}
+ ${col("Minha conta", [["/#entrar", "Gerenciar meu aparelho"], ["/aparelho", "Minhas listas"], ["/ajuda", "Ajuda"]])}
+</div>
+<div class="fbot"><span>© ${new Date().getFullYear()} ${name}</span><span>${name} é um player de mídia e não fornece conteúdo.</span></div>
 </div></footer>`;
 }
 
@@ -175,9 +182,13 @@ body:before{background:radial-gradient(ellipse at 80% -10%,rgba(124,92,255,.28),
 .addr small{color:var(--dim);font-size:11px}.addr b{color:#c9bbff;font-family:ui-monospace,Menlo,monospace;font-size:13.5px;word-break:break-all;font-weight:600}
 .dl-row .btn{width:100%}
 .howto{margin-top:22px;padding:28px}.howto ol{margin:14px 0 0 20px;color:var(--text);line-height:2}.howto b{color:#c9bbff}
-.foot{margin-top:90px;padding:40px 0 46px;border-top:1px solid rgba(155,132,255,.12);color:var(--mut)}
-.frow{display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap}.fnav{display:flex;flex-wrap:wrap;gap:8px 22px;margin-left:auto}.fnav a:hover{color:#fff}
-.plan.hl{border-color:#7c5cff!important;box-shadow:0 0 0 1px #7c5cff,0 20px 50px rgba(124,92,255,.25)}.plan.hl .o{color:#fff}.plan .chip{height:24px;padding:0 10px;color:#fff;font-size:11px;line-height:24px}
+.plan.hl{border-color:#7c5cff!important;box-shadow:0 0 0 1px #7c5cff,0 20px 50px rgba(124,92,255,.25)}.plan.hl .o{color:#fff}.foot{margin-top:100px;border-top:1px solid rgba(155,132,255,.14);background:linear-gradient(180deg,rgba(124,92,255,.06),transparent 70%);color:var(--mut)}
+.ftop{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:40px;padding:52px 0 40px}
+.fbrand p{font-size:14px;line-height:1.6;margin:14px 0 18px;max-width:340px}
+.fcol{display:flex;flex-direction:column;gap:12px}.fcol b{color:#fff;font-size:13px;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4px}
+.fcol a{font-size:14.5px;width:fit-content}.fcol a:hover{color:#c9bbff}
+.fbot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:20px 0 30px;border-top:1px solid rgba(155,132,255,.1);font-size:12.5px;color:var(--dim)}
+.plan .chip{height:24px;padding:0 10px;color:#fff;font-size:11px;line-height:24px}
 @media (max-width:1000px){
  .lnk,.navcta{display:none}.burger{display:flex}
  .mpanel{position:fixed;left:0;right:0;top:72px;background:#0a0814;border-bottom:1px solid rgba(155,132,255,.2);padding:12px 16px 18px;flex-direction:column;gap:2px;box-shadow:0 30px 60px rgba(0,0,0,.6)}
@@ -187,14 +198,17 @@ body:before{background:radial-gradient(ellipse at 80% -10%,rgba(124,92,255,.28),
  .orb{display:none}.hero{padding:40px 0 44px}.hero.sm{padding:36px 0 10px}
  .sec{padding-top:60px}.imp{flex-direction:column;padding:24px}.cta{flex-direction:column;align-items:flex-start;padding:26px}
 }
+@media (max-width:760px){
+ .ftop{grid-template-columns:1fr 1fr;gap:30px 20px;padding:40px 0 30px}.fbrand{grid-column:1/-1}
+ .fbot{flex-direction:column;gap:6px}
+}
 @media (max-width:520px){
  .act form.card{padding:22px !important}.act .g3m{margin-top:18px;gap:10px}
  .plan{padding:20px !important}
  .dcard .row{flex-wrap:wrap}.dcard .row>div{flex:1 1 calc(100% - 64px)}.dcard .tag{margin-left:60px;order:3}
  .dcard h3{font-size:17px}.addr b{font-size:12.5px}
  .howto ol{margin-left:18px;line-height:1.7}.howto li{margin-bottom:8px}
- .frow{flex-direction:column;gap:22px}.fnav{margin-left:0;display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;width:100%}
- .fnav a{padding:10px 12px;border-radius:10px;background:rgba(124,92,255,.08);border:1px solid rgba(155,132,255,.14);font-size:14px}
+  .fnav a{padding:10px 12px;border-radius:10px;background:rgba(124,92,255,.08);border:1px solid rgba(155,132,255,.14);font-size:14px}
  .lead{font-size:15.5px}.btn.lg{width:100%}.note{font-size:13px}.step,.dcard,.howto{padding:20px}.cta .btn{width:100%}
  .lnav .logo img{height:26px}
 }`;
