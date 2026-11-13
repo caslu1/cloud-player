@@ -105,70 +105,56 @@ fun LoginScreen(vm: Vm, adding: Boolean = false, onDone: () -> Unit = {}) {
         }
     }
 
-    // Login padrão (igual na Roku): "Pelo celular" (QR, MAC e chave) | ou | "Na TV" (lista Xtream/M3U)
+    // Login simples: formulário no centro (Conta XC | Lista de reprodução) e, ao lado, a ativação pelo celular
     val site = Activation.enabled()
     Box(Modifier.fillMaxSize().background(C.bg)) {
         ScreenBackground()
-        Orbits()
-        Column(Modifier.fillMaxSize().padding(start = 48.dp, end = 48.dp, top = 30.dp, bottom = 24.dp)) {
-            Logo(size = 15f)
-            Spacer(Modifier.height(18.dp))
-            Txt(if (adding) "Adicionar playlist" else "Bem-vindo ao Orbita Play", F.s(27.sp, C.white, FontWeight.Bold, F.outfit))
-            Spacer(Modifier.height(3.dp))
-            Txt(if (site) "Ative pelo celular em segundos ou conecte sua lista direto na TV." else "Conecte sua lista para começar.", F.s(11.sp, C.dim))
-            Spacer(Modifier.height(20.dp))
-            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = if (site) Arrangement.Start else Arrangement.Center) {
-                if (site) {
-                    ActivationPanel(vm, Modifier.width(350.dp).fillMaxHeight())
-                    Box(Modifier.width(62.dp).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(30.dp).clip(RoundedCornerShape(15.dp)).background(C.item).border(1.dp, Color(0xFF2A2440), RoundedCornerShape(15.dp)), contentAlignment = Alignment.Center) {
-                            Txt("ou", F.s(9.sp, C.dim, FontWeight.SemiBold))
-                        }
-                    }
-                }
+        Column(Modifier.fillMaxSize().padding(top = 22.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Logo(size = 14f)
+            Spacer(Modifier.height(14.dp))
+            Txt(if (adding) "Adicionar playlist" else "Bem-vindo ao Orbita Play", F.s(22.sp, C.white, FontWeight.Bold, F.outfit))
+            Spacer(Modifier.height(2.dp))
+            Txt("Use os dados enviados pelo seu provedor" + (if (site) " ou ative pelo celular." else "."), F.s(10.sp, C.dim))
+            Spacer(Modifier.height(16.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(
-                    Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(14.dp)).background(Color(0xE60C0A16))
-                        .border(1.dp, C.panelBorder, RoundedCornerShape(14.dp)).padding(20.dp)
+                    Modifier.width(470.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xE60C0A16))
+                        .border(1.dp, C.panelBorder, RoundedCornerShape(14.dp)).padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
-                    Txt("NA TV", F.s(8.sp, C.accentText, FontWeight.SemiBold, spacing = 1.2.sp))
-                    Spacer(Modifier.height(5.dp))
-                    Txt("Conectar lista", F.s(19.sp, C.white, FontWeight.Bold, F.outfit))
-                    Txt("Use os dados enviados pelo seu provedor.", F.s(10.sp, C.dim))
-                    Spacer(Modifier.height(12.dp))
                     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(7.dp)).background(C.field).border(1.dp, C.panelBorder, RoundedCornerShape(7.dp)).padding(3.dp)) {
-                        LoginTab("Xtream Codes", xtream, Modifier.weight(1f), tabReq) { xtream = true }
-                        LoginTab("Lista M3U", !xtream, Modifier.weight(1f)) { xtream = false }
+                        LoginTab("Conta XC", xtream, Modifier.weight(1f), tabReq) { xtream = true }
+                        LoginTab("Lista de reprodução", !xtream, Modifier.weight(1f)) { xtream = false }
                     }
+                    NameField(name, { name = it }) { runCatching { (if (xtream) serverReq else m3uReq).requestFocus() } }
                     if (xtream) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Box(Modifier.weight(0.4f)) { NameField(name, { name = it }) { runCatching { serverReq.requestFocus() } } }
-                            Box(Modifier.weight(0.6f)) { LoginField("SERVIDOR", server, { server = it }, "http://servidor.exemplo:8080", keyboard = KeyboardType.Uri, requester = serverReq) { runCatching { userReq.requestFocus() } } }
-                        }
+                        LoginField("PROVEDOR", server, { server = it }, "http://provedor.exemplo:8080", keyboard = KeyboardType.Uri, requester = serverReq) { runCatching { userReq.requestFocus() } }
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             Box(Modifier.weight(1f)) { LoginField("USUÁRIO", user, { user = it }, "seu usuário", requester = userReq) { runCatching { passReq.requestFocus() } } }
                             Box(Modifier.weight(1f)) { LoginField("SENHA", pass, { pass = it }, "••••••••", password = true, requester = passReq) { runCatching { enterReq.requestFocus() } } }
                         }
                     } else {
-                        NameField(name, { name = it }) { runCatching { m3uReq.requestFocus() } }
-                        LoginField("ENDEREÇO DA LISTA (URL)", m3u, { m3u = it }, "http://servidor/get.php?username=…", keyboard = KeyboardType.Uri, requester = m3uReq) { runCatching { enterReq.requestFocus() } }
-                        Spacer(Modifier.height(6.dp))
-                        Txt("Listas get.php do Xtream são convertidas automaticamente para login com guia (EPG).", F.s(8.sp, C.faint), maxLines = 2)
+                        LoginField("LISTA DE REPRODUÇÃO (LINK)", m3u, { m3u = it }, "http://provedor/get.php?username=…", keyboard = KeyboardType.Uri, requester = m3uReq) { runCatching { enterReq.requestFocus() } }
                     }
-                    Spacer(Modifier.height(15.dp))
+                    Spacer(Modifier.height(14.dp))
                     Focus(Modifier.fillMaxWidth(), onClick = { submit() }, requester = enterReq) { f ->
                         Row(
-                            Modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(8.dp)).background(C.accent)
-                                .then(if (f) Modifier.border(2.dp, C.white, RoundedCornerShape(8.dp)) else Modifier),
+                            Modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(8.dp)).background(if (f) C.white else C.accent),
                             horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Ic.Play, 12.dp)
+                            Icon(Ic.Play, 12.dp, if (f) Color(0xFF0B0A12) else C.white)
                             Spacer(Modifier.width(6.dp))
-                            Txt(if (busy) "Conectando…" else "Entrar", F.s(12.sp, C.white, FontWeight.SemiBold))
+                            Txt(if (busy) "Conectando…" else "Entrar", F.s(12.sp, if (f) Color(0xFF0B0A12) else C.white, FontWeight.SemiBold))
                         }
                     }
                     error?.let { Spacer(Modifier.height(8.dp)); Txt(it, F.s(8.5.sp, C.live, FontWeight.Medium), maxLines = 3) }
-                    Spacer(Modifier.weight(1f))
-                    Txt("Sem lista? Fale com o seu provedor.", F.s(8.5.sp, C.faint))
+                }
+                if (site) {
+                    Box(Modifier.width(50.dp), contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(28.dp).clip(RoundedCornerShape(14.dp)).background(C.item).border(1.dp, Color(0xFF2A2440), RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
+                            Txt("ou", F.s(9.sp, C.dim, FontWeight.SemiBold))
+                        }
+                    }
+                    ActivationCompact(vm, Modifier.width(230.dp))
                 }
             }
         }

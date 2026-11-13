@@ -326,6 +326,39 @@ sub savePlaylist(name as string, server as string, user as string, pass as strin
     if n = "" and found >= 0 then n = asText(list[found].name)
     if n = "" then n = "Lista " + (list.Count() + 1).ToStr()
     item = { name: n, server: server, user: user, pass: pass }
+    unmarkRemovedList(server, user)
     if found >= 0 then list[found] = item else list.Push(item)
     regWrite("playlists", list)
+end sub
+
+' --- playlists apagadas (não voltam sozinhas pelo site) -------------------------------
+function normServer(s as string) as string
+    s = s.Trim()
+    if s <> "" and Left(LCase(s), 4) <> "http" then s = "http://" + s
+    while Right(s, 1) = "/"
+        s = Left(s, Len(s) - 1)
+    end while
+    return s
+end function
+
+function isRemovedList(server as string, user as string) as boolean
+    for each r in regRead("removedLists")
+        if asText(r.server) = normServer(server) and asText(r.user) = user then return true
+    end for
+    return false
+end function
+
+sub markRemovedList(server as string, user as string)
+    if isRemovedList(server, user) then return
+    a = regRead("removedLists")
+    a.Push({ server: normServer(server), user: user })
+    regWrite("removedLists", a)
+end sub
+
+sub unmarkRemovedList(server as string, user as string)
+    out = []
+    for each r in regRead("removedLists")
+        if not (asText(r.server) = normServer(server) and asText(r.user) = user) then out.Push(r)
+    end for
+    regWrite("removedLists", out)
 end sub

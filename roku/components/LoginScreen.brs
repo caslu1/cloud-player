@@ -26,7 +26,7 @@ sub init()
     ' abas
     addPoster(r, "pkg:/images/tabs_bg.png", cx + 40, 456, 824, 64)
     m.tabs = []
-    names = ["Xtream Codes", "Lista M3U"]
+    names = ["Conta XC", "Lista de reprodução"]
     for i = 0 to 1
         bg = addPoster(r, "", cx + 46 + i * 406, 462, 406, 52)
         lb = addLabel(r, names[i], cx + 46 + i * 406, 476, ISEM(), 20, "0xFFFFFFFF", 406, "center")
@@ -62,14 +62,14 @@ sub buildForm()
     if m.xtream
         m.order = ["tabs", "name", "server", "user", "pass", "btn"]
         addField("name", "NOME DA LISTA", cx + 40, 560, 320)
-        addField("server", "SERVIDOR", cx + 380, 560, 484)
+        addField("server", "PROVEDOR", cx + 380, 560, 484)
         addField("user", "USUÁRIO", cx + 40, 690, 402)
         addField("pass", "SENHA", cx + 462, 690, 402)
         by = 820
     else
         m.order = ["tabs", "name", "url", "btn"]
         addField("name", "NOME DA LISTA", cx + 40, 548, 824)
-        addField("url", "LINK DA LISTA (get.php)", cx + 40, 664, 824)
+        addField("url", "LISTA DE REPRODUÇÃO (LINK)", cx + 40, 664, 824)
         addLabel(m.formBox, "Na Roku, use o link get.php do seu provedor (vira login Xtream).", cx + 40, 778, IREG(), 17, "0x6E6B8CFF", 824)
         by = 812
     end if
@@ -137,7 +137,7 @@ sub edit(key as string)
         if f.key = key then d.title = f.label
     end for
     d.text = m.values[key]
-    if key = "server" then d.message = ["Ex.: http://meuservidor.com:8080"]
+    if key = "server" then d.message = ["Ex.: http://provedor.com:8080"]
     if key = "url" then d.message = ["Ex.: http://servidor.com/get.php?username=...&password=..."]
     d.buttons = ["OK", "Cancelar"]
     d.observeField("buttonSelected", "onDialog")
@@ -230,8 +230,18 @@ sub onAct(event as object)
     end if
     if m.locked then return
     ' lista cadastrada no site: entra sozinho
-    if type(d.playlists) = "roArray" and d.playlists.Count() > 0
-        c = playlistCreds(d.playlists[0])
+    ' a primeira lista do site que não foi apagada no app (apagada não volta sozinha)
+    c = invalid
+    if type(d.playlists) = "roArray"
+        for each pl in d.playlists
+            pc = playlistCreds(pl)
+            if pc <> invalid and not isRemovedList(pc.server, pc.user)
+                c = pc
+                exit for
+            end if
+        end for
+    end if
+    if c <> invalid
         if c <> invalid and not m.busy and not m.adding
             m.values = { name: "", server: c.server, user: c.user, pass: c.pass, url: "" }
             m.xtream = true

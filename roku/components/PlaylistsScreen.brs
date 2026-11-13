@@ -106,6 +106,7 @@ sub onAsk()
     wasCurrent = isCurrent(p)
     m.list.Delete(m.idx)
     regWrite("playlists", m.list)
+    markRemovedList(asText(p.server), asText(p.user))
     if wasCurrent
         if m.list.Count() = 0
             m.top.action = { type: "logout" }

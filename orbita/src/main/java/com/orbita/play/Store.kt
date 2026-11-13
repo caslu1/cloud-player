@@ -89,20 +89,31 @@ class Store(ctx: Context) {
 
     /** Guarda (ou renomeia) a lista; sem nome usa o que já tinha ou "Lista N". */
     fun upsertPlaylist(name: String?, a: Account) {
+        // adicionada de novo pela pessoa: deixa de estar na lista das apagadas
+        if (isRemoved(a)) p.edit().putStringSet("removedLists", removedLists() - accKey(a)).apply()
         val i = playlists.indexOfFirst { it.same(a) }
         val n = name?.trim()?.takeIf { it.isNotEmpty() } ?: playlists.getOrNull(i)?.name ?: "Lista ${playlists.size + 1}"
         if (i >= 0) playlists[i] = Playlist(n, a) else playlists += Playlist(n, a)
         savePlaylists()
     }
 
-    fun removePlaylist(pl: Playlist) { playlists.removeAll { it.same(pl.acc) }; savePlaylists() }
+    fun removePlaylist(pl: Playlist) {
+        playlists.removeAll { it.same(pl.acc) }; savePlaylists()
+        // lembra que foi apagada: a lista do site não volta sozinha
+        p.edit().putStringSet("removedLists", removedLists() + accKey(pl.acc)).apply()
+    }
+
+    private fun accKey(a: Account) = "${a.type}|${a.server}|${a.user}|${a.m3uUrl}"
+    private fun removedLists(): Set<String> = p.getStringSet("removedLists", emptySet()).orEmpty().toSet()
+    fun isRemoved(a: Account) = accKey(a) in removedLists()
 
     fun logout() {
         // o MAC e a chave do aparelho continuam (são usados no site de ativação)
         val mac = p.getString("dmac", null); val key = p.getString("dkey", null)
         val seen = p.getBoolean("disclaimer", false)
+        val removed = removedLists()
         p.edit().clear().apply()
-        p.edit().putString("dmac", mac).putString("dkey", key).putBoolean("disclaimer", seen).apply()
+        p.edit().putString("dmac", mac).putString("dkey", key).putBoolean("disclaimer", seen).putStringSet("removedLists", removed).apply()
         reload()
         liveFormat.value = "ts"
     }

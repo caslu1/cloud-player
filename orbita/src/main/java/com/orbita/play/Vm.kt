@@ -114,7 +114,8 @@ class Vm(ctx: Context) {
             actBusy = false
             if (a == null) return@launch
             act = a
-            val first = a.playlists.firstOrNull()
+            // lista do site que a pessoa apagou no app não volta sozinha
+            val first = a.playlists.firstOrNull { !store.isRemoved(it.account()) }
             if (account == null && first != null && !a.locked && store.lastSiteList() != first.key) {
                 store.setLastSiteList(first.key)
                 runCatching { login(first.account()) }

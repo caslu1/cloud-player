@@ -255,3 +255,38 @@ fun ActivationScreen(vm: Vm) {
         }
     }
 }
+
+/** Cartão compacto "Pelo celular" do login simples: QR, MAC, chave e situação. */
+@Composable
+fun ActivationCompact(vm: Vm, modifier: Modifier) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val mac = remember { Activation.mac(ctx) }
+    val key = remember { Activation.key(ctx) }
+    ActivationPolling(vm)
+    val a = vm.act
+    val url = a?.activateUrl?.takeIf { it.isNotBlank() } ?: "${Activation.site}/ativar?mac=$mac&key=$key"
+    Column(
+        modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xE60C0A16)).border(1.dp, C.panelBorder, RoundedCornerShape(14.dp)).padding(18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Txt("PELO CELULAR", F.s(8.sp, C.accentText, FontWeight.SemiBold, spacing = 1.2.sp))
+        Spacer(Modifier.height(10.dp))
+        QrCode(url, Modifier.size(118.dp))
+        Spacer(Modifier.height(10.dp))
+        Txt(Activation.site.removePrefix("https://").removePrefix("http://"), F.s(8.5.sp, C.accentText, FontWeight.SemiBold))
+        Spacer(Modifier.height(10.dp))
+        InfoBox("ENDEREÇO MAC", mac, 11f, 0f)
+        Spacer(Modifier.height(6.dp))
+        InfoBox("CHAVE DO DISPOSITIVO", key, 13f, 3f)
+        Spacer(Modifier.height(8.dp))
+        val (t, c) = statusLine(a)
+        Row(
+            Modifier.clip(RoundedCornerShape(15.dp)).background(c.copy(alpha = 0.16f)).padding(horizontal = 9.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(Modifier.size(5.dp).clip(RoundedCornerShape(3.dp)).background(c))
+            Spacer(Modifier.width(5.dp))
+            Txt(t, F.s(9.sp, c, FontWeight.SemiBold))
+        }
+    }
+}
