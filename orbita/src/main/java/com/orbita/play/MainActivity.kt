@@ -261,6 +261,8 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
                 when (vm.store.homeLayout.value) {
                     "lite" -> HomeLite(vm, pb, ui, openSearch, reload, openSettings)
                     "cards" -> HomeCards(vm, pb, ui, openSearch, reload, openSettings)
+                    "round" -> HomeCards(vm, pb, ui, openSearch, reload, openSettings, style = "round")
+                    "square" -> HomeCards(vm, pb, ui, openSearch, reload, openSettings, style = "square")
                     else -> HomeScreen(vm, pb, ui, openSearch, reload, openSettings)
                 }
             } else {

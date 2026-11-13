@@ -394,8 +394,10 @@ private fun Logout(vm: Vm, pb: Playback, ui: Ui, confirm: (Ask) -> Unit) {
 private fun HomeLayoutPicker(vm: Vm) {
     val cur = vm.store.homeLayout.value
     Card("TELA INICIAL") { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Option("Padrão", "Blocos grandes e Continuar assistindo", radio = cur != "lite" && cur != "cards", memKey = "layout:default") { vm.store.setHomeLayout("default") }
+        Option("Padrão", "Blocos grandes e Continuar assistindo", radio = cur !in listOf("lite", "cards", "round", "square"), memKey = "layout:default") { vm.store.setHomeLayout("default") }
         Option("Lite", "Logo no centro, ícones de linha e capas ao fundo", radio = cur == "lite", memKey = "layout:lite") { vm.store.setHomeLayout("lite") }
         Option("Vitrine", "Cartões de vidro grandes, relógio e dados do aparelho", radio = cur == "cards", memKey = "layout:cards") { vm.store.setHomeLayout("cards") }
+        Option("Redondo", "Ícones grandes em círculos de vidro, o escolhido em degradê", radio = cur == "round", memKey = "layout:round") { vm.store.setHomeLayout("round") }
+        Option("Quadrado", "Ícones grandes em quadrados arredondados de vidro", radio = cur == "square", memKey = "layout:square") { vm.store.setHomeLayout("square") }
     } }
 }

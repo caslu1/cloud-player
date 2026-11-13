@@ -344,5 +344,20 @@ class AppFlowTest {
         waitText("NOME DA LISTA")
         settle(500)
         shot("23-adicionar-playlist")
+
+        // temas Redondo e Quadrado
+        for ((opt, name) in listOf("Redondo" to "24-inicio-redondo", "Quadrado" to "25-inicio-quadrado")) {
+            back(); repeat(3) { pump() }
+            if (opt == "Redondo") { back(); repeat(3) { pump() } }
+            waitText("Canais ao vivo")
+            rule.onNodeWithContentDescription("Configurações").performClick()
+            repeat(5) { pump() }
+            click("Layout da tela inicial", exact = true)
+            click(opt, exact = true)
+            back()
+            waitText("Canais ao vivo")
+            settle(800)
+            shot(name)
+        }
     }
 }

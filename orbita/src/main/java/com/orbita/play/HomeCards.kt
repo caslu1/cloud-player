@@ -57,7 +57,7 @@ private class VitrineCard(val key: String, val title: String, val count: String,
  * botões redondos no topo e relógio + dados do aparelho no rodapé.
  */
 @Composable
-fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit) {
+fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit, style: String = "cards") {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(10_000) } }
@@ -93,12 +93,17 @@ fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -
         )
         val first = remember { FocusRequester() }
         InitialFocus(first)
-        // 4 cartões sempre centralizados na tela
-        Row(
+        // 4 cartões sempre centralizados na tela (Vitrine) ou ícones grandes redondos/quadrados
+        if (style == "cards") Row(
             Modifier.align(Alignment.TopCenter).padding(top = 152.dp),
             horizontalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             cards.forEach { c -> GlassCard(c, if (c.key == ui.tab.name) first else null) }
+        } else Row(
+            Modifier.align(Alignment.TopCenter).padding(top = 150.dp),
+            horizontalArrangement = Arrangement.spacedBy(46.dp),
+        ) {
+            cards.forEach { c -> BadgeTile(c, style == "round", if (c.key == ui.tab.name) first else null) }
         }
 
         // rodapé: relógio, data e aparelho
@@ -127,6 +132,40 @@ fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -
                 Txt(remember(now / 3_600_000) { SimpleDateFormat("EEEE, d 'de' MMM", Locale("pt", "BR")).format(Date(now)).replaceFirstChar { it.uppercase() } }, F.s(10.5.sp, C.white, FontWeight.SemiBold))
                 Txt("Assinatura: $status", F.s(8.sp, C.dim))
             }
+        }
+    }
+}
+
+/** Ícone grande em círculo (ou quadrado) de vidro com anel fino; o focado ganha o degradê roxo→azul da marca. */
+@Composable
+private fun BadgeTile(c: VitrineCard, round: Boolean, requester: FocusRequester?) {
+    Focus(Modifier.width(150.dp), onClick = c.onClick, requester = requester, memKey = "home:${c.key}") { f ->
+        val k by animateFloatAsState(if (f) 1f else 0f, tween(160), label = "k")
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            val outer = if (round) CircleShape else RoundedCornerShape(34.dp)
+            val inner = if (round) CircleShape else RoundedCornerShape(26.dp)
+            Box(
+                Modifier.size(150.dp).graphicsLayer { scaleX = 1f + 0.08f * k; scaleY = 1f + 0.08f * k }
+                    .then(if (f) Modifier.background(Brush.radialGradient(listOf(Color(0x667C5CFF), Color(0x007C5CFF))), outer) else Modifier)
+                    .padding(6.dp).clip(outer)
+                    .background(
+                        if (f) Brush.linearGradient(listOf(Color(0xFFA36BFF), Color(0xFF7C5CFF), Color(0xFF3FA8F0)), start = androidx.compose.ui.geometry.Offset(0f, 0f), end = androidx.compose.ui.geometry.Offset(260f, 420f))
+                        else Brush.linearGradient(listOf(Color(0x24FFFFFF), Color(0x14FFFFFF)))
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    Modifier.size(108.dp).clip(inner).background(Color(if (f) 0x14FFFFFF else 0x0FFFFFFF))
+                        .border(1.5.dp, if (f) Color(0x8CFFFFFF) else Color(0x4DFFFFFF), inner),
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.foundation.Image(androidx.compose.ui.graphics.vector.rememberVectorPainter(SolidIc.of(c.key)), null, Modifier.size(70.dp))
+                }
+            }
+            Spacer(Modifier.height(14.dp))
+            Txt(c.title, F.s(13.sp, C.white, FontWeight.SemiBold))
+            Spacer(Modifier.height(2.dp))
+            Txt(c.count, F.s(8.5.sp, if (f) C.text else C.dim))
         }
     }
 }
@@ -205,4 +244,29 @@ private object DuoIc {
     val Ball by lazy { duo("dball",
         "M12,3 A9,9 0 1 0 12.01,3 Z M12.00,8.70 L12.00,5.70 M8.05,3.91 L12.00,5.70 L15.95,3.91 M15.14,10.98 L17.99,10.05 M18.47,5.75 L17.99,10.05 L20.91,13.25 M13.94,14.67 L15.70,17.10 M19.95,16.23 L15.70,17.10 L13.56,20.86 M10.06,14.67 L8.30,17.10 M10.44,20.86 L8.30,17.10 L4.05,16.23 M8.86,10.98 L6.01,10.05 M3.09,13.25 L6.01,10.05 L5.53,5.75",
         "M12.00,8.70 L15.14,10.98 L13.94,14.67 L10.06,14.67 L8.86,10.98 Z") }
+}
+
+/** Ícones brancos sólidos (com recortes) dos temas Redondo e Quadrado. */
+private object SolidIc {
+    private fun solid(name: String, vararg parts: Pair<String, Float>): ImageVector {
+        val b = ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
+        parts.forEach { (d, a) -> b.addPath(addPathNodes(d), fill = SolidColor(Color.White), fillAlpha = a, pathFillType = androidx.compose.ui.graphics.PathFillType.EvenOdd) }
+        return b.build()
+    }
+    val Tv by lazy { solid("stv",
+        "M5.5,7.2 H18.5 A3,3 0 0 1 21.5,10.2 V16.8 A3,3 0 0 1 18.5,19.8 H5.5 A3,3 0 0 1 2.5,16.8 V10.2 A3,3 0 0 1 5.5,7.2 Z M6.3,9.3 H14.2 A1.8,1.8 0 0 1 16,11.1 V15.9 A1.8,1.8 0 0 1 14.2,17.7 H6.3 A1.8,1.8 0 0 1 4.5,15.9 V11.1 A1.8,1.8 0 0 1 6.3,9.3 Z M18.75,10.4 A1.05,1.05 0 1 0 18.76,10.4 Z M18.75,13.9 A1.05,1.05 0 1 0 18.76,13.9 Z" to 1f,
+        "M11.3,7.3 L7.9,3.9 L8.9,2.9 L12,6 L15.1,2.9 L16.1,3.9 L12.7,7.3 Z M8.4,2.4 A1.05,1.05 0 1 0 8.41,2.4 Z M15.6,2.4 A1.05,1.05 0 1 0 15.61,2.4 Z" to 1f,
+        "M5.2,19.6 H8.6 L8.1,21.4 H5.7 Z M15.4,19.6 H18.8 L18.3,21.4 H15.9 Z" to 1f) }
+    val Film by lazy { solid("sfilm",
+        "M7,3.2 H17 A0.8,0.8 0 0 1 17.8,4 V4.6 H6.2 V4 A0.8,0.8 0 0 1 7,3.2 Z" to 0.35f,
+        "M5.3,5.1 H18.7 A0.9,0.9 0 0 1 19.6,6 V6.8 H4.4 V6 A0.9,0.9 0 0 1 5.3,5.1 Z" to 0.6f,
+        "M4.4,7.3 H19.6 A1.4,1.4 0 0 1 21,8.7 V19.6 A1.4,1.4 0 0 1 19.6,21 H4.4 A1.4,1.4 0 0 1 3,19.6 V8.7 A1.4,1.4 0 0 1 4.4,7.3 Z M4.6,9.2 H6.6 V11.4 H4.6 Z M4.6,13 H6.6 V15.2 H4.6 Z M4.6,16.8 H6.6 V19 H4.6 Z M17.4,9.2 H19.4 V11.4 H17.4 Z M17.4,13 H19.4 V15.2 H17.4 Z M17.4,16.8 H19.4 V19 H17.4 Z" to 1f) }
+    val Clap by lazy { solid("sclap",
+        "M3.6,10.6 H20.4 A0.9,0.9 0 0 1 21.3,11.5 V19.9 A0.9,0.9 0 0 1 20.4,20.8 H3.6 A0.9,0.9 0 0 1 2.7,19.9 V11.5 A0.9,0.9 0 0 1 3.6,10.6 Z M10.5,13.3 V18.2 L14.6,15.75 Z" to 1f,
+        "M3.1,7.3 L19.4,2.9 L20.4,6.6 L4.1,11 Z M6.6,8.95 L9.6,5.6 L11.5,5.1 L8.5,8.45 Z M11.4,7.65 L14.4,4.3 L16.3,3.8 L13.3,7.15 Z" to 1f,
+        "M3.9,9.2 A1.5,1.5 0 1 0 3.91,9.2 Z" to 1f) }
+    val Lists by lazy { solid("slist",
+        "M4.2,4.6 H19.8 A1.2,1.2 0 0 1 19.8,7 H4.2 A1.2,1.2 0 0 1 4.2,4.6 Z M4.2,9.6 H19.8 A1.2,1.2 0 0 1 19.8,12 H4.2 A1.2,1.2 0 0 1 4.2,9.6 Z M4.2,14.6 H11.8 A1.2,1.2 0 0 1 11.8,17 H4.2 A1.2,1.2 0 0 1 4.2,14.6 Z" to 1f,
+        "M14.2,14.1 C14.2,13.3 15,12.8 15.7,13.2 L21,16.4 C21.7,16.8 21.7,17.8 21,18.2 L15.7,21.4 C15,21.8 14.2,21.3 14.2,20.5 Z" to 1f) }
+    fun of(key: String) = when (key) { "CANAIS" -> Tv; "FILMES" -> Film; "SERIES" -> Clap; else -> Lists }
 }
