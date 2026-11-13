@@ -3,6 +3,7 @@ import { html, redirect, json } from "./util.js";
 import * as pub from "./public.js";
 import * as adm from "./admin.js";
 import * as app from "./app.js";
+import { IMGS } from "./imgs.js";
 
 export default {
   async fetch(req, env) {
@@ -20,6 +21,12 @@ export default {
       if ((r = p.match(/^\/api\/pagamento\/(\d+)$/))) return pub.paymentStatus(env, req, Number(r[1]));
       // cliente
       if (p === "/" && m === "GET") return pub.home(env, req);
+      if (p.startsWith("/img/")) {
+        const b64 = IMGS[p.slice(5)];
+        if (!b64) return new Response("not found", { status: 404 });
+        const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        return new Response(bin, { headers: { "content-type": "image/webp", "cache-control": "public, max-age=604800" } });
+      }
       // atalho para o app Downloader (Fire TV / TV Box)
       if (p === "/android" || p === "/apk") return Response.redirect(pub.APK_URL, 302);
       if (p === "/entrar" && m === "POST") return pub.login(env, req);
