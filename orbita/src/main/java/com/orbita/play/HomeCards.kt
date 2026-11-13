@@ -93,9 +93,9 @@ fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -
         val first = remember { FocusRequester() }
         InitialFocus(first)
         LazyRow(
-            Modifier.align(Alignment.TopStart).padding(top = 150.dp).fillMaxWidth().height(190.dp),
-            contentPadding = PaddingValues(start = 46.dp, end = 46.dp, top = 30.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            Modifier.align(Alignment.TopStart).padding(top = 118.dp).fillMaxWidth().height(250.dp),
+            contentPadding = PaddingValues(start = 60.dp, end = 60.dp, top = 34.dp),
+            horizontalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             items(cards, key = { it.key }) { c -> GlassCard(c, if (c.key == ui.tab.name) first else null) }
         }
@@ -132,7 +132,7 @@ fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -
 
 @Composable
 private fun GlassCard(c: VitrineCard, requester: FocusRequester?) {
-    Focus(Modifier.size(214.dp, 124.dp), onClick = c.onClick, requester = requester, memKey = "home:${c.key}") { f ->
+    Focus(Modifier.size(196.dp, 176.dp), onClick = c.onClick, requester = requester, memKey = "home:${c.key}") { f ->
         val k by animateFloatAsState(if (f) 1f else 0f, tween(160), label = "k")
         val shape = RoundedCornerShape(12.dp)
         Box(Modifier.fillMaxSize().graphicsLayer {
@@ -140,7 +140,7 @@ private fun GlassCard(c: VitrineCard, requester: FocusRequester?) {
         }) {
             // aba roxa em cima do cartão focado
             if (f) Box(
-                Modifier.align(Alignment.TopStart).offset(x = 58.dp, y = (-5).dp).size(56.dp, 10.dp)
+                Modifier.align(Alignment.TopStart).offset(x = 70.dp, y = (-5).dp).size(56.dp, 10.dp)
                     .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)).background(C.accent)
             )
             Box(
@@ -152,16 +152,16 @@ private fun GlassCard(c: VitrineCard, requester: FocusRequester?) {
                     .border(1.dp, if (f) Color(0x80C9BCFF) else Color(0x24FFFFFF), shape)
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
-                Txt(c.title, F.s(14.sp, C.white, FontWeight.SemiBold, F.outfit), Modifier.align(Alignment.TopStart))
+                Txt(c.title, F.s(15.sp, C.white, FontWeight.SemiBold, F.outfit), Modifier.align(Alignment.TopStart))
                 Column(Modifier.align(Alignment.BottomStart)) {
-                    Txt(c.count, F.s(9.5.sp, C.white, FontWeight.SemiBold))
+                    Txt(c.count, F.s(10.5.sp, C.white, FontWeight.SemiBold))
                     Spacer(Modifier.height(3.dp))
                     Txt(c.sub, F.s(7.5.sp, if (f) C.text else C.dim))
                 }
-                Box(Modifier.align(Alignment.CenterEnd).offset(x = 6.dp, y = 8.dp).size(76.dp)
+                Box(Modifier.align(Alignment.CenterEnd).offset(x = 8.dp, y = 4.dp).size(92.dp)
                     .background(Brush.radialGradient(listOf(Color(if (f) 0x667C5CFF else 0x337C5CFF), Color(0x007C5CFF)))),
                     contentAlignment = Alignment.Center) {
-                    androidx.compose.foundation.Image(androidx.compose.ui.graphics.vector.rememberVectorPainter(c.icon), null, Modifier.size(58.dp))
+                    androidx.compose.foundation.Image(androidx.compose.ui.graphics.vector.rememberVectorPainter(c.icon), null, Modifier.size(68.dp))
                 }
             }
         }
