@@ -1,6 +1,7 @@
 name: Orbita Play APK
 
-# Compila o app Orbita Play e publica o APK em um release fixo:
+# Compila o app Orbita Play e publica as fotos das telas para aprovação.
+# O APK só vai para o link fixo quando a publicação é aprovada (execução manual):
 # https://github.com/caslu1/cloud-player/releases/download/orbita-play/Orbita-Play.apk
 on:
   push:
@@ -48,6 +49,8 @@ jobs:
           name: Orbita-Play
           path: Orbita-Play.apk
       - name: Publish release
+        # só depois da aprovação do dono (execução manual); envios normais geram apenas as fotos
+        if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
