@@ -128,7 +128,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
                 PanelHeader("Categorias", "${visibleCats.size}")
                 SearchField(catQuery, { catQuery = it }, "Buscar categoria", Modifier.padding(horizontal = 10.dp))
                 Spacer(Modifier.height(8.dp))
-                LazyColumn(state = ui.catList, modifier = Modifier.weight(1f)) {
+                LazyColumn(state = ui.catList, modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     if (catQuery.isBlank()) {
                         item(key = FAV) { CatRow("Favoritos", favCount, ui.liveCat == FAV, "cat:$FAV", {}, catReq, Ic.Star, ::toFirst) { choose(FAV) } }
                         item(key = RECENT) { CatRow("Recentes", recentCount, ui.liveCat == RECENT, "cat:$RECENT", {}, icon = Ic.History, onRight = ::toFirst) { choose(RECENT) } }
@@ -173,7 +173,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
                         Modifier.fillMaxWidth()
                     )
                 }
-                LazyColumn(state = ui.chList, modifier = Modifier.weight(1f).padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                LazyColumn(state = ui.chList, modifier = Modifier.weight(1f).padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     itemsIndexed(list, key = { _, c -> c.id }) { i, c ->
                         val req = when { i == 0 -> firstChannel; i == initialIdx -> initial; else -> null }
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -279,13 +279,15 @@ internal fun CatRow(
             if (ev.type == androidx.compose.ui.input.key.KeyEventType.KeyDown && ev.key == androidx.compose.ui.input.key.Key.DirectionRight) { onRight(); true } else false
         }
     ) { f ->
+        // cada categoria num quadro próprio, com espaço entre eles
+        val shape = RoundedCornerShape(7.dp)
         Row(
-            Modifier.fillMaxSize()
-                .background(if (f) C.focusBg else Color.Transparent)
-                .then(if (f) Modifier.border(1.5.dp, C.accent, RoundedCornerShape(4.dp)) else Modifier),
+            Modifier.fillMaxSize().clip(shape)
+                .background(if (f) C.focusBg else if (selected) Color(0x1F7C5CFF) else Color(0x0FFFFFFF))
+                .border(if (f) 1.5.dp else 1.dp, if (f) C.accent else Color(0x14FFFFFF), shape),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(Modifier.width(2.5.dp).fillMaxHeight().background(if (selected) C.accent else Color.Transparent))
+            Box(Modifier.width(3.dp).fillMaxHeight().background(if (selected) C.accent else Color.Transparent))
             Spacer(Modifier.width(12.dp))
             if (icon != null) { Icon(icon, 14.dp, if (selected || f) C.white else C.dim); Spacer(Modifier.width(8.dp)) }
             Txt(label, F.s(11.5.sp, if (selected || f) C.white else C.text, if (selected) FontWeight.SemiBold else FontWeight.Medium), Modifier.weight(1f))
@@ -307,8 +309,8 @@ fun ChannelRow(
         val shape = RoundedCornerShape(8.dp)
         Row(
             Modifier.fillMaxWidth().height(44.dp).clip(shape)
-                .background(if (f) C.focusBg else Color.Transparent)
-                .then(if (f) Modifier.border(1.5.dp, C.accent, shape) else Modifier)
+                .background(if (f) C.focusBg else Color(0x0FFFFFFF))
+                .border(if (f) 1.5.dp else 1.dp, if (f) C.accent else Color(0x14FFFFFF), shape)
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

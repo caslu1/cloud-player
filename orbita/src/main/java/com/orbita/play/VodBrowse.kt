@@ -101,7 +101,7 @@ fun VodBrowse(
                     PanelHeader("Categorias", "${cats.size}")
                     SearchField(catQuery, { catQuery = it }, searchHint, Modifier.padding(horizontal = 10.dp))
                     Spacer(Modifier.height(8.dp))
-                    LazyColumn(state = catState, modifier = Modifier.weight(1f)) {
+                    LazyColumn(state = catState, modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         items(visibleCats, key = { it.id }) { c ->
                             CatRow(c.name, c.count, c.id == cat && !searching, "vcat:${c.id}", {}, if (c.id == cat) catReq else null, c.icon, ::toFirst) {
                                 val go = { catQuery = ""; results = null; onSelect(c.id); toFirst() }

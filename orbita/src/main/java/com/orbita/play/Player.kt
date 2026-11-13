@@ -712,7 +712,7 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
         Row(Modifier.fillMaxSize().padding(start = 22.dp, top = 22.dp, bottom = 18.dp, end = 50.dp)) {
             Column(Modifier.width(190.dp).fillMaxHeight()) {
                 Txt("CATEGORIAS", F.label, Modifier.padding(start = 10.dp, bottom = 8.dp))
-                LazyColumn(state = catState, modifier = Modifier.weight(1f)) {
+                LazyColumn(state = catState, modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     itemsIndexed(cats, key = { _, c -> c.id }) { i, c ->
                         val sel = c.id == cat
                         Focus(
@@ -750,7 +750,7 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
                     EmptyState("Nenhum canal nesta categoria", "◀ para escolher outra categoria", Modifier.fillMaxWidth())
                     Focus(Modifier.size(1.dp), requester = chReq, onKey = { ev -> if (ev.type == KeyEventType.KeyDown && ev.key == Key.DirectionLeft) { toCats(); true } else false }) { }
                 }
-                LazyColumn(state = chState, modifier = Modifier.weight(1f)) {
+                LazyColumn(state = chState, modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     itemsIndexed(list, key = { _, c -> c.id }) { i, c ->
                         LaunchedEffect(c.id) { delay(120); vm.requestEpg(c, 6) }
                         val playing = c.id == cur?.id
@@ -770,7 +770,7 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
                             }
                         ) { f ->
                             Row(
-                                Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(8.dp)).background(if (f) C.focusBg else Color.Transparent)
+                                Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(8.dp)).background(if (f) C.focusBg else Color(0x0FFFFFFF))
                                     .then(if (f) Modifier.border(1.5.dp, C.accent, RoundedCornerShape(8.dp)) else Modifier)
                                     .padding(horizontal = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
