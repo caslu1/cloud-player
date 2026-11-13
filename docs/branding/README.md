@@ -73,5 +73,5 @@ Para gerar de novo: `python3 source/sound.py som.wav`, `python3 source/anim.py a
 
 Fundo: espaço quase preto com estrelas piscando (leve aproximação), nebulosas roxa e azul se movendo devagar e órbitas grandes bem leves girando ao fundo.
 Visual: o "O" branco aparece no centro; um cometa roxo corre pela órbita em volta do "O", passando pela frente e por trás e desenhando o anel; ele para na posição do planeta com um flash e uma onda; o logo desliza e o texto se revela da esquerda para a direita; um brilho passa pelo texto.
-Som (original, sintetizado, suave, -24 LUFS, só sons tonais): partículas brilhantes (notas que sobem numa escala pentatônica) e um sintetizador deslizante que acompanham o cometa pela órbita e passam de um lado para o outro no estéreo; na chegada, um grave suave e um acorde de piano elétrico (Fá maior); marimba subindo enquanto o texto aparece; sino de vidro no brilho final.
-Gerar de novo: `python3 source/sound3.py bruto.wav` e `ffmpeg -i bruto.wav -af loudnorm=I=-24:TP=-6 som.wav`, `python3 source/anim2.py anim2.html`, `node source/rec2.js` e o mesmo comando `ffmpeg`.
+Som (original, simples e baixo, -28 LUFS): seis notas suaves que sobem e acompanham o cometa de um lado para o outro, e um acorde quente (Dó maior) que aparece devagar quando o cometa chega.
+Gerar de novo: `python3 source/sound4.py bruto.wav` e `ffmpeg -i bruto.wav -af loudnorm=I=-28:TP=-9 som.wav`, `python3 source/anim2.py anim2.html`, `node source/rec2.js` e o mesmo comando `ffmpeg`.
