@@ -18,7 +18,7 @@ from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.boundsPen import BoundsPen
 FD=os.path.join(os.path.dirname(os.path.abspath(__file__)),'fonts')
 FONT1=os.environ.get('FONT1','Poppins-SemiBold.ttf'); FONT2=os.environ.get('FONT2','Poppins-Light.ttf')
-def font_word(H, parts=(('rbita',FONT1),('play',FONT2)), track=0.015, start=1.19):
+def font_word(H, parts=(('rbita',FONT1),('play',FONT2)), track=0.015, start=1.035):
     x=H*start; letters=[]
     for pi,(txt,fn) in enumerate(parts):
         if pi: x+=H*0.03
