@@ -52,7 +52,7 @@ export function landing(env, { formHtml, plansHtml, logged }) {
   const hero = `<section class="hero"><div class="wrap hgrid">
 <div>
  <div class="eyebrow">PLAYER DE MÍDIA PARA TV</div>
- <h1 class="h1">Sua lista na TV, <span class="hl">do seu jeito.</span></h1>
+ <h1 class="h1">Sua lista na TV, <span class="grad">do seu jeito.</span></h1>
  <p class="lead">O ${name} é um player para Android TV, TV Box, Fire TV e Roku. Você adiciona a lista que já é sua e assiste com uma interface simples, rápida e bonita.</p>
  <div class="row wrapf" style="gap:12px;margin-top:28px"><a class="btn lg" href="#entrar">Gerenciar meu aparelho</a><a class="btn g lg" href="/download">${li("down", 18)} Baixar o app</a></div>
  <div class="note">${li("info", 18)}<div><b>O ${name} não inclui nenhum conteúdo.</b> Não fornece, não vende e não hospeda vídeos: só reproduz o que vem da lista que você mesmo adiciona.</div></div>
@@ -104,7 +104,7 @@ export function downloadsPage(env, { logged, host }) {
 <div class="row" style="gap:14px">${icoBox(ico, "dim2")}<div style="min-width:0"><h3>${t}</h3><p class="mut">${sub}</p></div><span class="tag">${li("clock", 14)} Em breve</span></div></div>`;
   const apkBlock = `<div class="dl-row"><div class="addr"><small>No app Downloader, digite</small><b>${code}</b></div><a class="btn" href="${APK_URL}">${li("down", 18)} Baixar APK</a></div>`;
   const body = `<section class="hero sm"><div class="wrap">
-<div class="eyebrow">DOWNLOADS</div><h1 class="h1" style="font-size:clamp(34px,5vw,52px)">Baixe o <span class="hl">${name}</span></h1>
+<div class="eyebrow">DOWNLOADS</div><h1 class="h1" style="font-size:clamp(34px,5vw,52px)">Baixe o <span class="grad">${name}</span></h1>
 <p class="lead">Escolha o seu aparelho. Depois de instalar, abra o app e ative pelo celular ou entre com a sua lista direto na TV.</p>
 </div></section>
 <section class="sec" style="padding-top:10px"><div class="wrap">
@@ -136,7 +136,7 @@ body:before{background:radial-gradient(ellipse at 80% -10%,rgba(124,92,255,.28),
 .mpanel{display:none}
 .eyebrow{color:var(--accent2);font-weight:700;font-size:12px;letter-spacing:2.4px}
 .h1{font-family:Outfit,Inter;font-weight:700;font-size:clamp(38px,6vw,66px);line-height:1.04;margin-top:14px;letter-spacing:-.5px}
-.hl{background:linear-gradient(90deg,#c9bbff,#9b84ff 45%,#7c5cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.grad{background:linear-gradient(90deg,#c9bbff,#9b84ff 45%,#7c5cff);-webkit-background-clip:text;background-clip:text;color:transparent}
 .h2{font-family:Outfit,Inter;font-weight:700;font-size:clamp(28px,4vw,40px);line-height:1.12;margin-top:10px}
 .lead{color:var(--mut);font-size:17px;line-height:1.65;margin-top:18px;max-width:620px}.lead.sm{font-size:16px;margin-top:12px}.lead b{color:#fff}
 .btn.lg{height:52px;padding:0 24px;font-size:15px;border-radius:12px}
@@ -177,7 +177,7 @@ body:before{background:radial-gradient(ellipse at 80% -10%,rgba(124,92,255,.28),
 .howto{margin-top:22px;padding:28px}.howto ol{margin:14px 0 0 20px;color:var(--text);line-height:2}.howto b{color:#c9bbff}
 .foot{margin-top:90px;padding:40px 0 46px;border-top:1px solid rgba(155,132,255,.12);color:var(--mut)}
 .frow{display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap}.fnav{display:flex;flex-wrap:wrap;gap:8px 22px;margin-left:auto}.fnav a:hover{color:#fff}
-.plan .chip{height:24px;padding:0 10px;color:#fff;font-size:11px;line-height:24px}
+.plan.hl{border-color:#7c5cff!important;box-shadow:0 0 0 1px #7c5cff,0 20px 50px rgba(124,92,255,.25)}.plan.hl .o{color:#fff}.plan .chip{height:24px;padding:0 10px;color:#fff;font-size:11px;line-height:24px}
 @media (max-width:1000px){
  .lnk,.navcta{display:none}.burger{display:flex}
  .mpanel{position:fixed;left:0;right:0;top:72px;background:#0a0814;border-bottom:1px solid rgba(155,132,255,.2);padding:12px 16px 18px;flex-direction:column;gap:2px;box-shadow:0 30px 60px rgba(0,0,0,.6)}
@@ -188,6 +188,13 @@ body:before{background:radial-gradient(ellipse at 80% -10%,rgba(124,92,255,.28),
  .sec{padding-top:60px}.imp{flex-direction:column;padding:24px}.cta{flex-direction:column;align-items:flex-start;padding:26px}
 }
 @media (max-width:520px){
+ .act form.card{padding:22px !important}.act .g3m{margin-top:18px;gap:10px}
+ .plan{padding:20px !important}
+ .dcard .row{flex-wrap:wrap}.dcard .row>div{flex:1 1 calc(100% - 64px)}.dcard .tag{margin-left:60px;order:3}
+ .dcard h3{font-size:17px}.addr b{font-size:12.5px}
+ .howto ol{margin-left:18px;line-height:1.7}.howto li{margin-bottom:8px}
+ .frow{flex-direction:column;gap:22px}.fnav{margin-left:0;display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;width:100%}
+ .fnav a{padding:10px 12px;border-radius:10px;background:rgba(124,92,255,.08);border:1px solid rgba(155,132,255,.14);font-size:14px}
  .lead{font-size:15.5px}.btn.lg{width:100%}.note{font-size:13px}.step,.dcard,.howto{padding:20px}.cta .btn{width:100%}
  .lnav .logo img{height:26px}
 }`;
