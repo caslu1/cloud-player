@@ -18,9 +18,10 @@ from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.boundsPen import BoundsPen
 FD=os.path.join(os.path.dirname(os.path.abspath(__file__)),'fonts')
 FONT1=os.environ.get('FONT1','Poppins-SemiBold.ttf'); FONT2=os.environ.get('FONT2','Poppins-Light.ttf')
-def font_word(H, parts=(('rbita',FONT1),('play',FONT2)), track=0.0, start=1.13):
+def font_word(H, parts=(('rbita',FONT1),('play',FONT2)), track=0.015, start=1.19):
     x=H*start; letters=[]
-    for txt,fn in parts:
+    for pi,(txt,fn) in enumerate(parts):
+        if pi: x+=H*0.03
         f=TTFont(os.path.join(FD,fn)); gs=f.getGlyphSet(); cm=f.getBestCmap(); upm=f['head'].unitsPerEm
         bp=BoundsPen(gs); gs[cm[ord('x')]].draw(bp); k=H*0.65/bp.bounds[3]
         for ch in txt:
@@ -67,7 +68,7 @@ def svg(kind, scheme, bg=None, pad=0.08, square=False, radius=0.22):
        'dark':('#0B0716','#0B0716','#0B0716','#0B0716'),
        'violet':('#7C5CFF','#7C5CFF','#7C5CFF','#7C5CFF'),
        'color':('url(#go{u})','url(#gr{u})','#FFFFFF','#A08BFF'),
-       'white-violet':('#FFFFFF','#8B6CFF','#FFFFFF','#FFFFFF'),
+       'white-violet':('#FFFFFF','#8B6CFF','#FFFFFF','#8B6CFF'),
        'color-white':('url(#go{u})','url(#gr{u})','#FFFFFF','#FFFFFF'),
        'color-light':('url(#go{u})','url(#gr{u})','#0B0716','#7C5CFF')}[scheme]
     oC,ringC,t1,t2=[c.replace('{u}',u) for c in S]
