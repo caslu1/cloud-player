@@ -189,6 +189,19 @@ body:before{background:radial-gradient(ellipse at 80% -10%,rgba(124,92,255,.28),
 .fcol{display:flex;flex-direction:column;gap:12px}.fcol b{color:#fff;font-size:13px;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4px}
 .fcol a{font-size:14.5px;width:fit-content}.fcol a:hover{color:#c9bbff}
 .fbot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:20px 0 30px;border-top:1px solid rgba(155,132,255,.1);font-size:12.5px;color:var(--dim)}
+.dpage{padding-top:40px;padding-bottom:20px}
+.dtop{display:flex;gap:22px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+.dmeta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.dpill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:rgba(124,92,255,.1);border:1px solid rgba(155,132,255,.2);color:#cfc8ea;font-size:13px}
+.dstat{display:flex;align-items:center;gap:18px;padding:18px 22px;flex-wrap:wrap}.dlab{color:var(--dim);font-size:11px;font-weight:700;letter-spacing:1.4px}.dline{font-size:13.5px;color:#cfc8ea}
+.dgrid2>*,.dtop>*{min-width:0}.lact .btn{white-space:nowrap}.in.mono::placeholder{letter-spacing:0;font-family:Inter,sans-serif}
+.dgrid2{display:grid;grid-template-columns:1fr 480px;gap:20px;margin-top:26px;align-items:start}
+.dbox{padding:26px}.dh{font-family:Outfit,Inter;font-size:20px}.dcount{margin-left:auto;font-size:12.5px;color:var(--dim);padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.04)}
+.lrow{padding:16px;border-radius:14px;background:var(--field);border:1px solid var(--line)}.lrow.cur{border-color:rgba(124,92,255,.7);background:linear-gradient(135deg,rgba(124,92,255,.12),var(--field) 60%)}
+.lhead{display:flex;gap:14px;align-items:center}.lico{flex:none;width:44px;height:44px;border-radius:12px;background:rgba(124,92,255,.18);display:flex;align-items:center;justify-content:center}
+.linfo{min-width:0;flex:1}.linfo b{font-size:16px}.lsub{color:var(--dim);font-size:13px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lact{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}.lact form{display:contents}
+.fld{margin-top:16px}.fld2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.paybox{max-width:920px;margin:0 auto;padding:34px;display:flex;gap:34px;flex-wrap:wrap}.payr{width:340px;max-width:100%}
 .plan .chip{height:24px;padding:0 10px;color:#fff;font-size:11px;line-height:24px}
 @media (max-width:1000px){
  .lnk,.navcta{display:none}.burger{display:flex}
@@ -203,7 +216,14 @@ body:before{background:radial-gradient(ellipse at 80% -10%,rgba(124,92,255,.28),
  .ftop{grid-template-columns:1fr 1fr;gap:30px 20px;padding:40px 0 30px}.fbrand{grid-column:1/-1}
  .fbot{flex-direction:column;gap:6px}
 }
+@media (max-width:900px){
+ .dgrid2{grid-template-columns:1fr}.dtop{align-items:stretch}.dstat{width:100%}
+}
 @media (max-width:520px){
+ .dpage{padding-top:26px}.dbox{padding:20px}.dstat{padding:16px 18px}.dstat .btn{width:100%}
+ .lact .btn{flex:1}.fld2{grid-template-columns:1fr}
+ .paybox{padding:22px;gap:24px}.payr{width:100%}
+ .tabs label{font-size:12.5px}
  .act form.card{padding:22px !important}.act .g3m{margin-top:18px;gap:10px}
  .plan{padding:20px !important}
  .dcard .row{flex-wrap:wrap}.dcard .row>div{flex:1 1 calc(100% - 64px)}.dcard .tag{margin-left:60px;order:3}

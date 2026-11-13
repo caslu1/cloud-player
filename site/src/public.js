@@ -64,8 +64,8 @@ function statusBox(d, st) {
   else if (st === "active") line = d.plan === "lifetime" ? "Vitalício" : `Anual · até ${fmtDate(d.expires_at)}`;
   else if (st === "expired") line = "o app está bloqueado até a ativação";
   else if (st === "blocked") line = "fale com o suporte";
-  const cta = st === "active" && d.plan === "lifetime" ? "" : st === "blocked" ? "" : `<a class="btn" href="/pagar" style="padding:0 18px">${st === "active" ? "Renovar" : "Ativar agora"}</a>`;
-  return `<div class="card row" style="padding:14px 20px;gap:16px;flex-wrap:wrap"><div><div class="dim" style="font-size:12px">STATUS</div><div class="row" style="gap:8px;margin-top:3px;flex-wrap:wrap"><span class="chip st-${st}">${STATUS_LABEL[st]}</span><span style="font-size:13px;color:#cfc8ea">${line}</span></div></div>${cta}</div>`;
+  const cta = st === "active" && d.plan === "lifetime" ? "" : st === "blocked" ? "" : `<a class="btn" href="/pagar">${st === "active" ? "Renovar" : "Ativar agora"}</a>`;
+  return `<div class="card dstat"><div><div class="dlab">SITUAÇÃO</div><div class="row" style="gap:8px;margin-top:6px;flex-wrap:wrap"><span class="chip st-${st}">${STATUS_LABEL[st]}</span><span class="dline">${line}</span></div></div>${cta}</div>`;
 }
 
 export async function device(env, req, msg = null) {
@@ -78,32 +78,30 @@ export async function device(env, req, msg = null) {
   const editId = Number(url.searchParams.get("editar") || 0);
   const ed = lists.find((l) => l.id === editId) || null;
   const max = d.plan === "lifetime" ? 999 : Number(s.max_lists);
-  const rows = lists.map((l, i) => `<div class="row" style="gap:14px;padding:16px;border-radius:12px;background:var(--field);border:1px solid ${i === 0 ? "var(--accent)" : "var(--line)"};margin-bottom:10px;flex-wrap:wrap">
-<div style="width:40px;height:40px;border-radius:10px;background:var(--soft);display:flex;align-items:center;justify-content:center">${ic("list", 20, "#9b84ff")}</div>
-<div style="flex:1;min-width:180px"><div class="row" style="gap:8px"><b style="font-size:15px">${esc(l.name)}</b>${i === 0 ? '<span class="chip st-active">Em uso</span>' : ""}${l.pin ? `<span class="chip" style="background:#16121f;color:var(--mut)">${ic("lock", 12)} PIN</span>` : ""}</div>
-<div class="dim" style="font-size:12.5px;margin-top:2px;word-break:break-all">${l.type === "xtream" ? "Xtream Codes · " + esc(l.server) : "M3U · " + esc(l.url)}</div></div>
-${i > 0 ? `<form method="post" action="/aparelho/lista/${l.id}/usar"><button class="btn g sm">Usar esta</button></form>` : ""}
-<a class="btn g sm" href="/aparelho?editar=${l.id}#form">Editar</a>
-<form method="post" action="/aparelho/lista/${l.id}/remover" onsubmit="return confirm('Remover esta lista?')"><button class="btn g sm red">Remover</button></form></div>`).join("");
+  const rows = lists.map((l, i) => `<div class="lrow${i === 0 ? " cur" : ""}">
+<div class="lhead"><span class="lico">${ic("list", 20, "#c9bbff")}</span><div class="linfo"><div class="row" style="gap:8px;flex-wrap:wrap"><b>${esc(l.name)}</b>${i === 0 ? '<span class="chip st-active">Em uso</span>' : ""}${l.pin ? `<span class="chip" style="background:#16121f;color:var(--mut)">${ic("lock", 12)} PIN</span>` : ""}</div>
+<div class="lsub">${l.type === "xtream" ? "Conta XC · " + esc(l.server) : "Lista de reprodução"}</div></div></div>
+<div class="lact">${i > 0 ? `<form method="post" action="/aparelho/lista/${l.id}/usar"><button class="btn g sm">Usar esta</button></form>` : ""}<a class="btn g sm" href="/aparelho?editar=${l.id}#form">Editar</a><form method="post" action="/aparelho/lista/${l.id}/remover" onsubmit="return confirm('Remover esta lista?')"><button class="btn g sm red">Remover</button></form></div></div>`).join("");
   const v = (k) => esc(ed ? ed[k] : "");
   const isM3u = ed && ed.type === "m3u";
   const body = `<style>${LANDING_CSS}</style>${siteNav(env, "/aparelho", true)}
-<div class="wrap" style="padding-top:40px;padding-bottom:60px">
- <div class="row" style="gap:20px;flex-wrap:wrap"><div style="flex:1;min-width:260px"><h1 style="font-size:30px">Meu aparelho</h1><div class="mut" style="margin-top:4px">MAC <span class="mono">${esc(d.mac)}</span>${d.model ? " · " + esc(d.model) : ""}</div></div>${statusBox(d, st)}</div>
+<div class="wrap dpage">
+ <div class="dtop"><div><div class="eyebrow">GERENCIAR APARELHO</div><h1 class="h2" style="margin-top:8px">Meu aparelho</h1>
+  <div class="dmeta"><span class="dpill">${ic("dev", 14, "#c9bbff")}<span class="mono">${esc(d.mac)}</span></span>${d.model ? `<span class="dpill">${esc(d.model)}</span>` : ""}</div></div>${statusBox(d, st)}</div>
  ${msg ? `<div class="alert ${msg.ok ? "ok" : "err"}" style="margin-top:20px">${esc(msg.text)}</div>` : ""}
- <div class="grid2" style="margin-top:24px;grid-template-columns:1fr 520px">
-  <div class="card" style="padding:26px;align-self:start"><div class="row"><div class="o" style="font-size:18px">Minhas listas</div><span class="dim" style="font-size:12px;margin-left:auto">${lists.length} de ${max === 999 ? "∞" : max}</span></div>
-   <div style="margin-top:16px">${rows || `<div class="mut" style="padding:20px 0">Nenhuma lista ainda. Adicione a sua ao lado — ela aparece na TV em alguns segundos.</div>`}</div></div>
-  <form id="form" class="card" style="padding:26px" method="post" action="/aparelho/lista">
-   <div class="o" style="font-size:18px">${ed ? "Editar lista" : "Adicionar lista"}</div>
+ <div class="dgrid2">
+  <div class="card dbox"><div class="row"><h3 class="dh">Minhas playlists</h3><span class="dcount">${lists.length} de ${max === 999 ? "∞" : max}</span></div>
+   <div style="margin-top:16px;display:grid;gap:12px">${rows || `<div class="mut" style="padding:12px 0;line-height:1.6">Nenhuma playlist ainda. Adicione a sua: ela aparece na TV em alguns segundos.</div>`}</div></div>
+  <form id="form" class="card dbox" method="post" action="/aparelho/lista">
+   <h3 class="dh">${ed ? "Editar playlist" : "Adicionar playlist"}</h3>
    ${ed ? `<input type="hidden" name="id" value="${ed.id}">` : ""}
-   <div class="tabs" style="margin-top:16px"><input type="radio" name="type" id="tx" value="xtream" ${isM3u ? "" : "checked"}><label for="tx">Xtream Codes</label><input type="radio" name="type" id="tm" value="m3u" ${isM3u ? "checked" : ""}><label for="tm">Link M3U</label></div>
-   <div style="margin-top:16px"><label class="lab">NOME DA LISTA</label><input class="in" name="name" value="${v("name")}" placeholder="Minha IPTV" required></div>
-   <div class="fx"><div style="margin-top:14px"><label class="lab">SERVIDOR (URL)</label><input class="in" name="server" value="${v("server")}" placeholder="http://servidor.com:8080"></div>
-   <div class="row" style="gap:12px;margin-top:14px"><div style="flex:1"><label class="lab">USUÁRIO</label><input class="in" name="username" value="${v("username")}"></div><div style="flex:1"><label class="lab">SENHA</label><input class="in" name="password" type="password" value="${v("password")}"></div></div></div>
-   <div class="fm"><div style="margin-top:14px"><label class="lab">LINK M3U</label><input class="in" name="url" value="${v("url")}" placeholder="http://servidor.com/get.php?username=...&password=..."></div></div>
-   <div style="margin-top:14px"><label class="lab">PIN PARA PROTEGER (OPCIONAL)</label><input class="in mono" name="pin" inputmode="numeric" maxlength="6" value="${v("pin")}" placeholder="Deixe vazio para não pedir"></div>
-   <button class="btn full" style="margin-top:20px">${ed ? "Salvar alterações" : "Salvar lista"}</button>
+   <div class="tabs" style="margin-top:16px"><input type="radio" name="type" id="tx" value="xtream" ${isM3u ? "" : "checked"}><label for="tx">Conta XC</label><input type="radio" name="type" id="tm" value="m3u" ${isM3u ? "checked" : ""}><label for="tm">Lista de reprodução</label></div>
+   <div class="fld"><label class="lab">NOME DA LISTA</label><input class="in" name="name" value="${v("name")}" placeholder="Ex.: Minha lista" required></div>
+   <div class="fx"><div class="fld"><label class="lab">PROVEDOR</label><input class="in" name="server" value="${v("server")}" placeholder="http://provedor.exemplo:8080" inputmode="url" autocapitalize="off"></div>
+   <div class="fld2"><div><label class="lab">USUÁRIO</label><input class="in" name="username" value="${v("username")}" autocapitalize="off"></div><div><label class="lab">SENHA</label><input class="in" name="password" type="password" value="${v("password")}"></div></div></div>
+   <div class="fm"><div class="fld"><label class="lab">LISTA DE REPRODUÇÃO (LINK)</label><input class="in" name="url" value="${v("url")}" placeholder="http://provedor/get.php?username=…" inputmode="url" autocapitalize="off"></div></div>
+   <div class="fld"><label class="lab">SENHA DE PROTEÇÃO (OPCIONAL)</label><input class="in mono" name="pin" inputmode="numeric" maxlength="6" value="${v("pin")}" placeholder="Deixe vazio para não pedir"></div>
+   <button class="btn full" style="margin-top:22px">${ed ? "Salvar alterações" : "Salvar playlist"}</button>
    ${ed ? `<a class="btn g full" style="margin-top:10px" href="/aparelho">Cancelar</a>` : ""}
   </form>
  </div>
@@ -195,12 +193,12 @@ export async function payPage(env, req) {
     : `<div class="row" style="gap:8px;justify-content:center;font-weight:600">${ic("pix", 18, "#32bcad")}Pagamento por Pix</div>
 <p class="mut" style="text-align:center;margin:16px 0;font-size:13px;line-height:1.6">Escolha o plano e gere o código. A ativação é automática quando o pagamento for confirmado.</p>
 ${err ? `<div class="alert err">${esc(err)}</div>` : ""}<a class="btn full" href="/pagar?plano=${plan}&gerar=1">Gerar Pix de ${money(amount)}</a>`;
-  const body = `<style>${LANDING_CSS}</style>${siteNav(env, "/pagar", true)}<div class="wrap" style="padding:40px 24px 60px"><div class="card" style="max-width:920px;margin:0 auto;padding:34px;display:flex;gap:34px;flex-wrap:wrap">
-<div style="flex:1;min-width:260px"><h1 style="font-size:26px">Ativar aparelho</h1><div class="mut mono" style="margin-top:4px">MAC ${esc(d.mac)}</div>
+  const body = `<style>${LANDING_CSS}</style>${siteNav(env, "/pagar", true)}<div class="wrap dpage"><div class="card paybox">
+<div style="flex:1;min-width:0"><div class="eyebrow">ATIVAR APARELHO</div><h1 class="h2" style="margin-top:8px">Escolha seu plano</h1><div class="dmeta"><span class="dpill">${ic("dev", 14, "#c9bbff")}<span class="mono">${esc(d.mac)}</span></span></div>
 <div style="margin-top:22px;display:grid;gap:10px">${opt("annual", "Anual", "1 ano de uso neste aparelho", s.price_annual)}${opt("lifetime", "Vitalício", "Pagamento único", s.price_lifetime)}</div>
 <div class="row" style="gap:10px;margin-top:22px;font-size:13px;color:#cfc8ea">${ic("check", 16, "#7ee2a8")}A ativação é automática assim que o Pix for confirmado.</div>
 <div class="row" style="gap:10px;margin-top:8px;font-size:13px;color:#cfc8ea">${ic("check", 16, "#7ee2a8")}A TV libera sozinha em alguns segundos.</div></div>
-<div style="width:340px;max-width:100%">${right}</div></div></div>`;
+<div class="payr">${right}</div></div></div>`;
   return html(page("Pagamento", body, site(env)));
 }
 
