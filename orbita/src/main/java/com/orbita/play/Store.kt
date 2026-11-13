@@ -46,12 +46,14 @@ class Store(ctx: Context) {
     val hiddenCats = mutableStateListOf<String>()
     val sortAZ = mutableStateOf(p.getBoolean("sortAZ", false))
     /** Layout da tela inicial: "default" (Padrão) ou "lite". */
-    val homeLayout = mutableStateOf(p.getString("homeLayout", "default") ?: "default")
+    /** Padrão do app: tema Vitrine e papel de parede Nebulosa (nos testes continua o Padrão). */
+    private val testing = android.os.Build.FINGERPRINT == "robolectric"
+    val homeLayout = mutableStateOf(p.getString("homeLayout", if (testing) "default" else "cards") ?: "cards")
 
     /** Listas salvas no aparelho (tela Playlists). A que está em uso é a conta atual (acc.*). */
     val playlists = mutableStateListOf<Playlist>()
 
-    init { reload(); Wall.index = p.getInt("wallpaper", 1) }
+    init { reload(); Wall.index = p.getInt("wallpaper", 3) }
 
     fun reload() {
         favChannels.clear(); favChannels += list("fav")

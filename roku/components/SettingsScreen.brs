@@ -211,13 +211,13 @@ sub renderOptions(k as string)
     else if k = "wall"
         title = "ESCOLHA O FUNDO DAS TELAS DO APP"
         names = ["Sem fundo", "Órbita", "Aurora", "Nebulosa", "Meia-noite", "Ametista", "Eclipse", "Oceano", "Brasa", "Floresta", "Grafite"]
-        cur = prefGet("wall", "1")
+        cur = prefGet("wall", "3")
         for i = 0 to names.Count() - 1
             o.Push({ kind: "wall", label: names[i], on: cur = i.ToStr(), act: "wall:" + i.ToStr() })
         end for
     else if k = "layout"
         title = "TELA INICIAL"
-        lay = prefGet("layout", "default")
+        lay = prefGet("layout", "cards")
         o.Push({ kind: "radio", label: "Padrão", value: "Blocos grandes e Continuar assistindo", on: lay = "default", act: "layout:default" })
         o.Push({ kind: "radio", label: "Lite", value: "Blocos quadrados com ícones de linha", on: lay = "lite", act: "layout:lite" })
         o.Push({ kind: "radio", label: "Vitrine", value: "Cartões de vidro grandes", on: lay = "cards", act: "layout:cards" })

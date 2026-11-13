@@ -12,7 +12,7 @@ sub init()
     m.live.observeField("action", "onLiveAction")
     m.playing = invalid
     m.global.addFields({ creds: {}, adultUnlocked: false })
-    m.top.findNode("bg").uri = "pkg:/images/wall_" + prefGet("wall", "1") + ".png"
+    m.top.findNode("bg").uri = "pkg:/images/wall_" + prefGet("wall", "3") + ".png"
     reg = CreateObject("roRegistrySection", "orbita")
     if reg.Exists("server")
         m.global.creds = { server: reg.Read("server"), user: reg.Read("user"), pass: reg.Read("pass") }
@@ -77,7 +77,7 @@ function pushScreen(name as string, params as object) as object
     s.params = params
     if m.stack.Count() > 0 then m.stack.Peek().visible = false
     m.stack.Push(s)
-    if name = homeName() and m.stack.Count() = 1 then m.homeLayout = prefGet("layout", "default")
+    if name = homeName() and m.stack.Count() = 1 then m.homeLayout = prefGet("layout", "cards")
     s.setFocus(true)
     return s
 end function
@@ -89,7 +89,7 @@ sub popScreen()
     top = m.stack.Peek()
     ' layout da tela inicial trocado nas Configurações
     st = top.subtype()
-    if isHome(st) and m.stack.Count() = 1 and prefGet("layout", "default") <> m.homeLayout
+    if isHome(st) and m.stack.Count() = 1 and prefGet("layout", "cards") <> m.homeLayout
         resetTo(homeName())
         return
     end if
@@ -98,7 +98,7 @@ sub popScreen()
 end sub
 
 function homeName() as string
-    l = prefGet("layout", "default")
+    l = prefGet("layout", "cards")
     if l = "lite" then return "HomeLite"
     if l = "cards" or l = "round" or l = "square" then return "HomeCards"
     return "HomeScreen"

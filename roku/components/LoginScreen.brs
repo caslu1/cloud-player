@@ -237,13 +237,14 @@ sub onAct(event as object)
             pc = playlistCreds(pl)
             if pc <> invalid and not isRemovedList(pc.server, pc.user)
                 c = pc
+                c.name = asText(pl.name)
                 exit for
             end if
         end for
     end if
     if c <> invalid
         if c <> invalid and not m.busy and not m.adding
-            m.values = { name: "", server: c.server, user: c.user, pass: c.pass, url: "" }
+            m.values = { name: asText(c.name), server: c.server, user: c.user, pass: c.pass, url: "" }
             m.xtream = true
             buildForm()
             login()

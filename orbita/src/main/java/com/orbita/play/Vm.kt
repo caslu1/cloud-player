@@ -118,7 +118,14 @@ class Vm(ctx: Context) {
             val first = a.playlists.firstOrNull { !store.isRemoved(it.account()) }
             if (account == null && first != null && !a.locked && store.lastSiteList() != first.key) {
                 store.setLastSiteList(first.key)
-                runCatching { login(first.account()) }
+                runCatching { login(first.account(), first.name.takeIf { it.isNotBlank() }) }
+            }
+            // listas do site que já estão no app com nome automático ("Lista 1") ganham o nome dado no site
+            for (pl in a.playlists) {
+                if (pl.name.isBlank()) continue
+                val acc = pl.account()
+                val ex = store.playlists.firstOrNull { it.same(acc) } ?: continue
+                if (Regex("""Lista \d+""").matches(ex.name) && ex.name != pl.name) store.upsertPlaylist(pl.name, acc)
             }
         }
     }
