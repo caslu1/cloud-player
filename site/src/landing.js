@@ -95,9 +95,10 @@ ${formHtml}
 <section id="planos" class="sec"><div class="wrap"><div class="eyebrow">PLANOS</div><h2 class="h2">Comece com o teste grátis</h2><div class="plans" style="margin-top:24px">${plansHtml}</div></div></section>`;
 
   const notice = `<section class="sec"><div class="wrap"><div class="card imp">
-<span class="ibox warn">${li("warn", 22)}</span><div><h3>Importante: o ${name} é apenas o player</h3>
-<p class="mut" style="margin-top:8px">O app funciona como um reprodutor de vídeo. Todo o conteúdo exibido vem exclusivamente da lista que você adiciona.</p>
-<ul><li>O ${name} não fornece, não vende e não hospeda vídeos nem listas.</li><li>O app vem sem conteúdo: sem uma lista sua, ele não mostra nada.</li><li>Use apenas conteúdo que você tem direito de assistir.</li></ul></div></div></div></section>`;
+<div class="imph"><span class="ibox warn">${li("warn", 22)}</span><div><div class="eyebrow" style="color:#ffc56b">IMPORTANTE</div><h3>O ${name} é apenas o player</h3></div></div>
+<p class="mut impp">O app funciona como um reprodutor de vídeo. Todo o conteúdo exibido vem exclusivamente da lista que você adiciona.</p>
+<div class="impl">${["O " + name + " não fornece, não vende e não hospeda vídeos nem listas.", "O app vem sem conteúdo: sem uma lista sua, ele não mostra nada.", "Use apenas conteúdo que você tem direito de assistir."].map((t) => `<div class="impi">${li("check", 16)}<span>${t}</span></div>`).join("")}</div>
+</div></div></section>`;
 
   return siteNav(env, "/", logged) + hero + steps + dl + activate + notice + siteFooter(env);
 }
@@ -172,7 +173,7 @@ body:before{background:radial-gradient(ellipse at 80% -10%,rgba(124,92,255,.28),
 .num{display:inline-flex;width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#8b6cff,#6a46f0);color:#fff;font-weight:700;align-items:center;justify-content:center}.num.sm{width:30px;height:30px;font-size:13px;flex:none}
 .cta{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:34px 36px;background:linear-gradient(120deg,rgba(124,92,255,.22),rgba(22,18,40,.9) 60%)!important}
 .act{align-items:center;grid-template-columns:1fr 520px}.g3m{display:grid;gap:14px;margin-top:24px}
-.imp{display:flex;gap:22px;padding:34px}.imp h3{font-size:22px}.imp ul{margin:14px 0 0 18px;color:var(--text);line-height:2}
+.imp{padding:30px 32px}.imph{display:flex;align-items:center;gap:16px}.imp h3{font-size:22px;margin-top:4px}.impp{margin-top:14px;line-height:1.6}.impl{display:grid;gap:10px;margin-top:16px}.impi{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:rgba(255,197,107,.06);border:1px solid rgba(255,197,107,.14);color:var(--text);font-size:14.5px;line-height:1.5}.impi svg{flex:none;color:#ffc56b;margin-top:2px}.ibox.warn{width:50px;height:50px}
 .dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .dcard{padding:22px;display:flex;flex-direction:column;gap:16px}.dcard h3{font-size:17px}.dcard p{font-size:13px;margin-top:2px}
 .dcard .row{align-items:flex-start}.dcard .tag{margin-left:auto}
@@ -196,7 +197,7 @@ body:before{background:radial-gradient(ellipse at 80% -10%,rgba(124,92,255,.28),
  .mmchk:checked~.mpanel{display:flex}
  .hgrid,.g3,.g2,.sgrid,.act,.dgrid{grid-template-columns:1fr !important}
  .orb{display:none}.hero{padding:40px 0 44px}.hero.sm{padding:36px 0 10px}
- .sec{padding-top:60px}.imp{flex-direction:column;padding:24px}.cta{flex-direction:column;align-items:flex-start;padding:26px}
+ .sec{padding-top:60px}.imp{padding:22px}.imp h3{font-size:19px}.cta{flex-direction:column;align-items:flex-start;padding:26px}
 }
 @media (max-width:760px){
  .ftop{grid-template-columns:1fr 1fr;gap:30px 20px;padding:40px 0 30px}.fbrand{grid-column:1/-1}
