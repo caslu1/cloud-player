@@ -59,8 +59,6 @@ fun HomeLite(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () ->
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(10_000) } }
     Box(Modifier.fillMaxSize()) {
         ScreenBackground()
-        PosterWall(vm)
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x99050409), 0.45f to Color(0xC7050409), 1f to Color(0xF2050409))))
 
         // relógio no canto
         Column(Modifier.align(Alignment.TopEnd).padding(top = 18.dp, end = 30.dp), horizontalAlignment = Alignment.End) {
@@ -91,27 +89,7 @@ fun HomeLite(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () ->
             }
         }
 
-        // rodapé
-        val ver = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: "1.0" }
-        val st = vm.status
-        val status = buildString {
-            append(if (st?.status == null || st.status.equals("Active", true)) "Ativa" else st.status)
-            st?.expires?.let { append(" · vence " + SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")).format(Date(it))) }
-        }
-        val mac = remember { Activation.mac(ctx) }
-        val key = remember { Activation.key(ctx) }
-        Row(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 30.dp, vertical = 14.dp)) {
-            Column {
-                Txt("Versão: $ver", F.s(8.sp, C.dim))
-                Txt("Status: $status", F.s(8.sp, C.dim))
-            }
-            Spacer(Modifier.weight(1f))
-            Column(horizontalAlignment = Alignment.End) {
-                Txt("MAC: $mac", F.s(8.sp, C.dim))
-                Txt("Chave: $key", F.s(8.sp, C.dim))
-                vm.account?.takeIf { it.type == "xtream" }?.let { Txt("Usuário: ${it.user}", F.s(8.sp, C.dim)) }
-            }
-        }
+        DeviceFooter(vm, Modifier.align(Alignment.BottomCenter).padding(horizontal = 10.dp))
     }
 }
 

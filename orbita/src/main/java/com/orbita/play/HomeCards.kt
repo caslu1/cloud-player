@@ -67,15 +67,6 @@ fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -
 
     Box(Modifier.fillMaxSize()) {
         ScreenBackground()
-        // capa de fundo (lançamento mais recente), bem escura
-        val hero = remember(vm.series, vm.movies) {
-            vm.series.sortedByDescending { it.added }.firstNotNullOfOrNull { it.backdrop?.takeIf { b -> b.isNotBlank() } }
-                ?: vm.movies.sortedByDescending { it.added }.firstNotNullOfOrNull { it.poster?.takeIf { b -> b.isNotBlank() } }
-        }
-        if (hero != null) AsyncImage(hero, null, Modifier.fillMaxSize().graphicsLayer { alpha = 0.38f }, contentScale = ContentScale.Crop)
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0xB3050409), 0.5f to Color(0x8C050409), 1f to Color(0xF2050409))))
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0x99050409), 0.6f to Color(0x00050409))))
-
         // topo: logo no centro, botões redondos à direita
         Logo(Modifier.align(Alignment.TopCenter).padding(top = 58.dp), size = 20f)
         Row(Modifier.align(Alignment.TopEnd).padding(top = 22.dp, end = 30.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -106,33 +97,12 @@ fun HomeCards(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () -
             cards.forEach { c -> BadgeTile(c, style == "round", if (c.key == ui.tab.name) first else null) }
         }
 
-        // rodapé: relógio, data e aparelho
-        val st = vm.status
-        val status = buildString {
-            append(if (st?.status == null || st.status.equals("Active", true)) "Ativa" else st.status)
-            st?.expires?.let { append(" · vence " + SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")).format(Date(it))) }
+        // relógio no canto e rodapé padrão
+        Column(Modifier.align(Alignment.TopStart).padding(top = 22.dp, start = 30.dp)) {
+            Txt(hhmm(now), F.s(17.sp, C.white, FontWeight.Bold, F.outfit))
+            Txt(remember(now / 3_600_000) { SimpleDateFormat("EEE, d MMM", Locale("pt", "BR")).format(Date(now)) }, F.s(7.5.sp, C.dim))
         }
-        val mac = remember { Activation.mac(ctx) }
-        val key = remember { Activation.key(ctx) }
-        Row(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 46.dp, end = 46.dp, bottom = 34.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(34.dp).clip(CircleShape).background(Color(0x1FFFFFFF)), contentAlignment = Alignment.Center) {
-                Icon(Ic.Key, 15.dp, C.white)
-            }
-            Spacer(Modifier.width(10.dp))
-            Column {
-                Txt("MAC  $mac", F.s(8.5.sp, C.text, FontWeight.Medium))
-                Txt("Chave  $key", F.s(8.sp, C.dim))
-            }
-            Spacer(Modifier.weight(1f))
-            Txt(hhmm(now), F.s(20.sp, C.white, FontWeight.Bold, F.outfit))
-            Spacer(Modifier.width(14.dp))
-            Box(Modifier.width(1.dp).height(30.dp).background(Color(0x33FFFFFF)))
-            Spacer(Modifier.width(14.dp))
-            Column {
-                Txt(remember(now / 3_600_000) { SimpleDateFormat("EEEE, d 'de' MMM", Locale("pt", "BR")).format(Date(now)).replaceFirstChar { it.uppercase() } }, F.s(10.5.sp, C.white, FontWeight.SemiBold))
-                Txt("Assinatura: $status", F.s(8.sp, C.dim))
-            }
-        }
+        DeviceFooter(vm, Modifier.align(Alignment.BottomCenter).padding(horizontal = 10.dp))
     }
 }
 

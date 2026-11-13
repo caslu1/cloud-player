@@ -1,5 +1,7 @@
 package com.orbita.play
 
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.key
 import android.view.KeyEvent as AKey
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -145,9 +147,22 @@ fun ConfirmDialog(
             Txt(title, F.s(14.sp, C.white, FontWeight.Bold, F.outfit))
             if (message.isNotEmpty()) { Spacer(Modifier.height(5.dp)); Txt(message, F.s(9.sp, C.dim), maxLines = 3, align = androidx.compose.ui.text.style.TextAlign.Center) }
             Spacer(Modifier.height(18.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ActionButton("Cancelar", requester = cancelReq) { onCancel() }
-                ActionButton(confirm, primary = true, icon = icon) { onConfirm() }
+            // o foco não sai da janela: ◀ ▶ só alternam entre os dois botões
+            var onConfirmBtn by remember { mutableStateOf(false) }
+            Row(
+                Modifier.onPreviewKeyEvent { e ->
+                    if (e.type != androidx.compose.ui.input.key.KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    when (e.key) {
+                        androidx.compose.ui.input.key.Key.DirectionUp, androidx.compose.ui.input.key.Key.DirectionDown -> true
+                        androidx.compose.ui.input.key.Key.DirectionRight -> onConfirmBtn
+                        androidx.compose.ui.input.key.Key.DirectionLeft -> !onConfirmBtn
+                        else -> false
+                    }
+                },
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(Modifier.onFocusChanged { if (it.hasFocus) onConfirmBtn = false }) { ActionButton("Cancelar", requester = cancelReq) { onCancel() } }
+                Box(Modifier.onFocusChanged { if (it.hasFocus) onConfirmBtn = true }) { ActionButton(confirm, primary = true, icon = icon) { onConfirm() } }
             }
         }
     }

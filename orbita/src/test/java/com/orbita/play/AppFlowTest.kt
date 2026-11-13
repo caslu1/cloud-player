@@ -358,5 +358,11 @@ class AppFlowTest {
             settle(800)
             shot(name)
         }
+
+        // Recarregar: janela de carregando e depois "Atualização concluída"
+        rule.onNodeWithContentDescription("Recarregar").performClick()
+        repeat(5) { pump() }
+        waitText("Atualização concluída")
+        shot("26-recarregar")
     }
 }

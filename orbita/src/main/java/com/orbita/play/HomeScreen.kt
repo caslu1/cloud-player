@@ -111,6 +111,7 @@ fun HomeScreen(vm: Vm, pb: Playback, ui: Ui, onSearch: () -> Unit, onReload: () 
             Spacer(Modifier.height(26.dp))
             ContinueRow(vm, pb, ui)
         }
+        DeviceFooter(vm, Modifier.align(Alignment.BottomCenter).padding(horizontal = 8.dp))
     }
 }
 

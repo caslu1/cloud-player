@@ -146,7 +146,7 @@ fun SettingsScreen(vm: Vm, pb: Playback, ui: Ui) {
                             "pin" -> ChangePin(vm, ui) { msg = it }
                             "hide" -> HideCategories(vm)
                             "play" -> PlaybackPrefs(vm)
-                            "storage" -> Storage(vm, confirm) { msg = it }
+                            "storage" -> Storage(vm, ui, confirm) { msg = it }
                             "wall" -> Card { WallpaperPicker(vm) }
                             "layout" -> HomeLayoutPicker(vm)
                             else -> Logout(vm, pb, ui, confirm)
@@ -211,53 +211,55 @@ private fun BigValue(label: String, value: String, spacing: Float = 0f) {
 }
 
 @Composable
+private fun InfoTile(label: String, value: String, icon: ImageVector, modifier: Modifier, mono: Boolean = false) {
+    Column(
+        modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xE60C0A16)).border(1.dp, C.panelBorder, RoundedCornerShape(12.dp))
+            .padding(horizontal = 14.dp, vertical = 12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(22.dp).clip(RoundedCornerShape(6.dp)).background(C.accentSoft), contentAlignment = Alignment.Center) { Icon(icon, 12.dp, C.accentText) }
+            Spacer(Modifier.width(8.dp))
+            Txt(label, F.s(7.5.sp, C.faint, FontWeight.SemiBold, spacing = 1.2.sp))
+        }
+        Spacer(Modifier.height(8.dp))
+        Txt(value, F.s(if (mono) 15.sp else 15.sp, C.white, FontWeight.Bold, F.outfit, if (mono) 1.5.sp else 0.sp), maxLines = 1)
+    }
+}
+
+/** Informações gerais: usuário, MAC e chave em destaque; assinatura e app embaixo. */
+@Composable
 private fun GeneralInfo(vm: Vm) {
     val a = vm.account
     val st = vm.status
     val ctx = LocalContext.current
     val ver = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: "1.0" }
     val active = st?.status == null || st.status.equals("Active", true)
+    val user = if (a?.type == "xtream") a.user else "Lista M3U"
+    val playlist = vm.store.playlists.firstOrNull { p -> a?.let { p.same(it) } == true }?.name
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Card("CONTA", Modifier.weight(1f).height(118.dp)) {
-                Line("Tipo", if (a?.type == "xtream") "Xtream Codes" else "Lista M3U")
-                if (a?.type == "xtream") { Line("Servidor", a.server.removePrefix("http://").removePrefix("https://")); Line("Usuário", a.user) }
-                else Line("Lista", a?.m3uUrl.orEmpty())
-            }
-            Card("ASSINATURA", Modifier.weight(1f).height(118.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val c = if (active) Color(0xFF7EE2A8) else C.live
-                    Row(Modifier.clip(RoundedCornerShape(12.dp)).background(c.copy(alpha = 0.15f)).padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(5.dp).clip(CircleShape).background(c)); Spacer(Modifier.width(5.dp))
-                        Txt(if (active) "Ativa" else st?.status.orEmpty(), F.s(8.5.sp, c, FontWeight.SemiBold))
-                    }
+            InfoTile("USUÁRIO", user, Ic.Key, Modifier.weight(1f))
+            InfoTile("ENDEREÇO MAC", Activation.mac(ctx), Ic.Info, Modifier.weight(1.25f), mono = true)
+            InfoTile("CHAVE DO APARELHO", Activation.key(ctx), Ic.Lock, Modifier.weight(1f), mono = true)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Card("ASSINATURA", Modifier.weight(1f).height(124.dp)) {
+                val c = if (active) Color(0xFF7EE2A8) else C.live
+                Row(Modifier.clip(RoundedCornerShape(12.dp)).background(c.copy(alpha = 0.15f)).padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(5.dp).clip(CircleShape).background(c)); Spacer(Modifier.width(5.dp))
+                    Txt(if (active) "Ativa" else st?.status.orEmpty(), F.s(8.5.sp, c, FontWeight.SemiBold))
                 }
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
                 Row {
                     Box(Modifier.weight(1f)) { BigValue("VALIDADE", st?.expires?.let { SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")).format(Date(it)) } ?: "—") }
                     Box(Modifier.weight(1f)) { BigValue("CONEXÕES", st?.maxConnections?.let { "${st.activeConnections ?: "0"} de $it" } ?: "—") }
                 }
             }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Card("ESTE APARELHO", Modifier.weight(1f).height(118.dp)) {
-                Row {
-                    Box(Modifier.weight(1.3f)) { BigValue("MAC", Activation.mac(ctx)) }
-                    Box(Modifier.weight(1f)) { BigValue("CHAVE", Activation.key(ctx), 2f) }
-                }
-                Spacer(Modifier.height(2.dp))
-                if (Activation.enabled()) Txt("Use o MAC e a chave em ${Activation.site.removePrefix("https://").removePrefix("http://")}", F.s(8.sp, C.dim), maxLines = 1)
-                Txt("Orbita Play $ver", F.s(8.sp, C.faint))
-            }
-            Card("CONTEÚDO", Modifier.weight(1f).height(118.dp)) {
-                Row {
-                    listOf(vm.uniqueChannels.size to "canais", vm.movies.size to "filmes", vm.series.size to "séries").forEach { (n, l) ->
-                        Column(Modifier.weight(1f)) {
-                            Txt(fmtCount(n), F.s(17.sp, C.white, FontWeight.Bold, F.outfit))
-                            Txt(l, F.s(8.5.sp, C.dim))
-                        }
-                    }
-                }
+            Card("APLICATIVO", Modifier.weight(1f).height(124.dp)) {
+                Line("Versão", "Orbita Play $ver")
+                Line("Playlist", playlist ?: "—")
+                if (a?.type == "xtream") Line("Servidor", a.server.removePrefix("http://").removePrefix("https://"))
+                if (Activation.enabled()) Line("Site", Activation.site.removePrefix("https://").removePrefix("http://"))
             }
         }
         Txt("O app não fornece conteúdo: use apenas listas que você tem direito de usar.", F.s(8.sp, C.faint), maxLines = 2)
@@ -353,12 +355,12 @@ private fun PlaybackPrefs(vm: Vm) {
 }
 
 @Composable
-private fun Storage(vm: Vm, confirm: (Ask) -> Unit, msg: (String) -> Unit) {
+private fun Storage(vm: Vm, ui: Ui, confirm: (Ask) -> Unit, msg: (String) -> Unit) {
     val ctx = LocalContext.current
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Card("LISTAS") {
             Option("Recarregar listas", "Canais, filmes e séries", memKey = "st:reload") {
-                confirm(Ask("Recarregar as listas?", "Canais, filmes e séries são baixados de novo do seu provedor.", "Recarregar", Ic.Refresh) { vm.reloadAll(); msg("Recarregando listas…") })
+                confirm(Ask("Recarregar as listas?", "Canais, filmes e séries são baixados de novo do seu provedor.", "Recarregar", Ic.Refresh) { vm.reloadAll(); ui.reloading = 1 })
             }
         }
         Card("DADOS GUARDADOS NESTE APARELHO") {

@@ -94,6 +94,8 @@ class Ui {
     var footballMenuChosen = false
     /** Pedido de senha em aberto (controle parental). */
     var pinPrompt by mutableStateOf<PinPrompt?>(null)
+    /** Janela do Recarregar: 0 fechada, 1 carregando, 2 concluído. */
+    var reloading by mutableIntStateOf(0)
 
     /** Abre uma categoria adulta bloqueada depois da senha. */
     fun unlockAdult(vm: Vm, then: () -> Unit) {
@@ -240,7 +242,7 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
     }
     val openSearch = { ui.push(Route.Search(FocusMem.last)) }
     val openSettings = { ui.push(Route.Settings(FocusMem.last)) }
-    val reload = { vm.reloadAll(); toast = "Atualizando a lista…" }
+    val reload = { vm.reloadAll(); ui.reloading = 1 }
     // a prévia de canal não continua tocando por trás da tela inicial
     LaunchedEffect(ui.home) { if (ui.home && !pb.fullscreen && pb.current?.kind == Kind.LIVE) pb.stop() }
     LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
@@ -278,6 +280,7 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
             }
         }
         ui.pinPrompt?.let { p -> PinDialog(p) { if (ui.pinPrompt === p) ui.pinPrompt = null } }
+        ReloadDialog(vm, ui)
         if (exitAsk) ConfirmDialog("Sair do Orbita Play?", "O que estiver tocando será fechado.", "Sair", onConfirm = { pb.stop(); exit() }, onCancel = { exitAsk = false })
         toast?.let {
             Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 36.dp).background(Color(0xEE15121F), androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).padding(horizontal = 14.dp, vertical = 8.dp)) {
