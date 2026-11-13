@@ -242,6 +242,7 @@ class AppFlowTest {
         repeat(10) { pump() }
         click("Gol TV FHD") // segundo OK: tela cheia
         repeat(10) { pump() }
+        shot("28-player-canais", wait = false)
         shot("10-player")
         settle(6000) // as informações somem sozinhas
         pressLeft() // abre a lista com categorias
