@@ -56,8 +56,12 @@ Fundo do ícone do app: `#241356 → #140B36 → #0B0716`
 
 ## Animação de abertura (splash TV)
 
-- `motion/orbitaplay-splash-1080p.mp4`: 1920×1080, 30 fps, 4 s, H.264
-- `motion/orbitaplay-splash-preview.gif`: prévia leve
+- `motion/orbitaplay-splash-1080p.mp4`: 1920×1080, 30 fps, 4,5 s, H.264 + áudio AAC
+- `motion/orbitaplay-splash-sound.wav`: só o som (48 kHz, estéreo)
+- `motion/orbitaplay-splash-preview.gif`: prévia leve (sem som)
 
-Sequência: o "O" se desenha → a órbita gira em volta → o planeta aparece → as letras entram e o logo desliza para o centro → um brilho passa pelo texto → aparece a frase "CANAIS · FILMES · SÉRIES · FUTEBOL".
-Para gerar de novo: `python3 source/anim.py anim.html` e `node source/rec.js` (frames), depois `ffmpeg -framerate 30 -i frames/f%04d.png -c:v libx264 -pix_fmt yuv420p splash.mp4`.
+Visual: fundo quase preto (`#040306`) com brilho violeta bem leve; o "O" branco se desenha, a órbita roxa gira em volta, o planeta aparece, as letras entram enquanto o logo desliza para o centro e um brilho passa pelo texto.
+Som (original, sintetizado): duas batidas graves ("tum-TUM") em 0,2 s e 0,5 s, depois um acorde de sintetizador que cresce, com brilhos agudos quando o planeta aparece e quando o brilho passa.
+
+Para gerar de novo: `python3 source/sound.py som.wav`, `python3 source/anim.py anim.html`, `node source/rec.js` (frames) e depois
+`ffmpeg -framerate 30 -i frames/f%04d.png -i som.wav -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest splash.mp4`.
