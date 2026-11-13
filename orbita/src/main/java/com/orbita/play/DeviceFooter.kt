@@ -54,8 +54,8 @@ fun DeviceFooter(vm: Vm, modifier: Modifier = Modifier) {
         }
         Spacer(Modifier.weight(1f))
         Column(horizontalAlignment = Alignment.End) {
-            Txt("MAC: $mac", F.s(7.5.sp, C.dim))
-            Txt("Chave: $key", F.s(7.5.sp, C.dim))
+            Txt("Endereço MAC: $mac", F.s(7.5.sp, C.dim))
+            Txt("Chave do dispositivo: $key", F.s(7.5.sp, C.dim))
             if (user != null) Txt("Usuário: $user", F.s(7.5.sp, C.dim))
         }
     }
