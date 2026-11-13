@@ -77,6 +77,15 @@ function asNum(v as dynamic) as float
     return Val(s)
 end function
 
+' Número inteiro exato (timestamps: Val() perde precisão em números grandes)
+function asInt(v as dynamic) as integer
+    s = asText(v).Trim()
+    if s = "" then return 0
+    i = Instr(1, s, ".")
+    if i > 0 then s = Left(s, i - 1)
+    return s.ToInt()
+end function
+
 function fmtCount(n as integer) as string
     s = n.ToStr()
     out = ""

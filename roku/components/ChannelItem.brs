@@ -1,6 +1,6 @@
 'Linha de canal igual ao ChannelRow do Android: número, logo, nome, programa de agora e a estrela ao lado.
 sub init()
-    m.focus = addPoster(m.top, "pkg:/images/ch_focus.png", 0, 0, 520, 88)
+    m.focus = addPoster(m.top, "pkg:/images/row_focus.9.png", 0, 0, 520, 88)
     m.num = addLabel(m.top, "", 16, 32, ISEM(), 20, "0x9D9ABBFF", 64)
     m.logoBg = addPoster(m.top, "pkg:/images/logo_box.png", 82, 14, 84, 60)
     m.abbr = addLabel(m.top, "", 82, 33, ISEM(), 15, "0xFFFFFFFF", 84, "center")
@@ -9,6 +9,15 @@ sub init()
     m.name = addLabel(m.top, "", 182, 18, ISEM(), 23, "0xFFFFFFFF", 324)
     m.prog = addLabel(m.top, "", 182, 52, IREG(), 18, "0x9D9ABBFF", 324)
     m.star = addPoster(m.top, "pkg:/images/star_btn_n.png", 532, 10, 64, 68)
+    m.watch = addLabel(m.top, "▶ Assistindo", 0, 22, ISEM(), 15, "0x22D3EEFF")
+    m.watch.visible = false
+    m.favIc = addPoster(m.top, "pkg:/images/ic_star.png", 0, 21, 22, 22)
+    m.favIc.blendColor = "0xFBBF24FF"
+    m.favIc.visible = false
+    m.ptrack = addRect(m.top, 182, 80, 460, 4, "0xFFFFFF33")
+    m.pbar = addRect(m.top, 182, 80, 0, 4, "0x22D3EEFF")
+    m.ptrack.visible = false
+    m.pbar.visible = false
 end sub
 
 function hashColor(s as string) as string
@@ -38,6 +47,7 @@ sub onContent()
     c.observeField("prog", "paint")
     c.observeField("starFocus", "paint")
     c.observeField("playing", "paint")
+    c.observeField("frac", "paint")
     paint()
 end sub
 
@@ -54,5 +64,25 @@ sub paint()
     if c.fav then st = "on"
     if f and c.starFocus then st = st + "_f"
     m.star.uri = "pkg:/images/star_btn_" + st + ".png"
-    m.star.visible = (c.icon <> "nostar")
+    panel = (c.icon = "panel")
+    m.star.visible = not panel
+    if panel
+        ' linha do menu lateral do player (igual ao Android)
+        m.focus.width = 720
+        m.name.width = 400
+        m.prog.width = 520
+        w = Len(m.name.text) * 13
+        if w > 400 then w = 400
+        m.watch.visible = c.playing
+        m.watch.translation = [182 + w + 16, 22]
+        m.favIc.visible = c.fav
+        fx = 182 + w + 16
+        if c.playing then fx = fx + 140
+        m.favIc.translation = [fx, 20]
+        m.ptrack.visible = c.frac > 0
+        m.pbar.visible = c.frac > 0
+        m.pbar.width = Int(460 * c.frac)
+        if c.prog <> "" then m.name.translation = [182, 12]
+        m.prog.translation = [182, 46]
+    end if
 end sub

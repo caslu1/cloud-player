@@ -2,6 +2,7 @@
 <component name="EpgTask" extends="Task">
     <interface>
         <field id="ids" type="array" />
+        <field id="full" type="boolean" />
         <field id="response" type="assocarray" />
     </interface>
     <script type="text/brightscript" uri="pkg:/components/common.brs" />

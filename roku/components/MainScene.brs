@@ -8,12 +8,8 @@ sub init()
     m.errMsg.font = mkFont(IMED(), 24)
     m.top.findNode("errTimer").observeField("fire", "hideError")
     ' tela cheia ao vivo: informações do canal e lista lateral (igual ao Android)
-    m.liveOv = m.top.findNode("liveOv")
-    m.chPanel = m.top.findNode("chPanel")
-    m.chList = m.top.findNode("chList")
-    m.chList.observeField("itemSelected", "onPanelPick")
-    m.top.findNode("ovTimer").observeField("fire", "hideOverlay")
-    buildOverlay()
+    m.live = m.top.findNode("liveUI")
+    m.live.observeField("action", "onLiveAction")
     m.playing = invalid
     m.global.addFields({ creds: {} })
     reg = CreateObject("roRegistrySection", "orbita")
@@ -93,99 +89,79 @@ sub startVideo()
     if a.start <> invalid and a.start > 0 then c.PlayStart = a.start
     m.video.content = c
     m.video.visible = true
+    m.screens.visible = false
     m.video.control = "play"
     m.video.setFocus(true)
     if a.live = true
-        if a.list <> invalid then m.liveList = a.list
-        if a.index <> invalid then m.liveIdx = a.index
-        if a.epg <> invalid then m.liveEpg = a.epg
+        d = m.live.data
+        if d = invalid then d = {}
+        if a.list <> invalid then d.list = a.list
+        if a.index <> invalid then d.idx = a.index
+        if a.all <> invalid then d.all = a.all
+        if a.cats <> invalid then d.cats = a.cats
+        if a.variants <> invalid then d.variants = a.variants
+        if a.catId <> invalid then d.catId = a.catId
+        if d.all = invalid then d.all = []
+        if d.cats = invalid then d.cats = []
+        m.live.data = d
         showOverlay()
     end if
 end sub
 
-sub buildOverlay()
-    o = m.liveOv
-    addPoster(o, "pkg:/images/player_shade.png", 0, 680, 1920, 400)
-    m.ovLogoBg = addPoster(o, "pkg:/images/logo_box.png", 72, 860, 150, 106)
-    m.ovLogoBg.blendColor = "0x1B1828FF"
-    m.ovLogo = addPoster(o, "", 82, 870, 130, 86)
-    m.ovLogo.loadDisplayMode = "scaleToFit"
-    m.ovNum = addLabel(o, "", 250, 858, ISEM(), 22, "0x22D3EEFF")
-    m.ovName = addLabel(o, "", 250, 888, OUTF(), 40, "0xFFFFFFFF", 1300)
-    m.ovProg = addLabel(o, "", 250, 942, IREG(), 22, "0xE7E5F7FF", 1300)
-    addPoster(o, "pkg:/images/live_badge.png", 1740, 862, 108, 34)
-    m.ovClock = addLabel(o, "", 1640, 40, OUTF(), 30, "0xFFFFFFFF", 220, "right")
-end sub
-
 sub showOverlay()
-    a = m.playing
-    if a = invalid or a.live <> true then return
-    c = invalid
-    if m.liveList <> invalid and m.liveIdx <> invalid and m.liveIdx < m.liveList.Count() then c = m.liveList[m.liveIdx]
-    if c <> invalid
-        m.ovNum.text = c.num
-        m.ovName.text = c.name
-        m.ovLogo.uri = c.logo
-        e = invalid
-        if m.liveEpg <> invalid then e = m.liveEpg[c.id]
-        if e <> invalid and e.title <> "" then m.ovProg.text = e.title + "  ·  " + hhmmOf(e.start) + " – " + hhmmOf(e.stop) else m.ovProg.text = ""
-    else
-        m.ovNum.text = ""
-        m.ovName.text = a.title
-        m.ovProg.text = ""
-    end if
-    d = CreateObject("roDateTime")
-    d.ToLocalTime()
-    m.ovClock.text = two(d.GetHours()) + ":" + two(d.GetMinutes())
-    m.liveOv.visible = true
-    t = m.top.findNode("ovTimer")
-    t.control = "stop"
-    t.control = "start"
+    if m.live.mode = "overlay" then m.live.callFunc("refresh", {}) else m.live.mode = "overlay"
 end sub
 
 sub hideOverlay()
-    m.liveOv.visible = false
-end sub
-
-' Troca de canal no player (▲▼ e lista lateral)
-sub zap(idx as integer)
-    if m.liveList = invalid or m.liveList.Count() = 0 then return
-    n = m.liveList.Count()
-    idx = (idx + n) mod n
-    m.liveIdx = idx
-    c = m.liveList[idx]
-    regPush("recents", { key: c.id, id: c.id, name: c.name, num: c.num, logo: c.logo }, 30)
-    play({ type: "play", streamId: c.id, title: c.name, live: true })
-end sub
-
-sub openPanel()
-    if m.liveList = invalid then return
-    root = CreateObject("roSGNode", "ContentNode")
-    for each c in m.liveList
-        n = root.createChild("ItemData")
-        n.key = c.id
-        n.title = c.name
-        n.num = c.num
-        n.logo = c.logo
-        n.playing = (c.id = m.liveList[m.liveIdx].id)
-        n.icon = "nostar"
-        if m.liveEpg <> invalid and m.liveEpg[c.id] <> invalid and m.liveEpg[c.id].title <> "" then n.prog = m.liveEpg[c.id].title
-    end for
-    m.chList.content = root
-    m.chList.jumpToItem = m.liveIdx
-    m.chPanel.visible = true
-    m.liveOv.visible = false
-    m.chList.setFocus(true)
-end sub
-
-sub closePanel()
-    m.chPanel.visible = false
+    m.live.mode = "hidden"
     m.video.setFocus(true)
 end sub
 
-sub onPanelPick()
-    closePanel()
-    zap(m.chList.itemSelected)
+' Troca de canal no player (▲▼)
+sub zap(dirn as integer)
+    d = m.live.data
+    if d = invalid or d.list = invalid or d.list.Count() = 0 then return
+    n = d.list.Count()
+    playIdx((d.idx + dirn + n) mod n, d.list, invalid)
+end sub
+
+sub playIdx(idx as integer, list as object, catId as dynamic)
+    d = m.live.data
+    d.list = list
+    d.idx = idx
+    if catId <> invalid then d.catId = catId
+    m.live.data = d
+    c = list[idx]
+    id = c.id
+    if id = invalid then id = c.key
+    regPush("recents", { key: id, id: id, name: c.name, num: asText(c.num), logo: asText(c.logo), cat: asText(c.cat), vkey: asText(c.vkey), q: asText(c.q) }, 30)
+    play({ type: "play", streamId: id, title: c.name, live: true })
+end sub
+
+sub onLiveAction(event as object)
+    a = event.getData()
+    if a.type = "hide"
+        hideOverlay()
+    else if a.type = "zap"
+        if a.dir = "up" then zap(-1) else zap(1)
+    else if a.type = "pick"
+        m.live.mode = "hidden"
+        playIdx(a.idx, a.list, a.catId)
+    else if a.type = "quality"
+        ' troca pela versão escolhida (FHD/HD/SD…) do mesmo canal
+        d = m.live.data
+        c = d.list[d.idx]
+        nc = {}
+        nc.Append(c)
+        nc.id = a.id
+        nc.q = a.q
+        for each it in d.all
+            if it.id = a.id then nc.name = it.name
+        end for
+        d.list[d.idx] = nc
+        m.live.data = d
+        play({ type: "play", streamId: a.id, title: nc.name, live: true })
+    end if
 end sub
 
 ' Guarda onde parou (filmes e episódios) para o "Continuar assistindo".
@@ -203,10 +179,10 @@ end sub
 
 sub stopVideo()
     saveProgress()
-    m.liveOv.visible = false
-    m.chPanel.visible = false
+    m.live.mode = "hidden"
     m.video.control = "stop"
     m.video.visible = false
+    m.screens.visible = true
     m.playing = invalid
     if m.stack.Count() > 0 then m.stack.Peek().setFocus(true)
 end sub
@@ -267,31 +243,20 @@ end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
-    if m.video.visible and m.playing <> invalid and m.playing.live = true
-        if m.chPanel.visible
-            if key = "back" or key = "right"
-                closePanel()
-                return true
-            end if
-            return false
-        end if
-        hasList = (m.liveIdx <> invalid and m.liveList <> invalid)
-        if (key = "up" or key = "down" or key = "left") and not hasList
+    if m.video.visible and m.playing <> invalid and m.playing.live = true and m.live.mode = "hidden"
+        d = m.live.data
+        hasList = (d <> invalid and d.list <> invalid and d.list.Count() > 0)
+        if key = "up" and hasList
+            zap(-1)
             return true
-        else if key = "up"
-            zap(m.liveIdx - 1)
+        else if key = "down" and hasList
+            zap(1)
             return true
-        else if key = "down"
-            zap(m.liveIdx + 1)
-            return true
-        else if key = "left"
-            openPanel()
+        else if key = "left" and hasList
+            m.live.mode = "panel"
             return true
         else if key = "OK" or key = "info"
-            if m.liveOv.visible then hideOverlay() else showOverlay()
-            return true
-        else if key = "back" and m.liveOv.visible
-            hideOverlay()
+            showOverlay()
             return true
         end if
     end if

@@ -109,7 +109,7 @@ sub buildContinue()
         addPoster(g, "pkg:/images/play_circle.png", 140, 66, 56, 56)
         frac = 0.0
         if p.dur <> invalid and p.dur > 0 then frac = p.pos / p.dur
-        addRect(g, 12, 174, 312, 6, "0x55FFFFFF")
+        addRect(g, 12, 174, 312, 6, "0xFFFFFF55")
         addRect(g, 12, 174, Int(312 * frac), 6, "0x7C5CFFFF")
         ring = addPoster(g, "pkg:/images/ring_thumb.png", 0, 0, 336, 188)
         ring.visible = false

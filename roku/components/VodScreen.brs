@@ -236,7 +236,7 @@ sub fillMovieHero(info as object)
     m.plot.text = asText(info.plot)
     bd = info.backdrop_path
     if type(bd) = "roArray" and bd.Count() > 0 and asText(bd[0]) <> "" then m.backdrop.uri = asText(bd[0])
-    chips = [Left(asText(info.releasedate), 4), fmtDuration(Int(asNum(info.duration_secs)))]
+    chips = [Left(asText(info.releasedate), 4), fmtDuration(asInt((info.duration_secs)))]
     setChips(chips, asNum(info.rating), asText(info.genre))
 end sub
 

@@ -190,7 +190,7 @@ sub showSeason(i as integer)
         if type(ei) = "roAssociativeArray"
             n.HDPOSTERURL = asText(ei.movie_image)
             n.plot = asText(ei.plot)
-            d = Int(asNum(ei.duration_secs))
+            d = asInt((ei.duration_secs))
             if d > 0 then meta = meta + " · " + Int(d / 60).ToStr() + " min"
         end if
         if n.HDPOSTERURL = "" then n.HDPOSTERURL = m.cover

@@ -21,7 +21,7 @@ sub init()
     m.live.visible = false
     m.pvTitle = addLabel(info, "", 1136, 316, OUTF(), 30, "0xFFFFFFFF", 708)
     m.pvNow = addLabel(info, "", 1136, 360, IREG(), 20, "0xE7E5F7FF", 708)
-    m.pvTrack = addRect(info, 1136, 396, 708, 5, "0x33FFFFFF")
+    m.pvTrack = addRect(info, 1136, 396, 708, 5, "0xFFFFFF33")
     m.pvBar = addRect(info, 1136, 396, 0, 5, "0x22D3EEFF")
     m.pvNext = addLabel(info, "", 1136, 410, IREG(), 18, "0x9D9ABBFF", 708)
     m.pvErr = addLabel(info, "", 1136, 200, IMED(), 20, "0xF43F5EFF", 708, "center")
@@ -70,6 +70,7 @@ sub onLive(event as object)
     end if
     m.items = r.items
     m.catData = r.cats
+    m.variants = r.variants
     buildCats()
     choose("__all", false)
 end sub
@@ -146,7 +147,7 @@ sub choose(id as string, focusList as boolean)
         n.fav = favs.DoesExist(k)
         n.playing = (k = m.playingId)
         if m.epgCache.DoesExist(k) then n.prog = progText(m.epgCache[k])
-        m.shown.Push({ id: k, name: it.name, num: asText(it.num), logo: asText(it.logo) })
+        m.shown.Push({ id: k, name: it.name, num: asText(it.num), logo: asText(it.logo), cat: asText(it.cat), vkey: asText(it.vkey), q: asText(it.q) })
     end for
     m.list.content = root
     m.chTitle.text = UCase(m.catNodes[id].title) + "   " + fmtCount(m.shown.Count())
@@ -276,8 +277,8 @@ sub onApi(event as object)
     now = nowSecs()
     progs = []
     for each e in r.data.epg_listings
-        s = Int(asNum(e.start_timestamp))
-        en = Int(asNum(e.stop_timestamp))
+        s = asInt((e.start_timestamp))
+        en = asInt((e.stop_timestamp))
         if en > now then progs.Push({ title: b64(asText(e.title)), start: s, stop: en })
     end for
     y = 548
@@ -324,7 +325,7 @@ sub onChannel()
         m.live.visible = false
         m.playingId = ""
         markPlaying()
-        m.top.action = { type: "play", streamId: c.id, title: c.name, live: true, list: m.shown, index: m.list.itemSelected, epg: m.epgCache }
+        m.top.action = { type: "play", streamId: c.id, title: c.name, live: true, list: m.shown, index: m.list.itemSelected, epg: m.epgCache, all: m.items, cats: m.catData, variants: m.variants, catId: m.catId }
         return
     end if
     addRecent(c)

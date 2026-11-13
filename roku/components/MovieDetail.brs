@@ -45,7 +45,7 @@ sub onApi(event as object)
         if type(bd) = "roArray" and bd.Count() > 0 then m.top.findNode("backdrop").uri = asText(bd[0])
         img = asText(info.movie_image)
         if img <> "" and m.poster.uri = "" then m.poster.uri = img
-        setChips([Left(asText(info.releasedate), 4), fmtDuration(Int(asNum(info.duration_secs)))], asNum(info.rating), asText(info.genre))
+        setChips([Left(asText(info.releasedate), 4), fmtDuration(asInt((info.duration_secs)))], asNum(info.rating), asText(info.genre))
     end if
     md = r.data.movie_data
     if type(md) = "roAssociativeArray" and asText(md.container_extension) <> "" then m.ext = asText(md.container_extension)

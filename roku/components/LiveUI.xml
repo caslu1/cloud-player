@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="LiveUI" extends="Group">
+    <interface>
+        <!-- data = { all, cats, variants, list, idx, catId, epg } -->
+        <field id="data" type="assocarray" />
+        <field id="mode" type="string" value="hidden" onChange="onMode" />
+        <field id="action" type="assocarray" />
+        <function name="refresh" />
+    </interface>
+    <children>
+        <Group id="ov" visible="false" />
+        <Group id="panel" visible="false">
+            <Poster uri="pkg:/images/player_panel.png" width="1280" height="1080" />
+            <Group id="panelLabels" />
+            <MarkupList id="pCats" translation="[44,96]" itemComponentName="CatItem" itemSize="[380,68]" itemSpacing="[0,0]" numRows="14"
+                drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
+            <MarkupList id="pChs" translation="[452,96]" itemComponentName="ChannelItem" itemSize="[740,96]" itemSpacing="[0,0]" numRows="10"
+                drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
+        </Group>
+        <Timer id="ovTimer" duration="5" />
+        <Timer id="epgDelay" duration="0.4" />
+        <Timer id="clock" duration="20" repeat="true" />
+    </children>
+    <script type="text/brightscript" uri="pkg:/components/common.brs" />
+    <script type="text/brightscript" uri="pkg:/components/LiveUI.brs" />
+</component>

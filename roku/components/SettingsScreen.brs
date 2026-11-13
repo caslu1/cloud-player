@@ -103,7 +103,7 @@ sub render()
             exp = asText(u.exp_date)
             if exp <> "" and exp <> "0"
                 d = CreateObject("roDateTime")
-                d.FromSeconds(Int(Val(exp)))
+                d.FromSeconds(asInt(exp))
                 venc = two(d.GetDayOfMonth()) + "/" + two(d.GetMonth()) + "/" + d.GetYear().ToStr()
             end if
             cons = asText(u.active_cons) + " de " + asText(u.max_connections)
