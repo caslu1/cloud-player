@@ -123,7 +123,7 @@ export const LANDING_CSS = `
 html{scroll-behavior:smooth}
 .lnav{position:sticky;top:0;z-index:20;background:rgba(7,6,13,.82);backdrop-filter:blur(12px);border-bottom:1px solid #16121f}
 .lnav .lnk{display:flex;gap:26px;margin-left:auto;margin-right:22px;color:var(--mut);font-weight:500}.lnav .lnk a:hover{color:#fff}
-.mmenu{display:none;margin-left:12px}.mmenu summary{list-style:none;cursor:pointer;color:#fff;display:flex;padding:8px;border:1px solid var(--line2);border-radius:10px}
+.mmenu{display:none;margin-left:12px}@media (max-width:520px){.mmenu{margin-left:auto}}.mmenu summary{list-style:none;cursor:pointer;color:#fff;display:flex;padding:8px;border:1px solid var(--line2);border-radius:10px}
 .mmenu summary::-webkit-details-marker{display:none}
 .mmenu>div{position:absolute;right:16px;top:64px;background:#100d1c;border:1px solid var(--line2);border-radius:14px;padding:8px;display:grid;min-width:220px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
 .mmenu>div a{padding:12px 14px;border-radius:9px;color:#e6e1f5}.mmenu>div a:hover{background:#1d1638}
