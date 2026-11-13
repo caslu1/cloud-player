@@ -19,10 +19,10 @@ sub init()
         ] },
         { t: "APARÊNCIA", items: [
             { k: "wall", t: "Papel de parede", i: "ic_grid", d: "Fundo das telas do app." },
-            { k: "layout", t: "Layout da tela inicial", i: "ic_home", d: "Padrão ou Lite." }
+            { k: "layout", t: "Layout da tela inicial", i: "ic_home", d: "Padrão, Lite, Vitrine, Redondo ou Quadrado." }
         ] },
         { t: "SISTEMA", items: [
-            { k: "storage", t: "Armazenamento", i: "ic_replay", d: "Limpar dados guardados nesta TV." },
+            { k: "storage", t: "Armazenamento", i: "ic_replay", d: "Recarregar listas e limpar dados guardados." },
             { k: "logout", t: "Sair da conta", i: "ic_logout", d: "Remover a lista deste aparelho." }
         ] }
     ]
@@ -110,11 +110,16 @@ sub render()
     m.optBox = invalid
     c = m.global.creds
     if it.k = "info"
-        g = card("CONTA", 564, 220, 630, 236)
-        line(g, "Tipo", "Xtream Codes", 66)
-        line(g, "Servidor", c.server.Replace("http://", "").Replace("https://", ""), 106)
-        line(g, "Usuário", c.user, 146)
-        g = card("ASSINATURA", 1214, 220, 630, 236)
+        ' usuário, endereço MAC e chave em destaque (igual ao Android)
+        tiles = [["USUÁRIO", asText(c.user), 404], ["ENDEREÇO MAC", deviceMac(), 484], ["CHAVE DO APARELHO", deviceKey(), 364]]
+        x = 564
+        for each t in tiles
+            g = card(t[0], x, 220, t[2], 150)
+            v = addLabel(g, t[1], 28, 70, OUTF(), 32, "0xFFFFFFFF", t[2] - 56)
+            v.maxLines = 1
+            x = x + t[2] + 20
+        end for
+        g = card("ASSINATURA", 564, 390, 636, 250)
         u = m.info
         st = "—"
         venc = "—"
@@ -136,21 +141,20 @@ sub render()
         if ok then pill.blendColor = "0x163A2AFF" else pill.blendColor = "0x3A1620FF"
         if ok then pc = "0x7EE2A8FF" else pc = "0xFF8095FF"
         addLabel(g, "●  " + st, 44, 69, ISEM(), 17, pc)
-        big(g, "VALIDADE", venc, 28, 126)
-        big(g, "CONEXÕES", cons, 330, 126)
-        g = card("ESTE APARELHO", 564, 476, 630, 236)
-        big(g, "MAC", deviceMac(), 28, 62)
-        big(g, "CHAVE", deviceKey(), 380, 62)
-        s = siteUrl()
-        if s <> "" then addLabel(g, "Use o MAC e a chave em " + s.Replace("https://", "").Replace("http://", ""), 28, 150, IREG(), 17, "0x9D9ABBFF", 580)
-        addLabel(g, "Orbita Play para Roku 1.0", 28, 186, IREG(), 17, "0x6E6B8CFF")
-        g = card("GUARDADO NESTA TV", 1214, 476, 630, 236)
-        stats = [[regRead("favs").Count(), "favoritos"], [regRead("mylist").Count(), "minha lista"], [regRead("progress").Count(), "em andamento"]]
-        for i = 0 to 2
-            addLabel(g, stats[i][0].ToStr(), 28 + i * 200, 66, OUTF(), 40, "0xFFFFFFFF")
-            addLabel(g, stats[i][1], 28 + i * 200, 118, IREG(), 18, "0x9D9ABBFF")
+        big(g, "VALIDADE", venc, 28, 130)
+        big(g, "CONEXÕES", cons, 330, 130)
+        g = card("APLICATIVO", 1220, 390, 636, 250)
+        line(g, "Versão", "Orbita Play " + CreateObject("roAppInfo").GetVersion(), 66)
+        pn = ""
+        for each p in regRead("playlists")
+            if asText(p.server) = asText(c.server) and asText(p.user) = asText(c.user) then pn = asText(p.name)
         end for
-        addLabel(m.content, "O app não fornece conteúdo: use apenas listas que você tem direito de usar.", 564, 736, IREG(), 17, "0x6E6B8CFF")
+        if pn = "" then pn = "—"
+        line(g, "Playlist", pn, 106)
+        line(g, "Servidor", c.server.Replace("http://", "").Replace("https://", ""), 146)
+        su = siteUrl()
+        if su <> "" then line(g, "Site", su.Replace("https://", "").Replace("http://", ""), 186)
+        addLabel(m.content, "O app não fornece conteúdo: use apenas listas que você tem direito de usar.", 564, 664, IREG(), 17, "0x6E6B8CFF")
     else
         renderOptions(it.k)
     end if
@@ -214,10 +218,14 @@ sub renderOptions(k as string)
     else if k = "layout"
         title = "TELA INICIAL"
         lay = prefGet("layout", "default")
-        o.Push({ kind: "radio", label: "Padrão", value: "Blocos grandes e Continuar assistindo", on: lay <> "lite", act: "layout:default" })
-        o.Push({ kind: "radio", label: "Lite", value: "Logo no centro e ícones de linha", on: lay = "lite", act: "layout:lite" })
+        o.Push({ kind: "radio", label: "Padrão", value: "Blocos grandes e Continuar assistindo", on: lay = "default", act: "layout:default" })
+        o.Push({ kind: "radio", label: "Lite", value: "Blocos quadrados com ícones de linha", on: lay = "lite", act: "layout:lite" })
+        o.Push({ kind: "radio", label: "Vitrine", value: "Cartões de vidro grandes", on: lay = "cards", act: "layout:cards" })
+        o.Push({ kind: "radio", label: "Redondo", value: "Ícones grandes em círculos de vidro", on: lay = "round", act: "layout:round" })
+        o.Push({ kind: "radio", label: "Quadrado", value: "Ícones grandes em quadrados arredondados", on: lay = "square", act: "layout:square" })
     else if k = "storage"
-        title = "DADOS GUARDADOS NESTA TV"
+        title = "LISTAS E DADOS GUARDADOS NESTA TV"
+        o.Push({ kind: "action", label: "Recarregar listas", value: "Canais, filmes e séries", act: "reload" })
         o.Push({ kind: "action", label: "Limpar histórico", value: "Recentes e continuar assistindo", act: "history" })
         o.Push({ kind: "action", label: "Limpar Minha lista", value: "Filmes e séries guardados", act: "mylist" })
         o.Push({ kind: "action", label: "Limpar favoritos", value: "Canais marcados com a estrela", act: "favs" })
@@ -389,6 +397,10 @@ sub onAsk()
         m.top.action = { type: "logout" }
         return
     end if
+    if act = "reload"
+        m.top.action = { type: "reload" }
+        return
+    end if
     if Left(act, 4) = "fmt:"
         prefSet("fmt", Mid(act, 5))
         rerender()
@@ -428,7 +440,9 @@ end sub
 sub pressOpt()
     op = m.opts[m.bIdx]
     a = op.act
-    if a = "history"
+    if a = "reload"
+        ask("Recarregar as listas?", "Canais, filmes e séries são baixados de novo do seu provedor.", "Recarregar", "ic_replay", false, a)
+    else if a = "history"
         ask("Limpar o histórico?", "Os canais recentes e o ""Continuar assistindo"" serão apagados.", "Limpar", "ic_replay", true, a)
     else if a = "mylist"
         ask("Limpar a Minha lista?", "Os filmes e séries guardados serão removidos.", "Limpar", "ic_replay", true, a)

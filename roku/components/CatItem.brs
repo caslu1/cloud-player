@@ -1,7 +1,9 @@
 ' Linha de categoria (igual ao CatRow do Android): barra roxa = escolhida, fundo roxo = foco.
 sub init()
+    ' cada categoria num quadro próprio (igual ao Android), com espaço entre eles
+    m.tile = addPoster(m.top, "pkg:/images/tile_n.9.png", 0, 0, 374, 72)
     m.focus = addPoster(m.top, "pkg:/images/cat_focus.png", 0, 0, 374, 72)
-    m.bar = addRect(m.top, 0, 0, 5, 72, "0x7C5CFFFF")
+    m.bar = addRect(m.top, 0, 12, 5, 48, "0x7C5CFFFF")
     m.icon = addPoster(m.top, "", 24, 22, 28, 28)
     m.label = addLabel(m.top, "", 24, 21, IMED(), 22, "0xE7E5F7FF", 250)
     m.label.maxLines = 1
@@ -52,6 +54,7 @@ sub paint()
     f = m.top.listHasFocus and m.top.focusPercent > 0.5
     m.focus.visible = f
     m.bar.visible = sel
+    if sel then m.tile.uri = "pkg:/images/tile_sel.9.png" else m.tile.uri = "pkg:/images/tile_n.9.png"
     if f or sel
         m.label.color = "0xFFFFFFFF"
         m.label.font = mkFont(ISEM(), 22)

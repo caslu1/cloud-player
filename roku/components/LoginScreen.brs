@@ -4,7 +4,11 @@ sub init()
     r = m.top.findNode("root")
     ' Login padrão (igual ao Android): "Pelo celular" | ou | "Na TV"
     addPoster(r, "pkg:/images/logo_full.png", 96, 64, 260, 52)
-    addLabel(r, "Bem-vindo ao Orbita Play", 96, 146, OUTF(), 54, "0xFFFFFFFF")
+    m.title = addLabel(r, "Bem-vindo ao Orbita Play", 96, 146, OUTF(), 54, "0xFFFFFFFF")
+    m.adding = false
+    c0 = m.global.creds
+    m.prevCreds = { server: asText(c0.server), user: asText(c0.user), pass: asText(c0.pass) }
+    m.top.observeField("params", "onParams")
     sub_ = "Conecte sua lista para começar."
     if m.site <> "" then sub_ = "Ative pelo celular em segundos ou conecte sua lista direto na TV."
     addLabel(r, sub_, 96, 222, IREG(), 22, "0x9D9ABBFF")
@@ -30,7 +34,7 @@ sub init()
     end for
     m.cx = cx
     m.formBox = r.createChild("Group")
-    m.values = { server: "", user: "", pass: "", url: "" }
+    m.values = { name: "", server: "", user: "", pass: "", url: "" }
     m.xtream = true
     m.msg = addLabel(r, "", cx + 40, 906, IMED(), 19, "0xF43F5EFF", 824)
     m.msg.wrap = true
@@ -56,16 +60,18 @@ sub buildForm()
     cx = m.cx
     m.fields = []
     if m.xtream
-        m.order = ["tabs", "server", "user", "pass", "btn"]
-        addField("server", "SERVIDOR", cx + 40, 560, 824)
+        m.order = ["tabs", "name", "server", "user", "pass", "btn"]
+        addField("name", "NOME DA LISTA", cx + 40, 560, 320)
+        addField("server", "SERVIDOR", cx + 380, 560, 484)
         addField("user", "USUÁRIO", cx + 40, 690, 402)
         addField("pass", "SENHA", cx + 462, 690, 402)
         by = 820
     else
-        m.order = ["tabs", "url", "btn"]
-        addField("url", "LINK DA LISTA (get.php)", cx + 40, 560, 824)
-        addLabel(m.formBox, "Na Roku, use o link get.php do seu provedor (vira login Xtream).", cx + 40, 680, IREG(), 18, "0x6E6B8CFF", 824)
-        by = 730
+        m.order = ["tabs", "name", "url", "btn"]
+        addField("name", "NOME DA LISTA", cx + 40, 548, 824)
+        addField("url", "LINK DA LISTA (get.php)", cx + 40, 664, 824)
+        addLabel(m.formBox, "Na Roku, use o link get.php do seu provedor (vira login Xtream).", cx + 40, 778, IREG(), 17, "0x6E6B8CFF", 824)
+        by = 812
     end if
     m.btn = addButton(m.formBox, "Entrar", "ic_play", true, cx + 40, by)
     m.btn.bg.width = 824
@@ -92,7 +98,7 @@ sub refresh()
         v = m.values[f.key]
         if f.key = "pass" and v <> "" then v = String(Len(v), "•")
         if v = ""
-            f.value.text = "Toque OK para preencher"
+            if f.key = "name" then f.value.text = "Ex.: Minha lista" else f.value.text = "Toque OK para preencher"
             f.value.color = "0x6E6B8CFF"
         else
             f.value.text = v
@@ -114,6 +120,14 @@ sub refresh()
         if sel then t.label.color = "0xFFFFFFFF" else t.label.color = "0x9D9ABBFF"
     end for
     paintButton(m.btn, cur = "btn")
+end sub
+
+sub onParams()
+    p = m.top.params
+    if p <> invalid and p.adding = true
+        m.adding = true
+        m.title.text = "Adicionar playlist"
+    end if
 end sub
 
 sub edit(key as string)
@@ -218,8 +232,8 @@ sub onAct(event as object)
     ' lista cadastrada no site: entra sozinho
     if type(d.playlists) = "roArray" and d.playlists.Count() > 0
         c = playlistCreds(d.playlists[0])
-        if c <> invalid and not m.busy
-            m.values = { server: c.server, user: c.user, pass: c.pass, url: "" }
+        if c <> invalid and not m.busy and not m.adding
+            m.values = { name: "", server: c.server, user: c.user, pass: c.pass, url: "" }
             m.xtream = true
             buildForm()
             login()
@@ -292,10 +306,13 @@ sub onApi(event as object)
         reg.Write("user", m.values.user)
         reg.Write("pass", m.values.pass)
         reg.Flush()
+        savePlaylist(m.values.name, m.values.server, m.values.user, m.values.pass)
         if m.site <> "" then m.top.findNode("poll").control = "stop"
         m.top.action = { type: "home" }
         return
     end if
+    ' adicionando playlist: se não entrou, continua com a lista que estava em uso
+    if m.adding then m.global.creds = m.prevCreds
     m.msg.color = "0xF43F5EFF"
     if r.code = 0
         m.msg.text = "Sem resposta do servidor. Confira o endereço e a internet da TV."
@@ -309,16 +326,18 @@ end sub
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
     cur = m.order[m.idx]
-    if key = "up" and m.idx > 0
-        ' senha → servidor (pula o usuário, que está na mesma linha)
-        if cur = "pass" then m.idx = m.idx - 2 else m.idx = m.idx - 1
-        if m.order[m.idx] = "user" and cur = "btn" then m.idx = m.idx
-    else if key = "down" and m.idx < m.order.Count() - 1
-        if cur = "user" then m.idx = m.idx + 2 else m.idx = m.idx + 1
-    else if key = "right" and cur = "user"
-        m.idx = m.idx + 1
-    else if key = "left" and cur = "pass"
-        m.idx = m.idx - 1
+    ' mapa de setas: nome e servidor na mesma linha; usuário e senha na mesma linha
+    if m.xtream
+        nav = { tabs: { down: "name" }, name: { right: "server", down: "user", up: "tabs" }, server: { left: "name", down: "user", up: "tabs" }, user: { right: "pass", up: "name", down: "btn" }, pass: { left: "user", up: "server", down: "btn" }, btn: { up: "user" } }
+    else
+        nav = { tabs: { down: "name" }, name: { down: "url", up: "tabs" }, url: { up: "name", down: "btn" }, btn: { up: "url" } }
+    end if
+    dest = invalid
+    if nav[cur] <> invalid then dest = nav[cur][key]
+    if dest <> invalid
+        for i = 0 to m.order.Count() - 1
+            if m.order[i] = dest then m.idx = i
+        end for
     else if (key = "left" or key = "right") and cur = "tabs"
         m.xtream = (key = "left")
         m.idx = 0

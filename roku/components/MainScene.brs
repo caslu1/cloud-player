@@ -16,6 +16,8 @@ sub init()
     reg = CreateObject("roRegistrySection", "orbita")
     if reg.Exists("server")
         m.global.creds = { server: reg.Read("server"), user: reg.Read("user"), pass: reg.Read("pass") }
+        ' quem já usava o app antes das Playlists: a lista atual vira a "Lista 1"
+        if regRead("playlists").Count() = 0 then savePlaylist("", m.global.creds.server, m.global.creds.user, m.global.creds.pass)
         pushScreen(homeName(), {})
         startActTask(false)
     else
@@ -75,6 +77,7 @@ function pushScreen(name as string, params as object) as object
     s.params = params
     if m.stack.Count() > 0 then m.stack.Peek().visible = false
     m.stack.Push(s)
+    if name = homeName() and m.stack.Count() = 1 then m.homeLayout = prefGet("layout", "default")
     s.setFocus(true)
     return s
 end function
@@ -86,7 +89,7 @@ sub popScreen()
     top = m.stack.Peek()
     ' layout da tela inicial trocado nas Configurações
     st = top.subtype()
-    if (st = "HomeScreen" or st = "HomeLite") and st <> homeName() and m.stack.Count() = 1
+    if isHome(st) and m.stack.Count() = 1 and prefGet("layout", "default") <> m.homeLayout
         resetTo(homeName())
         return
     end if
@@ -95,9 +98,31 @@ sub popScreen()
 end sub
 
 function homeName() as string
-    if prefGet("layout", "default") = "lite" then return "HomeLite"
+    l = prefGet("layout", "default")
+    if l = "lite" then return "HomeLite"
+    if l = "cards" or l = "round" or l = "square" then return "HomeCards"
     return "HomeScreen"
 end function
+
+function isHome(st as string) as boolean
+    return st = "HomeScreen" or st = "HomeLite" or st = "HomeCards"
+end function
+
+' Recarregar: janela "Carregando…" → "Atualização concluída"
+sub showReload()
+    if m.reloadBox <> invalid then return
+    d = CreateObject("roSGNode", "ReloadBox")
+    d.observeField("done", "onReloadDone")
+    m.top.appendChild(d)
+    m.reloadBox = d
+    d.setFocus(true)
+end sub
+
+sub onReloadDone()
+    m.top.removeChild(m.reloadBox)
+    m.reloadBox = invalid
+    resetTo(homeName())
+end sub
 
 sub resetTo(name as string)
     while m.stack.Count() > 0
@@ -115,9 +140,20 @@ sub onAction(event as object)
         play(a)
     else if a.type = "home"
         resetTo(homeName())
+    else if a.type = "reload"
+        showReload()
+    else if a.type = "switch"
+        ' troca de playlist (tela Playlists)
+        reg = CreateObject("roRegistrySection", "orbita")
+        reg.Write("server", a.server)
+        reg.Write("user", a.user)
+        reg.Write("pass", a.pass)
+        reg.Flush()
+        m.global.creds = { server: a.server, user: a.user, pass: a.pass }
+        resetTo(homeName())
     else if a.type = "logout"
         reg = CreateObject("roRegistrySection", "orbita")
-        for each k in ["server", "user", "pass", "progress", "favs", "recents"]
+        for each k in ["server", "user", "pass", "progress", "favs", "recents", "playlists"]
             reg.Delete(k)
         end for
         reg.Flush()
@@ -344,7 +380,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
             return true
         end if
         ' na tela inicial: pergunta antes de sair do app (igual ao Android)
-        if m.exitBox = invalid and m.stack.Count() = 1 and (m.stack[0].subtype() = "HomeScreen" or m.stack[0].subtype() = "HomeLite")
+        if m.exitBox = invalid and m.stack.Count() = 1 and isHome(m.stack[0].subtype())
             d = CreateObject("roSGNode", "ConfirmBox")
             d.setup = { title: "Sair do Orbita Play?", message: "O que estiver tocando será fechado.", confirm: "Sair", icon: "ic_logout", danger: false }
             d.observeField("result", "onExitAsk")

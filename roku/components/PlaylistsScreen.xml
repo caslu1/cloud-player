@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="PlaylistsScreen" extends="Group">
+    <interface>
+        <field id="params" type="assocarray" />
+        <field id="action" type="assocarray" />
+    </interface>
+    <children>
+        <Rectangle width="1920" height="1080" color="0x05040999" />
+        <Group id="root" />
+        <Group id="rows" />
+    </children>
+    <script type="text/brightscript" uri="pkg:/components/common.brs" />
+    <script type="text/brightscript" uri="pkg:/components/DeviceId.brs" />
+    <script type="text/brightscript" uri="pkg:/components/PlaylistsScreen.brs" />
+</component>

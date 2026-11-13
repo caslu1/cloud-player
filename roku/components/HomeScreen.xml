@@ -6,9 +6,9 @@
     </interface>
     <children>
         <Group id="root" />
-        <Timer id="timer" repeat="true" duration="20" />
     </children>
     <script type="text/brightscript" uri="pkg:/components/common.brs" />
     <script type="text/brightscript" uri="pkg:/components/DeviceId.brs" />
+    <script type="text/brightscript" uri="pkg:/components/HomeFrame.brs" />
     <script type="text/brightscript" uri="pkg:/components/HomeScreen.brs" />
 </component>

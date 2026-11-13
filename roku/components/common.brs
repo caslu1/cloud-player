@@ -313,3 +313,19 @@ function catLocked(name as string) as boolean
     if prefGet("adult", "lock") <> "lock" then return false
     return m.global.adultUnlocked <> true
 end function
+
+' --- playlists salvas nesta TV ------------------------------------------------------
+' Guarda (ou renomeia) a lista; sem nome usa o que já tinha ou "Lista N".
+sub savePlaylist(name as string, server as string, user as string, pass as string)
+    list = regRead("playlists")
+    found = -1
+    for i = 0 to list.Count() - 1
+        if asText(list[i].server) = server and asText(list[i].user) = user then found = i
+    end for
+    n = name.Trim()
+    if n = "" and found >= 0 then n = asText(list[found].name)
+    if n = "" then n = "Lista " + (list.Count() + 1).ToStr()
+    item = { name: n, server: server, user: user, pass: pass }
+    if found >= 0 then list[found] = item else list.Push(item)
+    regWrite("playlists", list)
+end sub

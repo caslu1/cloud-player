@@ -12,9 +12,9 @@
         <Group id="panel" visible="false">
             <Poster uri="pkg:/images/player_panel.png" width="1280" height="1080" />
             <Group id="panelLabels" />
-            <MarkupList id="pCats" translation="[44,96]" itemComponentName="CatItem" itemSize="[380,68]" itemSpacing="[0,0]" numRows="14"
+            <MarkupList id="pCats" translation="[44,96]" itemComponentName="CatItem" itemSize="[380,68]" itemSpacing="[0,10]" numRows="12"
                 drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
-            <MarkupList id="pChs" translation="[452,96]" itemComponentName="ChannelItem" itemSize="[740,96]" itemSpacing="[0,0]" numRows="10"
+            <MarkupList id="pChs" translation="[452,96]" itemComponentName="ChannelItem" itemSize="[740,96]" itemSpacing="[0,10]" numRows="9"
                 drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
         </Group>
         <Timer id="ovTimer" duration="5" />

@@ -1,5 +1,6 @@
 'Linha de canal igual ao ChannelRow do Android: número, logo, nome, programa de agora e a estrela ao lado.
 sub init()
+    m.tile = addPoster(m.top, "pkg:/images/tile_n.9.png", 0, 0, 520, 88)
     m.focus = addPoster(m.top, "pkg:/images/row_focus.9.png", 0, 0, 520, 88)
     m.num = addLabel(m.top, "", 16, 32, ISEM(), 20, "0x9D9ABBFF", 64)
     m.logoBg = addPoster(m.top, "pkg:/images/logo_box.png", 82, 14, 84, 60)
@@ -8,7 +9,8 @@ sub init()
     m.logo.loadDisplayMode = "scaleToFit"
     m.name = addLabel(m.top, "", 182, 18, ISEM(), 23, "0xFFFFFFFF", 324)
     m.prog = addLabel(m.top, "", 182, 52, IREG(), 18, "0x9D9ABBFF", 324)
-    m.star = addPoster(m.top, "pkg:/images/star_btn_n.png", 532, 10, 64, 68)
+    ' favorito com a mesma altura da linha do canal
+    m.star = addPoster(m.top, "pkg:/images/star_btn_n.png", 532, 0, 88, 88)
     m.watch = addLabel(m.top, "▶ Assistindo", 0, 22, ISEM(), 15, "0x22D3EEFF")
     m.watch.visible = false
     m.favIc = addPoster(m.top, "pkg:/images/ic_star.png", 0, 21, 22, 22)
@@ -69,6 +71,7 @@ sub paint()
     if panel
         ' linha do menu lateral do player (igual ao Android)
         m.focus.width = 720
+        m.tile.width = 720
         m.name.width = 400
         m.prog.width = 520
         w = Len(m.name.text) * 13

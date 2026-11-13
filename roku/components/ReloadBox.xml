@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="ReloadBox" extends="Group">
+    <interface>
+        <field id="done" type="boolean" />
+    </interface>
+    <children>
+        <Poster uri="pkg:/images/dim.png" width="1920" height="1080" />
+        <Group id="box" translation="[680,370]">
+            <Poster uri="pkg:/images/dialog.png" width="560" height="340" />
+            <BusySpinner id="spin" translation="[236,56]" />
+            <Poster id="check" uri="pkg:/images/rl_check.png" translation="[236,52]" width="88" height="88" visible="false" />
+            <Label id="title" translation="[0,170]" width="560" horizAlign="center" text="Carregando…" />
+            <Label id="sub" translation="[0,222]" width="560" horizAlign="center" text="Atualizando canais, filmes e séries" />
+        </Group>
+        <Timer id="closeT" duration="1.8" />
+    </children>
+    <script type="text/brightscript" uri="pkg:/components/common.brs" />
+    <script type="text/brightscript" uri="pkg:/components/ReloadBox.brs" />
+</component>

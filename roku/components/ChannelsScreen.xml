@@ -9,9 +9,9 @@
         <Poster uri="pkg:/images/panel_cat.png" translation="[48,38]" width="390" height="1008" />
         <Poster uri="pkg:/images/panel_ch.png" translation="[458,38]" width="632" height="1008" />
         <Group id="labels" />
-        <MarkupList id="cats" translation="[56,110]" itemComponentName="CatItem" itemSize="[374,72]" itemSpacing="[0,2]" numRows="12"
+        <MarkupList id="cats" translation="[56,110]" itemComponentName="CatItem" itemSize="[374,72]" itemSpacing="[0,10]" numRows="11"
             drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
-        <MarkupList id="channels" translation="[466,110]" itemComponentName="ChannelItem" itemSize="[600,88]" itemSpacing="[0,8]" numRows="10"
+        <MarkupList id="channels" translation="[466,110]" itemComponentName="ChannelItem" itemSize="[620,88]" itemSpacing="[0,10]" numRows="9"
             drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
         <Poster id="pvBg" uri="pkg:/images/preview_bg.png" translation="[1110,38]" width="760" height="424" />
         <Poster id="pvLogo" translation="[1200,140]" width="580" height="150" loadDisplayMode="scaleToFit" />
