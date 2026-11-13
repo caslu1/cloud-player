@@ -40,7 +40,7 @@ const MOCKS = {
   filmes: () => `${mockTop(2)}<div class="mhero sm"><div><small>FILME</small><h4>Cidade de Vidro</h4></div><span class="msun v"></span></div>
 <div class="mrow-t">Lançamentos</div><div class="mrow">${[1, 4, 2, 6, 3].map((i, k) => poster(i, MOV[i], k === 0)).join("")}</div>`,
 };
-const shot = (src, alt) => `<div class="tvf mock" role="img" aria-label="${esc(alt)}">${MOCKS[src]()}</div>`;
+const shot = (src, alt) => `<div class="tvf"><img src="/img/${src}.webp" alt="${esc(alt)}" loading="lazy" width="1600" height="900"></div>`;
 
 export function landing(env, { formHtml, plansHtml, logged, host }) {
   const name = esc(env.SITE_NAME);
@@ -59,7 +59,7 @@ ${logged ? `<a class="btn sm" href="/aparelho">Minhas listas</a>` : `<a class="b
  <div class="row wrapf" style="gap:12px;margin-top:26px"><a class="btn lg" href="#entrar">Ativar meu aparelho</a><a class="btn g lg" href="#como">Como funciona</a></div>
  <div class="note">${li("info", 18)}<div><b>O ${name} não inclui nenhum conteúdo.</b> Não fornece, não vende e não hospeda vídeos: só reproduz o que vem da lista que você mesmo adiciona.</div></div>
 </div>
-<div class="hshot">${shot("inicio", "Tela inicial do app")}<div class="cap">Imagem ilustrativa · títulos fictícios</div></div>
+<div class="hshot">${shot("inicio", "Tela inicial do app")}<div class="cap">Tela inicial do aplicativo · tema Vitrine</div></div>
 </div></section>
 <section class="strip"><div class="wrap sgrid">
 ${[["tv", "Feito para TV", "Navegação rápida com o controle remoto."], ["shield", "Sem conteúdo próprio", "Você usa só a sua própria lista."], ["phone", "Configure pelo celular", "Leia o QR code e pronto."]]
@@ -82,7 +82,7 @@ ${[["Instale na sua TV", `Instale o ${name} no aparelho e abra o app. Na tela ap
   const gallery = `<section id="telas" class="sec"><div class="wrap">
 <div class="eyebrow">TELAS DO APP</div><h2 class="h2">Fácil de usar, direto do sofá</h2>
 <div class="g2s">${screens.map(([s, t, d]) => `<div class="scard">${shot(s, t)}<h3>${t}</h3><p class="mut">${d}</p></div>`).join("")}</div>
-<p class="dim" style="font-size:12px;margin-top:14px">Imagens ilustrativas · títulos e telas fictícios.</p>
+<p class="dim" style="font-size:12px;margin-top:14px">Imagens do aplicativo com conteúdo de demonstração.</p>
 </div></section>`;
 
   const features = `<section id="recursos" class="sec"><div class="wrap">
