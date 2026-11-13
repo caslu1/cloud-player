@@ -26,7 +26,7 @@ sub init()
     startSplash()
 end sub
 
-' Vídeo de abertura (igual ao Android). OK/voltar pula; terminou, deu erro ou demorou: segue para o app.
+' Vídeo de abertura (igual ao Android): sempre toca até o fim; só segue antes se der erro ou travar.
 sub startSplash()
     v = CreateObject("roSGNode", "Video")
     v.width = 1920
@@ -41,7 +41,7 @@ sub startSplash()
     m.splash = v
     m.screens.visible = false
     t = CreateObject("roSGNode", "Timer")
-    t.duration = 8
+    t.duration = 15
     t.observeField("fire", "endSplash")
     m.top.appendChild(t)
     m.splashTimer = t
@@ -349,10 +349,7 @@ end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
-    if m.splash <> invalid
-        endSplash()
-        return true
-    end if
+    if m.splash <> invalid then return true
     if m.video.visible and m.playing <> invalid and m.playing.live = true and m.live.mode = "hidden"
         d = m.live.data
         hasList = (d <> invalid and d.list <> invalid and d.list.Count() > 0)

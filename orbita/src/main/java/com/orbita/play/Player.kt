@@ -782,44 +782,36 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
     fun toChannels() { scope.launch { delay(30); runCatching { chReq.requestFocus() } } }
     fun toCats() { scope.launch { catState.scrollToItem((catIdx - 4).coerceAtLeast(0)); delay(30); runCatching { catReq.requestFocus() } } }
 
+    // igual à tela de Canais: dois quadros (categorias | canais), cada item no seu quadro
+    val counts = remember(vm.channels) { cats.associate { it.id to channelsOf(vm, it.id).size } }
+    val panelShape = RoundedCornerShape(12.dp)
     Box(
-        Modifier.fillMaxHeight().width(640.dp)
-            .background(Brush.horizontalGradient(0f to Color(0xF5080A18), 0.8f to Color(0xEB050409), 1f to Color.Transparent))
+        Modifier.fillMaxHeight().width(660.dp)
+            .background(Brush.horizontalGradient(0f to Color(0xF2050409), 0.85f to Color(0xE0050409), 1f to Color.Transparent))
     ) {
-        Row(Modifier.fillMaxSize().padding(start = 22.dp, top = 22.dp, bottom = 18.dp, end = 50.dp)) {
-            Column(Modifier.width(190.dp).fillMaxHeight()) {
-                Txt("CATEGORIAS", F.label, Modifier.padding(start = 10.dp, bottom = 8.dp))
-                LazyColumn(state = catState, modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Row(Modifier.fillMaxSize().padding(start = 20.dp, top = 18.dp, bottom = 18.dp, end = 60.dp)) {
+            Column(
+                Modifier.width(200.dp).fillMaxHeight().clip(panelShape).background(Color(0xF00C0A16))
+                    .border(1.dp, C.panelBorder, panelShape).padding(top = 12.dp, bottom = 8.dp)
+            ) {
+                Row(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 8.dp)) {
+                    Txt("CATEGORIAS", F.label, Modifier.weight(1f)); Txt("${cats.size - 3}", F.label)
+                }
+                LazyColumn(state = catState, modifier = Modifier.weight(1f).padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     itemsIndexed(cats, key = { _, c -> c.id }) { i, c ->
-                        val sel = c.id == cat
-                        Focus(
-                            Modifier.fillMaxWidth().height(34.dp),
-                            requester = if (i == catIdx) catReq else null,
-                            onClick = { cat = c.id; toChannels() },
-                            onKey = { ev ->
-                                if (ev.type == KeyEventType.KeyDown && ev.key == Key.DirectionRight) { toChannels(); true }
-                                else ev.type == KeyEventType.KeyDown && ev.key == Key.DirectionLeft
-                            }
-                        ) { f ->
-                            Row(
-                                Modifier.fillMaxSize().clip(RoundedCornerShape(6.dp))
-                                    .background(if (f) C.focusBg else if (sel) C.accentSoft else Color.Transparent)
-                                    .then(if (f) Modifier.border(1.5.dp, C.accent, RoundedCornerShape(6.dp)) else Modifier)
-                                    .padding(horizontal = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                val ic = when (c.id) { "__fav" -> Ic.Star; "__recent" -> Ic.History; "__all" -> Ic.LiveTv; else -> null }
-                                if (ic != null) { Icon(ic, 13.dp, if (sel || f) C.white else C.dim); Spacer(Modifier.width(7.dp)) }
-                                Txt(c.name, F.s(11.sp, if (sel || f) C.white else C.text, if (sel) FontWeight.SemiBold else FontWeight.Medium), Modifier.weight(1f))
-                                if (sel) Box(Modifier.size(5.dp).clip(androidx.compose.foundation.shape.CircleShape).background(C.accent))
-                            }
-                        }
+                        val ic = when (c.id) { "__fav" -> Ic.Star; "__recent" -> Ic.History; "__all" -> Ic.LiveTv; else -> null }
+                        CatRow(
+                            c.name, counts[c.id] ?: 0, c.id == cat, "pcat:${c.id}", {}, if (i == catIdx) catReq else null, ic, ::toChannels
+                        ) { cat = c.id; toChannels() }
                     }
                 }
             }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f).fillMaxHeight()) {
-                Row(Modifier.padding(start = 10.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Spacer(Modifier.width(10.dp))
+            Column(
+                Modifier.weight(1f).fillMaxHeight().clip(panelShape).background(Color(0xF00C0A16))
+                    .border(1.dp, C.panelBorder, panelShape).padding(start = 8.dp, end = 8.dp, top = 12.dp, bottom = 8.dp)
+            ) {
+                Row(Modifier.padding(start = 6.dp, end = 6.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Txt(cats.firstOrNull { it.id == cat }?.name?.uppercase() ?: "CANAIS", F.label, Modifier.weight(1f))
                     Txt("${list.size} CANAIS", F.label)
                 }
@@ -848,7 +840,7 @@ private fun ChannelPanel(vm: Vm, pb: Playback, onClose: () -> Unit) {
                         ) { f ->
                             Row(
                                 Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(8.dp)).background(if (f) C.focusBg else Color(0x0FFFFFFF))
-                                    .then(if (f) Modifier.border(1.5.dp, C.accent, RoundedCornerShape(8.dp)) else Modifier)
+                                    .border(if (f) 1.5.dp else 1.dp, if (f) C.accent else Color(0x14FFFFFF), RoundedCornerShape(8.dp))
                                     .padding(horizontal = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {

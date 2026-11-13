@@ -24,7 +24,7 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.delay
 
-/** Vídeo de abertura (res/raw/splash.mp4) ao abrir o app. Qualquer tecla pula; erro ou demora também seguem em frente. */
+/** Vídeo de abertura (res/raw/splash.mp4): sempre toca até o fim antes de abrir o app (só segue antes se der erro). */
 @Composable
 fun VideoSplash(onDone: () -> Unit) {
     val ctx = LocalContext.current
@@ -42,11 +42,11 @@ fun VideoSplash(onDone: () -> Unit) {
         player.addListener(l)
         onDispose { player.removeListener(l); player.release() }
     }
-    // garantia: nunca prende o app na abertura
-    LaunchedEffect(Unit) { delay(8_000); onDone() }
+    // garantia: se o vídeo travar, o app abre depois de 15 s
+    LaunchedEffect(Unit) { delay(15_000); onDone() }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
-    Box(Modifier.fillMaxSize().background(C.bg).focusRequester(focus).focusable().onKeyEvent { onDone(); true }) {
+    Box(Modifier.fillMaxSize().background(C.bg).focusRequester(focus).focusable().onKeyEvent { true }) {
         AndroidView(
             factory = { c ->
                 PlayerView(c).apply {
