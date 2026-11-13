@@ -149,7 +149,7 @@ html{scroll-behavior:smooth}html,body{overflow-x:clip;max-width:100%}
 .wrapf{flex-wrap:wrap}
 .hero{padding:64px 0 56px;position:relative}
 .hero:after{content:"";position:absolute;right:0;top:-60px;width:60%;height:120%;background:radial-gradient(ellipse at 60% 40%,rgba(124,92,255,.28),transparent 60%);pointer-events:none;z-index:-1}
-.hgrid{display:grid;grid-template-columns:1fr;max-width:820px;gap:48px;align-items:center}
+.hgrid{display:grid;grid-template-columns:minmax(0,820px);gap:48px;align-items:center}
 .note{display:flex;gap:12px;margin-top:26px;padding:16px 18px;border-radius:14px;background:rgba(29,22,56,.6);border:1px solid var(--line2);color:var(--mut);font-size:14px;line-height:1.55;max-width:560px}.note svg{flex:none;color:#9b84ff;margin-top:2px}.note b{color:#fff}
 .tvf{border-radius:16px;padding:8px;background:linear-gradient(160deg,#2a2440,#100d1c);border:1px solid #2a2440;box-shadow:0 30px 80px rgba(0,0,0,.55)}
 .tvf img{display:block;width:100%;height:auto;border-radius:10px;aspect-ratio:16/9;object-fit:cover;background:#050409}
