@@ -12,7 +12,22 @@ back=f'M{-rx:.1f} 0 A{rx:.1f} {ry:.1f} 0 0 1 {rx:.1f} 0'
 t=math.radians(33); bx,by=rx*math.cos(t),ry*math.sin(t)
 neck=f'M{bx:.1f} {by:.1f} A{rx:.1f} {ry:.1f} 0 0 0 {rx:.1f} 0'
 BIG='x="-3000" y="-3000" width="12000" height="7000"'
-LETTERS,TEXT_W=word(H)
+from fontTools.ttLib import TTFont
+from fontTools.pens.svgPathPen import SVGPathPen
+from fontTools.pens.transformPen import TransformPen
+from fontTools.pens.boundsPen import BoundsPen
+FD=os.path.join(os.path.dirname(os.path.abspath(__file__)),'fonts')
+FONT1=os.environ.get('FONT1','Poppins-SemiBold.ttf'); FONT2=os.environ.get('FONT2','Poppins-Light.ttf')
+def font_word(H, parts=(('rbita',FONT1),('play',FONT2)), track=0.0, start=1.13):
+    x=H*start; letters=[]
+    for txt,fn in parts:
+        f=TTFont(os.path.join(FD,fn)); gs=f.getGlyphSet(); cm=f.getBestCmap(); upm=f['head'].unitsPerEm
+        bp=BoundsPen(gs); gs[cm[ord('x')]].draw(bp); k=H*0.65/bp.bounds[3]
+        for ch in txt:
+            g=cm[ord(ch)]; sp=SVGPathPen(gs); gs[g].draw(TransformPen(sp,(k,0,0,-k,x,H)))
+            letters.append([f'<path d="{sp.getCommands()}"/>']); x+=gs[g].width*k+upm*k*track
+    return letters, x
+LETTERS,TEXT_W=font_word(H) if os.environ.get('CUSTOM')!='1' else word(H)
 # icon extents (approx, measured): left/top/right/bottom of the orbit mark
 ICON=(-0.22*H, -0.13*H, 1.17*H, 1.12*H)
 

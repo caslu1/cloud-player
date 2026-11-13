@@ -45,7 +45,7 @@ Fundo do ícone do app: `#241356 → #140B36 → #0B0716`
 
 - Títulos: **Outfit Bold**
 - Textos: **Inter** (Regular, SemiBold)
-- Logo: letras geométricas próprias (não é fonte). Use sempre os arquivos prontos.
+- Logo: **Poppins** — "orbita" em SemiBold e "play" em Light. Use sempre os arquivos prontos.
 
 ## Uso
 
