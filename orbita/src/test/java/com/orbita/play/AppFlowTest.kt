@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -156,14 +157,23 @@ class AppFlowTest {
 
     @Test fun loginAndBrowseEverything() {
         rule.mainClock.autoAdvance = false
+        // aviso de primeiro acesso
+        waitText("Aviso importante")
+        shot("29-aviso")
+        click("Entendo", exact = true)
         waitText("Conectar lista")
         shot("01-login")
+        // teclado do app
+        click("Ex.: Minha lista")
+        waitText("Pronto")
+        shot("30-teclado")
+        back()
 
         val fields = rule.onAllNodes(hasSetTextAction())
-        fields[0].performTextInput("Minha lista")
-        fields[1].performTextInput(server.url("/").toString())
-        fields[2].performTextInput("user")
-        fields[3].performTextInput("pass")
+        fields[0].performTextReplacement("Minha lista")
+        fields[1].performTextReplacement(server.url("/").toString())
+        fields[2].performTextReplacement("user")
+        fields[3].performTextReplacement("pass")
         click("Entrar")
 
         // Tela inicial
@@ -203,10 +213,11 @@ class AppFlowTest {
         back()
         // busca por título dentro de Filmes
         click("Buscar filme ou categoria")
-        rule.onAllNodes(hasSetTextAction())[0].performTextInput("Inter")
+        rule.onAllNodes(hasSetTextAction())[0].performTextReplacement("Inter")
         waitText("Resultados para")
         waitText("Interestelar")
         shot("13-busca-filmes")
+        back() // fecha o teclado
 
         // Séries
         back()
@@ -273,9 +284,10 @@ class AppFlowTest {
         // busca geral (lupa no topo)
         rule.onNodeWithContentDescription("Buscar").performClick()
         repeat(5) { pump() }
-        rule.onAllNodes(hasSetTextAction())[0].performTextInput("Fut")
+        rule.onAllNodes(hasSetTextAction())[0].performTextReplacement("Fut")
         waitText("Canais (")
         shot("14-busca")
+        back() // fecha o teclado
         back()
         waitText("PLAYLISTS")
         settle(500)

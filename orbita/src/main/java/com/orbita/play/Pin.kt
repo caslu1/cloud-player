@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -163,6 +164,53 @@ fun ConfirmDialog(
             ) {
                 Box(Modifier.onFocusChanged { if (it.hasFocus) onConfirmBtn = false }) { ActionButton("Cancelar", requester = cancelReq) { onCancel() } }
                 Box(Modifier.onFocusChanged { if (it.hasFocus) onConfirmBtn = true }) { ActionButton(confirm, primary = true, icon = icon) { onConfirm() } }
+            }
+        }
+    }
+}
+
+/** Aviso importante (só no primeiro acesso): o app é uma plataforma de tecnologia e não fornece conteúdo. */
+@Composable
+fun Disclaimer(onOk: () -> Unit) {
+    val okReq = remember { FocusRequester() }
+    LaunchedEffect(Unit) { delay(80); runCatching { okReq.requestFocus() } }
+    BackHandler { }
+    Box(Modifier.fillMaxSize().background(Color(0xCC000000)), contentAlignment = Alignment.Center) {
+        Column(
+            Modifier.width(380.dp).clip(RoundedCornerShape(18.dp)).background(Color(0xFF0E0C16))
+                .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(18.dp)).padding(horizontal = 22.dp, vertical = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Txt("Aviso importante", F.s(15.sp, C.white, FontWeight.Bold, F.outfit))
+            Spacer(Modifier.height(12.dp))
+            Box(
+                Modifier.size(56.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF26242E)).border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) { Icon(Ic.Warning, 28.dp, Color(0xFFC9A227)) }
+            Spacer(Modifier.height(14.dp))
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFF26242E))
+                    .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(12.dp)).padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                listOf(
+                    "O aplicativo é apenas uma plataforma de tecnologia. Não somos responsáveis por qualquer conteúdo adicionado pelos usuários.",
+                    "Não fornecemos nem vendemos canais de TV, assinaturas, conteúdo de streaming ou serviços de IPTV. A disponibilidade e o uso de todo o conteúdo são responsabilidade do usuário.",
+                ).forEach { t ->
+                    Row {
+                        Icon(Ic.Warning, 11.dp, Color(0xFFC9A227), Modifier.padding(top = 1.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Txt(t, F.s(8.5.sp, C.text), maxLines = 4)
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Focus(onClick = onOk, requester = okReq) { f ->
+                Box(
+                    Modifier.clip(RoundedCornerShape(8.dp)).background(if (f) C.white else Color(0xE6FFFFFF))
+                        .then(if (f) Modifier.border(2.dp, C.accent, RoundedCornerShape(8.dp)) else Modifier)
+                        .padding(horizontal = 22.dp, vertical = 8.dp)
+                ) { Txt("Entendo", F.s(9.5.sp, Color(0xFF0B0A12), FontWeight.Bold)) }
             }
         }
     }

@@ -246,40 +246,24 @@ fun Count(n: Int, highlight: Boolean) {
 
 fun fmtCount(n: Int): String = if (n >= 1000) String.format(Locale("pt", "BR"), "%,d", n).replace(',', '.') else n.toString()
 
-/** Campo de busca: aparece como item focável; OK abre o teclado. Assim o teclado não sobe só por passar o foco. */
+/** Campo de busca: item focável; OK abre o teclado do app (embaixo da tela) e a busca acontece enquanto digita. */
 @Composable
 fun SearchField(
     value: String, onChange: (String) -> Unit, placeholder: String, modifier: Modifier = Modifier,
     requester: FocusRequester? = null, onFocus: () -> Unit = {}, autoEdit: Boolean = false,
 ) {
-    var editing by remember { mutableStateOf(autoEdit) }
-    val fieldReq = remember { FocusRequester() }
+    val req = requester ?: remember { FocusRequester() }
     val shape = RoundedCornerShape(7.dp)
-    if (editing) {
-        var had by remember { mutableStateOf(false) }
-        BasicTextField(
-            value, onChange,
-            modifier.fillMaxWidth().height(30.dp).clip(shape).background(C.field).border(1.5.dp, C.accent, shape)
-                .focusRequester(fieldReq)
-                .onFocusChanged { if (it.isFocused) had = true else if (had) editing = false }
-                .padding(horizontal = 10.dp, vertical = 6.dp),
-            singleLine = true,
-            textStyle = F.s(9.5.sp, C.white),
-            cursorBrush = SolidColor(C.accent),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { editing = false; runCatching { requester?.requestFocus() } }, onDone = { editing = false }),
-        )
-        LaunchedEffect(Unit) { runCatching { fieldReq.requestFocus() } }
-    } else {
-        Focus(modifier, onClick = { editing = true }, requester = requester, onFocus = onFocus) { f ->
-            Row(
-                Modifier.fillMaxWidth().height(30.dp).clip(shape).background(C.field)
-                    .border(if (f) 1.5.dp else 1.dp, if (f) C.accent else C.panelBorder, shape).padding(horizontal = 9.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Ic.Search, 13.dp, C.dim); Spacer(Modifier.width(6.dp))
-                Txt(value.ifEmpty { placeholder }, F.s(10.5.sp, if (value.isEmpty()) C.faint else C.white), Modifier.weight(1f))
-            }
+    val editing = Kb.req?.label == placeholder
+    LaunchedEffect(Unit) { if (autoEdit) Kb.open(placeholder, value, back = req) { onChange(it) } }
+    Focus(modifier.kbSemantics(value, onChange), onClick = { Kb.open(placeholder, value, back = req) { onChange(it) } }, requester = req, onFocus = onFocus) { f ->
+        Row(
+            Modifier.fillMaxWidth().height(30.dp).clip(shape).background(C.field)
+                .border(if (f || editing) 1.5.dp else 1.dp, if (f || editing) C.accent else C.panelBorder, shape).padding(horizontal = 9.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Ic.Search, 13.dp, C.dim); Spacer(Modifier.width(6.dp))
+            Txt(value.ifEmpty { placeholder }, F.s(10.5.sp, if (value.isEmpty()) C.faint else C.white), Modifier.weight(1f))
         }
     }
 }

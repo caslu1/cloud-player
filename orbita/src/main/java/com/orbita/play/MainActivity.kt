@@ -204,6 +204,9 @@ fun App(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
                 pb.fullscreen && pb.current != null -> FullPlayer(vm, pb)
                 else -> Shell(vm, pb, ui, exit)
             }
+            // aviso de primeiro acesso e o teclado do app ficam por cima de tudo
+            if (!vm.store.disclaimerSeen.value) Disclaimer { vm.store.acceptDisclaimer() }
+            TvKeyboard()
         }
     }
     // revalida a ativação de tempos em tempos; vencido/bloqueado para o vídeo

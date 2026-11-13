@@ -180,39 +180,34 @@ fun LoginScreen(vm: Vm, adding: Boolean = false, onDone: () -> Unit = {}) {
 private fun NameField(value: String, onChange: (String) -> Unit, onNext: () -> Unit) =
     LoginField("NOME DA LISTA", value, onChange, "Ex.: Minha lista", onNext = onNext)
 
-/** Campo do login: rótulo em maiúsculas e caixa maior, com borda roxa no foco. */
+/** Campo do login: rótulo em maiúsculas e caixa maior, com borda roxa no foco. OK abre o teclado do app. */
 @Composable
 private fun LoginField(
     label: String, value: String, onChange: (String) -> Unit, placeholder: String, password: Boolean = false,
-    keyboard: KeyboardType = KeyboardType.Text, requester: FocusRequester? = null, onNext: () -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") keyboard: KeyboardType = KeyboardType.Text, requester: FocusRequester? = null, onNext: () -> Unit = {},
 ) {
-    var focused by remember { mutableStateOf(false) }
+    val req = requester ?: remember { FocusRequester() }
+    val title = label.lowercase().replaceFirstChar { it.uppercase() }
     Column(Modifier.padding(top = 11.dp)) {
         Txt(label, F.s(7.5.sp, C.faint, FontWeight.SemiBold, spacing = 1.sp))
         Spacer(Modifier.height(5.dp))
         val shape = RoundedCornerShape(8.dp)
-        BasicTextField(
-            value, onChange,
-            Modifier.fillMaxWidth().height(38.dp)
-                .then(if (focused) Modifier.border(4.dp, Color(0x2E7C5CFF), RoundedCornerShape(10.dp)).padding(2.dp) else Modifier)
-                .clip(shape).background(C.field)
-                .border(if (focused) 1.5.dp else 1.dp, if (focused) C.accent else C.panelBorder, shape)
-                .then(if (requester != null) Modifier.focusRequester(requester) else Modifier)
-                .onFocusChanged { focused = it.isFocused }
-                .padding(horizontal = 12.dp),
-            singleLine = true,
-            textStyle = F.s(11.sp, C.white),
-            cursorBrush = SolidColor(C.accentText),
-            visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
-            keyboardOptions = KeyboardOptions(keyboardType = if (password) KeyboardType.Password else keyboard, imeAction = ImeAction.Next, autoCorrectEnabled = false),
-            keyboardActions = KeyboardActions(onNext = { onNext() }, onDone = { onNext() }),
-            decorationBox = { inner ->
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
-                    if (value.isEmpty()) Txt(placeholder, F.s(11.sp, C.faint))
-                    inner()
-                }
+        Focus(
+            Modifier.fillMaxWidth().kbSemantics(value, onChange), requester = req,
+            onClick = { Kb.open(title, value, password, back = req, onDone = onNext) { onChange(it) } }
+        ) { focused ->
+            Box(
+                Modifier.fillMaxWidth().height(38.dp)
+                    .then(if (focused) Modifier.border(4.dp, Color(0x2E7C5CFF), RoundedCornerShape(10.dp)).padding(2.dp) else Modifier)
+                    .clip(shape).background(C.field)
+                    .border(if (focused) 1.5.dp else 1.dp, if (focused) C.accent else C.panelBorder, shape)
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (value.isEmpty()) Txt(placeholder, F.s(11.sp, C.faint))
+                else Txt(if (password) "•".repeat(value.length) else value, F.s(11.sp, C.white))
             }
-        )
+        }
     }
 }
 

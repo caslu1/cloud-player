@@ -100,8 +100,9 @@ class Store(ctx: Context) {
     fun logout() {
         // o MAC e a chave do aparelho continuam (são usados no site de ativação)
         val mac = p.getString("dmac", null); val key = p.getString("dkey", null)
+        val seen = p.getBoolean("disclaimer", false)
         p.edit().clear().apply()
-        p.edit().putString("dmac", mac).putString("dkey", key).apply()
+        p.edit().putString("dmac", mac).putString("dkey", key).putBoolean("disclaimer", seen).apply()
         reload()
         liveFormat.value = "ts"
     }
@@ -163,6 +164,9 @@ class Store(ctx: Context) {
         save("hiddenCats", hiddenCats.toList())
     }
     fun setWallpaper(i: Int) { Wall.index = i; p.edit().putInt("wallpaper", i).apply() }
+    /** Aviso importante: aparece só na primeira vez que o app é aberto. */
+    val disclaimerSeen = mutableStateOf(p.getBoolean("disclaimer", false))
+    fun acceptDisclaimer() { disclaimerSeen.value = true; p.edit().putBoolean("disclaimer", true).apply() }
     fun setHomeLayout(v: String) { homeLayout.value = v; p.edit().putString("homeLayout", v).apply() }
     fun setSortAZ(b: Boolean) { sortAZ.value = b; p.edit().putBoolean("sortAZ", b).apply() }
 
