@@ -46,9 +46,9 @@ export function landing(env, { formHtml, plansHtml, logged, host }) {
   const name = esc(env.SITE_NAME);
   const nav = `<header class="lnav"><div class="wrap row" style="height:72px">
 <a href="/" class="logo"><img src="${WORDMARK}" alt="${name}" height="32"></a>
-<nav class="lnk"><a href="#como">Como funciona</a><a href="#recursos">Recursos</a><a href="#instalar">Instalar</a><a href="#planos">Planos</a><a href="/ajuda">Ajuda</a></nav>
+<nav class="lnk"><a href="#como">Como funciona</a><a href="#instalar">Instalar</a><a href="#planos">Planos</a><a href="/ajuda">Ajuda</a></nav>
 ${logged ? `<a class="btn sm" href="/aparelho">Minhas listas</a>` : `<a class="btn sm" href="#entrar">Ativar aparelho</a>`}
-<details class="mmenu"><summary aria-label="Menu">${li("grid", 22)}</summary><div><a href="#como">Como funciona</a><a href="#recursos">Recursos</a><a href="#instalar">Instalar</a><a href="#planos">Planos</a><a href="/ajuda">Ajuda</a>${logged ? `<a href="/sair">Sair</a>` : ""}</div></details>
+<details class="mmenu"><summary aria-label="Menu">${li("grid", 22)}</summary><div><a href="#como">Como funciona</a><a href="#instalar">Instalar</a><a href="#planos">Planos</a><a href="/ajuda">Ajuda</a>${logged ? `<a href="/sair">Sair</a>` : ""}</div></details>
 </div></header>`;
 
   const hero = `<section class="hero"><div class="wrap hgrid">
@@ -125,7 +125,7 @@ ${formHtml}
 <nav class="row wrapf" style="gap:18px;margin-left:auto"><a href="#entrar">Ativar aparelho</a><a href="/aparelho">Minhas listas</a><a href="#planos">Planos</a><a href="/ajuda">Ajuda</a><a href="${APK_URL}">Baixar APK</a></nav>
 </div><div class="wrap dim" style="font-size:12px;margin-top:14px">${name} é um player de mídia e não fornece conteúdo.</div></footer>`;
 
-  return nav + hero + steps + features + install + activate + notice + footer;
+  return nav + hero + steps + install + activate + notice + footer;
 }
 
 export const LANDING_CSS = `
