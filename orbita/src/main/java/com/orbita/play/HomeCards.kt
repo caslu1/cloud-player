@@ -198,10 +198,22 @@ private fun GlassCard(c: VitrineCard, requester: FocusRequester?) {
                     Spacer(Modifier.height(3.dp))
                     Txt(c.sub, F.s(7.5.sp, if (f) C.text else C.dim))
                 }
-                Box(Modifier.align(Alignment.CenterEnd).offset(x = 8.dp, y = 4.dp).size(92.dp)
-                    .background(Brush.radialGradient(listOf(Color(if (f) 0x667C5CFF else 0x337C5CFF), Color(0x007C5CFF)))),
-                    contentAlignment = Alignment.Center) {
-                    androidx.compose.foundation.Image(androidx.compose.ui.graphics.vector.rememberVectorPainter(c.icon), null, Modifier.size(68.dp))
+                // ícone branco sólido num círculo de vidro; no cartão focado o círculo fica no degradê da marca
+                Box(
+                    Modifier.align(Alignment.CenterEnd).offset(y = 6.dp).size(86.dp).clip(CircleShape)
+                        .background(
+                            if (f) Brush.linearGradient(listOf(Color(0xFFA36BFF), Color(0xFF7C5CFF), Color(0xFF3FA8F0)))
+                            else Brush.linearGradient(listOf(Color(0x24FFFFFF), Color(0x12FFFFFF)))
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        Modifier.size(66.dp).clip(CircleShape).background(Color(if (f) 0x14FFFFFF else 0x0FFFFFFF))
+                            .border(1.dp, if (f) Color(0x8CFFFFFF) else Color(0x4DFFFFFF), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        androidx.compose.foundation.Image(androidx.compose.ui.graphics.vector.rememberVectorPainter(SolidIc.of(c.key)), null, Modifier.size(42.dp))
+                    }
                 }
             }
         }
