@@ -1,7 +1,7 @@
 ' Tela inicial Lite (igual ao Android): logo no centro, blocos quadrados com ícones de linha, Recarregar e rodapé.
 sub init()
     r = m.top.findNode("root")
-    addPoster(r, "pkg:/images/logo_full.png", 810, 124, 300, 52)
+    addPoster(r, "pkg:/images/logo_big.png", 790, 112, 340, 72)
     m.clock = addLabel(r, "", 1620, 36, OUTF(), 30, "0xFFFFFFFF", 240, "right")
     m.date = addLabel(r, "", 1620, 76, IREG(), 15, "0x9D9ABBFF", 240, "right")
     m.items = [

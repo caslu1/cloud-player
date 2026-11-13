@@ -464,13 +464,8 @@ fun HintBar(hints: List<Pair<String, String>>, modifier: Modifier = Modifier) {
 
 @Composable
 fun Logo(modifier: Modifier = Modifier, size: Float = 13f) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Image(painterResource(R.drawable.logo_mark), null, Modifier.size((size * 1.75f).dp))
-        Spacer(Modifier.width(8.dp))
-        Txt("ORBITA", F.s(size.sp, C.white, FontWeight.Bold, F.outfit, 0.5.sp))
-        Spacer(Modifier.width(5.dp))
-        Txt("PLAY", F.s(size.sp, C.accentText, FontWeight.Bold, F.outfit, 0.5.sp))
-    }
+    // logo oficial (arquivo da marca): planeta com órbita + "orbitaplay"
+    Image(painterResource(R.drawable.logo_word), "Orbita Play", modifier.height((size * 2.1f).dp), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
 }
 
 @Composable

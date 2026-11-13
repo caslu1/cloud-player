@@ -286,9 +286,7 @@ fun ScreenBackground() = WallpaperView(Wall.index)
 fun BrandSplash() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(painterResource(R.drawable.logo_mark), null, Modifier.size(60.dp))
-            Spacer(Modifier.height(10.dp))
-            Logo(Modifier.wrapContentSize(), 16f)
+            Logo(Modifier.wrapContentSize(), 30f)
         }
     }
 }

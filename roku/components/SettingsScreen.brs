@@ -1,7 +1,7 @@
 ' Configurações igual ao Android: menu por grupos à esquerda, conteúdo em quadros e janelas de confirmação.
 sub init()
     r = m.top.findNode("root")
-    addPoster(r, "pkg:/images/logo_full.png", 64, 40, 300, 52)
+    addPoster(r, "pkg:/images/logo_full.png", 64, 40, 245, 52)
     addRect(r, 388, 48, 2, 36, "0x1C1830FF")
     addLabel(r, "Configurações", 414, 38, OUTF(), 38, "0xFFFFFFFF")
     addPoster(r, "pkg:/images/set_menu.png", 64, 126, 460, 900)

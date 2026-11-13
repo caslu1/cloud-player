@@ -2,7 +2,7 @@
 sub init()
     m.root = m.top.findNode("root")
     r = m.root
-    addPoster(r, "pkg:/images/logo_full.png", 56, 26, 300, 52)
+    addPoster(r, "pkg:/images/logo_full.png", 56, 26, 245, 52)
     ' ações do topo (recarregar e configurações)
     m.topBtns = []
     names = ["refresh", "settings"]

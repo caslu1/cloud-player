@@ -16,7 +16,8 @@ const P = {
 };
 export const ic = (n, s = 16, c = "currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true"><path fill="${c}" d="${P[n]}"/></svg>`;
 
-const LOGO = `<svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><circle cx="30" cy="36" r="17" fill="none" stroke="#7c5cff" stroke-width="9"/><circle cx="30" cy="36" r="5" fill="#7c5cff"/><path d="M27 40 L58 6 L33 42 Z" fill="#22d3ee"/></svg>`;
+import { WORDMARK, MARK } from "./brand.js";
+export { MARK };
 
 export const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700&display=swap');
@@ -37,7 +38,7 @@ a{color:inherit;text-decoration:none}
 .btn.full{width:100%}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
 .st-active{background:#163a2a;color:var(--ok)}.st-trial{background:#3a2a10;color:var(--warn)}.st-expired{background:#3a1620;color:var(--bad)}.st-blocked{background:#22202c;color:var(--mut)}
-.logo{display:flex;align-items:center;gap:10px;font-family:Outfit,Inter;font-weight:700;font-size:20px}.logo span{color:var(--accent2)}
+.logo{display:flex;align-items:center}.logo img{height:34px;width:auto;display:block}
 nav.top{height:76px;border-bottom:1px solid #16121f;position:relative;z-index:2}
 nav.top .links{display:flex;gap:30px;color:var(--mut);font-weight:500;margin-left:auto}nav.top .links a:hover,nav.top .links a.on{color:#fff}
 .alert{padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px}.alert.err{background:#3a1620;color:#ffc2cc}.alert.ok{background:#163a2a;color:#c9f5dc}
@@ -68,10 +69,10 @@ td{padding:14px 16px;border-bottom:1px solid #191528;font-size:13.5px;color:var(
 
 export function page(title, body, { siteName = "Orbita Play" } = {}) {
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(title)} · ${esc(siteName)}</title><meta name="theme-color" content="#07060d"><style>${CSS}</style></head><body>${body}</body></html>`;
+<title>${esc(title)} · ${esc(siteName)}</title><meta name="theme-color" content="#07060d"><link rel="icon" type="image/png" href="${MARK}"><style>${CSS}</style></head><body>${body}</body></html>`;
 }
 
-export const logo = () => `<a href="/" class="logo">${LOGO}ORBITA <span>PLAY</span></a>`;
+export const logo = () => `<a href="/" class="logo"><img src="${WORDMARK}" alt="Orbita Play" height="34"></a>`;
 
 export function publicNav(active, logged) {
   const l = (h, t) => `<a href="${h}" class="${active === h ? "on" : ""}">${t}</a>`;
