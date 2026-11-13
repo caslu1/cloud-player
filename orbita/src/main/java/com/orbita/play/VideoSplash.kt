@@ -1,6 +1,7 @@
 package com.orbita.play
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -44,6 +45,7 @@ fun VideoSplash(onDone: () -> Unit) {
     }
     // garantia: se o vídeo travar, o app abre depois de 15 s
     LaunchedEffect(Unit) { delay(15_000); onDone() }
+    BackHandler { } // o vídeo não é pulado pelo Voltar
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     Box(Modifier.fillMaxSize().background(C.bg).focusRequester(focus).focusable().onKeyEvent { true }) {
