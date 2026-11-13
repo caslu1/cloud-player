@@ -158,7 +158,11 @@ private fun GlassCard(c: VitrineCard, requester: FocusRequester?) {
                     Spacer(Modifier.height(3.dp))
                     Txt(c.sub, F.s(7.5.sp, if (f) C.text else C.dim))
                 }
-                androidx.compose.foundation.Image(androidx.compose.ui.graphics.vector.rememberVectorPainter(c.icon), null, Modifier.align(Alignment.CenterEnd).offset(y = 8.dp).size(54.dp))
+                Box(Modifier.align(Alignment.CenterEnd).offset(x = 6.dp, y = 8.dp).size(76.dp)
+                    .background(Brush.radialGradient(listOf(Color(if (f) 0x667C5CFF else 0x337C5CFF), Color(0x007C5CFF)))),
+                    contentAlignment = Alignment.Center) {
+                    androidx.compose.foundation.Image(androidx.compose.ui.graphics.vector.rememberVectorPainter(c.icon), null, Modifier.size(58.dp))
+                }
             }
         }
     }
@@ -181,20 +185,20 @@ private object DuoIc {
     private fun duo(name: String, line: String, fill: String): ImageVector =
         ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
             .addPath(addPathNodes(fill), fill = SolidColor(purple))
-            .addPath(addPathNodes(line), fill = null, stroke = SolidColor(Color.White), strokeLineWidth = 1.6f,
+            .addPath(addPathNodes(line), fill = null, stroke = SolidColor(Color.White), strokeLineWidth = 1.7f,
                 strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round)
             .build()
 
     val Tv by lazy { duo("dtv",
-        "M6,7.5 H18 A3,3 0 0 1 21,10.5 V17 A3,3 0 0 1 18,20 H6 A3,3 0 0 1 3,17 V10.5 A3,3 0 0 1 6,7.5 Z M8.5,3 L12,6.5 L15.5,3",
-        "M10.4,10.5 L15.2,13.75 L10.4,17 Z") }
+        "M6.5,7.5 H17.5 A3.5,3.5 0 0 1 21,11 V16.5 A3.5,3.5 0 0 1 17.5,20 H6.5 A3.5,3.5 0 0 1 3,16.5 V11 A3.5,3.5 0 0 1 6.5,7.5 Z M12,7.5 L8.2,3.6 M12,7.5 L15.8,3.6 M7.5,22 H16.5",
+        "M13.1,9.6 L9.3,14.3 H11.9 L10.9,17.9 L14.7,13.2 H12.1 Z") }
     val Camera by lazy { duo("dcam",
-        "M5.5,8 A2.6,2.6 0 1 0 5.51,8 Z M11.5,8 A2.6,2.6 0 1 0 11.51,8 Z M4,11.5 H15 A1.5,1.5 0 0 1 16.5,13 V19 A1.5,1.5 0 0 1 15,20.5 H4 A1.5,1.5 0 0 1 2.5,19 V13 A1.5,1.5 0 0 1 4,11.5 Z M16.5,14.5 L21.5,12 V20 L16.5,17.5",
-        "M6,14 H11 V18 H6 Z") }
+        "M6.6,3.4 A2.9,2.9 0 1 0 6.61,3.4 Z M13,3.4 A2.9,2.9 0 1 0 13.01,3.4 Z M4.5,10.2 H14.5 A2,2 0 0 1 16.5,12.2 V18.5 A2,2 0 0 1 14.5,20.5 H4.5 A2,2 0 0 1 2.5,18.5 V12.2 A2,2 0 0 1 4.5,10.2 Z M16.5,13.6 L21.5,11 V19.7 L16.5,17.1",
+        "M6.2,13.3 H11 A0.8,0.8 0 0 1 11.8,14.1 V16.7 A0.8,0.8 0 0 1 11,17.5 H6.2 A0.8,0.8 0 0 1 5.4,16.7 V14.1 A0.8,0.8 0 0 1 6.2,13.3 Z") }
     val Series by lazy { duo("dser",
-        "M6,4 H18 A3,3 0 0 1 21,7 V17 A3,3 0 0 1 18,20 H6 A3,3 0 0 1 3,17 V7 A3,3 0 0 1 6,4 Z M3,8.5 H21 M8,4 L9.5,8.5 M13,4 L14.5,8.5",
-        "M10,11.2 L15.2,14.25 L10,17.3 Z") }
+        "M7,3 H17 A4,4 0 0 1 21,7 V17 A4,4 0 0 1 17,21 H7 A4,4 0 0 1 3,17 V7 A4,4 0 0 1 7,3 Z M3,8.5 H21 M8.2,3.2 L10.2,8.5 M13.6,3.2 L15.6,8.5",
+        "M10.2,11.6 C10.2,11 10.8,10.7 11.3,11 L15.3,13.6 C15.8,13.9 15.8,14.6 15.3,14.9 L11.3,17.5 C10.8,17.8 10.2,17.5 10.2,16.9 Z") }
     val Ball by lazy { duo("dball",
-        "M12,3 A9,9 0 1 0 12.01,3 Z M12.00,5.60 L12.00,8.70 M15.14,10.98 L18.09,10.02 M13.94,14.67 L15.76,17.18 M10.06,14.67 L8.24,17.18 M8.86,10.98 L5.91,10.02",
+        "M12,3 A9,9 0 1 0 12.01,3 Z M12.00,8.70 L12.00,5.70 M8.05,3.91 L12.00,5.70 L15.95,3.91 M15.14,10.98 L17.99,10.05 M18.47,5.75 L17.99,10.05 L20.91,13.25 M13.94,14.67 L15.70,17.10 M19.95,16.23 L15.70,17.10 L13.56,20.86 M10.06,14.67 L8.30,17.10 M10.44,20.86 L8.30,17.10 L4.05,16.23 M8.86,10.98 L6.01,10.05 M3.09,13.25 L6.01,10.05 L5.53,5.75",
         "M12.00,8.70 L15.14,10.98 L13.94,14.67 L10.06,14.67 L8.86,10.98 Z") }
 }
