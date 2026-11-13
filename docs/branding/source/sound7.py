@@ -22,7 +22,7 @@ speed=np.abs(np.gradient(th)); speed/=speed.max()+1e-12
 act=np.clip((t-T0+0.1)/0.25,0,1)*np.clip((T1+0.2-t)/0.3,0,1)
 sw=tvlp(lp(rng.standard_normal(N),4000,4),400+2600*speed*(0.5+0.5*fr))*act*(0.1+0.9*speed**1.5)*(0.5+0.5*fr)
 pan=np.clip(sx*0.85,-1,1)
-L=sw*np.sqrt((1-pan)/2)*0.25; R=sw*np.sqrt((1+pan)/2)*0.25
+L=sw*np.sqrt((1-pan)/2)*0.12; R=sw*np.sqrt((1+pan)/2)*0.12
 # 2) double hit: soft "tum" at 2.95, deep "TUM" at 3.12 (when 'play' appears)
 def hit(st,f0,f1,dec,amp):
     tt=np.clip(t-st,0,None); g=(t>=st)

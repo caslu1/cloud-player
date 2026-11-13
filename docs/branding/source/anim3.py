@@ -35,7 +35,7 @@ svg=f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="{l:.1f} {tp:.1f} {w:.1f
  <g>
  <g mask="url(#txt)"><rect id="shineR" x="0" y="{tp:.1f}" width="{H*0.9:.1f}" height="{hh:.1f}" fill="url(#shine)" transform="skewX(-20)" opacity="0"/></g></g>
 </g></svg>'''
-G=dict(H0=B.H*0.98,XP=XP,YP=B.H*0.6,cx=B.cx,cy=B.cy,ang=B.ang,off=B.off,rx=B.rx,ry=B.ry,Ro=B.Ro,ri=B.ri,gapB=B.gapB,ELL=ELL,DX=(l+rr)/2-500,W=rr,
+G=dict(DA=(rr-(XP-B.H*0.03))/2,H0=B.H*0.98,XP=XP,YP=B.H*0.6,cx=B.cx,cy=B.cy,ang=B.ang,off=B.off,rx=B.rx,ry=B.ry,Ro=B.Ro,ri=B.ri,gapB=B.gapB,ELL=ELL,DX=(l+rr)/2-500,W=rr,
        endTh=33.0)
 import json
 html=f'''<!doctype html><html><head><meta charset="utf-8"><style>
@@ -56,7 +56,7 @@ html,body{{margin:0;width:1920px;height:1080px;overflow:hidden;background:#04030
 <svg id="orbs" viewBox="0 0 1920 1080"><g transform="translate(960 540) rotate(-47)" fill="none" stroke="#9B84FF">
 <ellipse id="o1" rx="1150" ry="250" stroke-opacity=".14" stroke-width="2"/><ellipse id="o2" rx="1500" ry="330" stroke-opacity=".10" stroke-width="2" stroke-dasharray="4 14"/>
 <ellipse id="o3" rx="1900" ry="420" stroke-opacity=".05" stroke-width="2"/><circle id="sat" r="5" fill="#C9B8FF" stroke="none" opacity=".6"/></g></svg>
-<div id="vig"></div><div id="halo"></div><div id="wrap">{svg}</div>
+<div id="vig"></div><div id="halo"></div><div id="wrap">{svg}</div><div id="fadeout" style="position:absolute;inset:0;z-index:5;background:#000;opacity:0"></div>
 <script>
 const G={json.dumps(G)};
 const cl=x=>Math.max(0,Math.min(1,x)), seg=(t,a,b)=>cl((t-a)/(b-a));
@@ -118,11 +118,16 @@ function render(t){{
      c.setAttribute('r',(G.Ro*0.09*f).toFixed(1)); c.setAttribute('opacity',(on&&t<T1+0.1?vis(q)*f*0.9*cl(speed/1.5):0).toFixed(2));}});
   const rp=seg(t,T1,T1+0.7); $('ripple').setAttribute('cx',p[0]);$('ripple').setAttribute('cy',p[1]);
   $('ripple').setAttribute('r',G.Ro*(0.12+0.9*eo(rp))); $('ripple').setAttribute('opacity',rp>0&&rp<1?(1-rp)*0.9:0);
-  const sl=eio(seg(t,2.25,3.05)); $('all').setAttribute('transform','translate('+(G.DX*(1-sl)).toFixed(1)+' 0)');
+  // O centred -> 'orbita' centred -> full logo centred (synced with 'play')
+  const s1=eio(seg(t,2.25,2.9)), s2=eio(seg(t,3.1,3.75));
+  const tx=G.DX+(G.DA-G.DX)*s1+(0-G.DA)*s2;
+  const zEnd=eio(seg(t,4.75,5.5)); const zs=1+0.05*zEnd;
+  $('all').setAttribute('transform','translate(500 500) scale('+zs.toFixed(4)+') translate(-500 -500) translate('+tx.toFixed(1)+' 0)');
+  document.getElementById('fadeout').style.opacity=zEnd.toFixed(3);
   $('wipeR').setAttribute('width',((G.XP-G.H0)*1.02*eo(seg(t,2.35,2.85))).toFixed(0));
-  const pp=seg(t,3.12,3.55), sc=0.86+0.14*back(pp);
-  $('playG').setAttribute('opacity',eo(seg(t,3.12,3.3)));
-  $('playG').setAttribute('transform','translate('+G.XP+' '+G.YP+') scale('+sc.toFixed(4)+') translate('+(-G.XP)+' '+(-G.YP)+')');
+  const pp=eo(seg(t,3.1,3.7)), sc=0.94+0.06*pp;
+  $('playG').setAttribute('opacity',eo(seg(t,3.1,3.45)));
+  $('playG').setAttribute('transform','translate('+(140*(1-pp)).toFixed(1)+' 0) translate('+G.XP+' '+G.YP+') scale('+sc.toFixed(4)+') translate('+(-G.XP)+' '+(-G.YP)+')');
   $('playGlow').setAttribute('opacity',(Math.sin(Math.PI*seg(t,3.12,4.2))*0.9).toFixed(3));
   const L=$('letters'); L.setAttribute('transform','translate('+(-60*(1-eo(seg(t,2.35,2.85))))+' 0)');
   const s=seg(t,3.7,4.4); $('shineR').setAttribute('x',(-900+(G.W+1600)*eio(s)).toFixed(1)); $('shineR').setAttribute('opacity',s>0&&s<1?1:0);

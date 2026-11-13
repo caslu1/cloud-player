@@ -81,6 +81,6 @@ Gerar de novo: `python3 source/sound5.py bruto.wav` e `ffmpeg -i bruto.wav -af l
 - `motion/orbitaplay-splash-play-1080p.mp4`: 1920×1080, 30 fps, 5,5 s, H.264 + AAC
 - `motion/orbitaplay-splash-play-sound.wav` e `motion/orbitaplay-splash-play-preview.gif`
 
-Visual: igual à abertura 2 (cometa girando em volta do "O", fundo de espaço), mas "orbita" aparece primeiro e, depois de uma pausa curta, "play" surge com um leve "pulo" e um brilho roxo.
+Visual: igual à abertura 2 (cometa girando em volta do "O", fundo de espaço). O "O" começa centralizado; "orbita" se revela e fica centralizado; depois de uma pausa curta, "play" entra deslizando da direita com um brilho roxo enquanto o logo inteiro se ajusta ao centro; no final, aproximação leve e fade para preto (transição para o app).
 Som (original, baixo, -26 LUFS): sopro de ar suave que acompanha o cometa em volta do "O" (estéreo); quando "play" aparece, duas batidas graves ("tum-TUM", em 2,95 s e 3,12 s) que abrem um acorde quente (Fá maior) sumindo devagar.
 Gerar de novo: `python3 source/sound7.py bruto.wav`, `ffmpeg -i bruto.wav -af loudnorm=I=-26:TP=-8 som.wav`, `python3 source/anim3.py anim3.html`, `node source/rec3.js` e o mesmo comando `ffmpeg`.
