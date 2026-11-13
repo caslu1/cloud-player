@@ -82,7 +82,7 @@ ${[["Instale na sua TV", `Instale o ${name} no aparelho e abra o app. Na tela ap
   const gallery = `<section id="telas" class="sec"><div class="wrap">
 <div class="eyebrow">TELAS DO APP</div><h2 class="h2">Fácil de usar, direto do sofá</h2>
 <div class="g2s">${screens.map(([s, t, d]) => `<div class="scard">${shot(s, t)}<h3>${t}</h3><p class="mut">${d}</p></div>`).join("")}</div>
-<p class="dim" style="font-size:12px;margin-top:14px">Imagens do aplicativo com conteúdo de demonstração.</p>
+<p class="dim" style="font-size:12px;margin-top:14px">Imagens ilustrativas do aplicativo · títulos fictícios.</p>
 </div></section>`;
 
   const features = `<section id="recursos" class="sec"><div class="wrap">
