@@ -347,8 +347,7 @@ class AppFlowTest {
 
         // temas Redondo e Quadrado
         for ((opt, name) in listOf("Redondo" to "24-inicio-redondo", "Quadrado" to "25-inicio-quadrado")) {
-            back(); repeat(3) { pump() }
-            if (opt == "Redondo") { back(); repeat(3) { pump() } }
+            if (opt == "Redondo") repeat(2) { back(); repeat(3) { pump() } }
             waitText("Canais ao vivo")
             rule.onNodeWithContentDescription("Configurações").performClick()
             repeat(5) { pump() }
