@@ -44,7 +44,7 @@ ${logged ? `<a class="btn sm" href="/aparelho">Minhas listas</a>` : `<a class="b
  <div class="row wrapf" style="gap:12px;margin-top:26px"><a class="btn lg" href="#entrar">Ativar meu aparelho</a><a class="btn g lg" href="#como">Como funciona</a></div>
  <div class="note">${li("info", 18)}<div><b>O ${name} não inclui nenhum conteúdo.</b> Não fornece, não vende e não hospeda vídeos: só reproduz o que vem da lista que você mesmo adiciona.</div></div>
 </div>
-<div class="hshot">${shot("inicio", "Tela inicial do app")}<div class="cap">Tela inicial do aplicativo · tema Vitrine</div></div>
+<div class="hshot">${shot("inicio", "Tela inicial do app")}<div class="cap">Imagem ilustrativa · tela inicial do aplicativo</div></div>
 </div></section>
 <section class="strip"><div class="wrap sgrid">
 ${[["tv", "Feito para TV", "Navegação rápida com o controle remoto."], ["shield", "Sem conteúdo próprio", "Você usa só a sua própria lista."], ["phone", "Configure pelo celular", "Leia o QR code e pronto."]]
@@ -63,16 +63,11 @@ ${[["Instale na sua TV", `Instale o ${name} no aparelho e abra o app. Na tela ap
 
   const screens = [["inicio", "Tela inicial", "Cinco temas para escolher: Vitrine, Padrão, Lite, Redondo e Quadrado."],
     ["canais", "Canais ao vivo", "Categorias, favoritos, recentes, prévia do canal e a programação de hoje."],
-    ["filmes", "Filmes", "Capas grandes, notas, sinopse e busca por título ou categoria."],
-    ["episodios", "Séries", "Temporadas, episódios com foto e o elenco de cada série."],
-    ["player", "Player", "Continua de onde parou, áudio e legendas, próximo episódio e ajuste de tela."],
-    ["lista-player", "Canais dentro do player", "Troque de categoria e de canal sem sair da tela cheia."],
-    ["playlists", "Várias playlists", "Guarde mais de uma lista, dê um nome a cada uma e troque em segundos."],
-    ["config", "Configurações", "Controle parental com senha, papel de parede, formato e preferências."]];
+    ["filmes", "Filmes", "Capas grandes, notas, sinopse e busca por título ou categoria."]];
   const gallery = `<section id="telas" class="sec"><div class="wrap">
 <div class="eyebrow">TELAS DO APP</div><h2 class="h2">Fácil de usar, direto do sofá</h2>
 <div class="g2s">${screens.map(([s, t, d]) => `<div class="scard">${shot(s, t)}<h3>${t}</h3><p class="mut">${d}</p></div>`).join("")}</div>
-<p class="dim" style="font-size:12px;margin-top:14px">Imagens do aplicativo com conteúdo de demonstração.</p>
+<p class="dim" style="font-size:12px;margin-top:14px">Imagens ilustrativas · títulos de demonstração.</p>
 </div></section>`;
 
   const features = `<section id="recursos" class="sec"><div class="wrap">
@@ -141,8 +136,8 @@ html{scroll-behavior:smooth}
 .note{display:flex;gap:12px;margin-top:26px;padding:16px 18px;border-radius:14px;background:rgba(29,22,56,.6);border:1px solid var(--line2);color:var(--mut);font-size:14px;line-height:1.55;max-width:560px}.note svg{flex:none;color:#9b84ff;margin-top:2px}.note b{color:#fff}
 .tvf{border-radius:16px;padding:8px;background:linear-gradient(160deg,#2a2440,#100d1c);border:1px solid #2a2440;box-shadow:0 30px 80px rgba(0,0,0,.55)}
 .tvf img{display:block;width:100%;height:auto;border-radius:10px;aspect-ratio:16/9;object-fit:cover;background:#050409}
-.hshot .tvf{transform:perspective(1400px) rotateY(-6deg);box-shadow:0 40px 100px rgba(124,92,255,.25),0 30px 80px rgba(0,0,0,.6)}
-.cap{color:var(--dim);font-size:12px;text-align:right;margin-top:12px}
+.hshot .tvf{box-shadow:0 40px 100px rgba(124,92,255,.25),0 30px 80px rgba(0,0,0,.6)}
+.cap{color:var(--dim);font-size:13px;text-align:right;margin-top:14px}
 .strip{border-top:1px solid #1c1730;border-bottom:1px solid #1c1730;background:linear-gradient(90deg,rgba(124,92,255,.14),rgba(63,168,240,.05));padding:26px 0}
 .sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}.sgrid b{font-size:15px}.sgrid .mut{margin-top:3px}
 .ibox{flex:none;width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;background:#1d1638;border:1px solid #2a2440;color:#9b84ff}
@@ -150,7 +145,7 @@ html{scroll-behavior:smooth}
 .sec{padding:76px 0 0}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
-.g2s{display:grid;grid-template-columns:1fr 1fr;gap:26px 22px;margin-top:30px}
+.g2s{display:grid;grid-template-columns:repeat(3,1fr);gap:26px 22px;margin-top:30px}
 .step{padding:26px}.step h3,.feat h3,.scard h3,.inst h3{font-family:Outfit,Inter;font-size:19px;margin-top:14px}.step p,.feat p,.scard p{margin-top:8px;line-height:1.6}
 .num{display:inline-flex;width:34px;height:34px;border-radius:9px;background:var(--accent);color:#fff;font-weight:700;align-items:center;justify-content:center}.num.sm{width:28px;height:28px;font-size:13px;flex:none}
 .feat{padding:22px;display:flex;gap:16px}.feat h3{margin-top:2px;font-size:17px}
@@ -164,7 +159,7 @@ html{scroll-behavior:smooth}
 @media (max-width:1000px){
  .lnav .lnk{display:none}.mmenu{display:block}
  .hgrid,.g3,.g2,.g2s,.sgrid,.act{grid-template-columns:1fr !important}
- .hero{padding:34px 0 40px}.hshot .tvf{transform:none}.cap{text-align:left}
+ .hero{padding:34px 0 40px}.hshot .tvf{transform:none}.cap{text-align:right}
  .sec{padding-top:56px}.imp{flex-direction:column;padding:24px}
  .lnav .btn.sm{padding:0 12px}.lnav .logo img{height:26px}
 }
