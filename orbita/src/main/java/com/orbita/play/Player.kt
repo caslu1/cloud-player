@@ -447,7 +447,7 @@ fun FullPlayer(vm: Vm, pb: Playback) {
         }
 
         if (overlay && panel == PPanel.NONE) {
-            if (live) LiveOverlay(vm, pb, item, qualityReq, Modifier.fillMaxSize())
+            if (live) LiveOverlay(vm, pb, item, qualityReq, Modifier.fillMaxSize()) { panel = PPanel.CHANNELS }
             else {
                 VodOverlay(item, if (seekTarget >= 0) seekTarget else pos, dur, pb.isPlaying, seekTarget >= 0, vodButtons, vodBtn, hasNext, Modifier.align(Alignment.BottomCenter))
                 if (seekTarget >= 0 && seekStart >= 0) SeekBadge(seekTarget - seekStart, Modifier.align(Alignment.Center))
@@ -504,7 +504,7 @@ private val liveBlue = Color(0xFF3D6BFF)
 
 /** Informações do canal ao vivo (layout da tela de referência): canal, programa, progresso, a seguir e qualidade. */
 @Composable
-private fun LiveOverlay(vm: Vm, pb: Playback, item: PlayItem, qualityReq: FocusRequester, modifier: Modifier) {
+private fun LiveOverlay(vm: Vm, pb: Playback, item: PlayItem, qualityReq: FocusRequester, modifier: Modifier, onChannels: () -> Unit) {
     val c = item.channel ?: return
     val progs = vm.epg[c.id].orEmpty()
     val nowMs = System.currentTimeMillis()
@@ -583,6 +583,20 @@ private fun LiveOverlay(vm: Vm, pb: Playback, item: PlayItem, qualityReq: FocusR
             }
             Spacer(Modifier.height(14.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // botão de grade: abre categorias e canais dentro do player (◀ no controle também abre)
+                Focus(onClick = onChannels) { f ->
+                    val shape = RoundedCornerShape(8.dp)
+                    Row(
+                        Modifier.height(36.dp).clip(shape).background(if (f) C.white else Color(0x22FFFFFF))
+                            .border(if (f) 2.dp else 1.dp, if (f) C.white else Color(0x40FFFFFF), shape).padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Ic.Grid, 15.dp, if (f) Color(0xFF14172B) else C.white)
+                        Spacer(Modifier.width(7.dp))
+                        Txt("Canais", F.s(10.sp, if (f) Color(0xFF14172B) else C.white, FontWeight.Bold))
+                    }
+                }
+                Box(Modifier.padding(horizontal = 14.dp).width(1.dp).height(24.dp).background(Color(0x33FFFFFF)))
                 Txt("Qualidade", F.s(8.5.sp, C.dim), Modifier.padding(end = 10.dp))
                 val focusTarget = q?.takeIf { variants.containsKey(it) } ?: Quality.order.firstOrNull { variants.containsKey(it) } ?: Quality.order[2]
                 Quality.order.forEach { label ->
