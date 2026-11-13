@@ -25,7 +25,22 @@ const L = {
 const li = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${L[n]}</svg>`;
 const icoBox = (n) => `<span class="ibox">${li(n)}</span>`;
 
-const shot = (src, alt) => `<div class="tvf"><img src="/img/${src}.webp" alt="${esc(alt)}" loading="lazy" width="1280" height="720"></div>`;
+// telas ilustrativas desenhadas (títulos fictícios, sem dados do aparelho)
+const G = ["#2f7fd6,#173a8a", "#d64553,#6e1f2a", "#3fae5c,#1b4d2a", "#d9a12b,#7a4a12", "#9b55e8,#3d1a78", "#22a7a7,#0f4a52", "#e0702e,#6a2a10", "#5b6cf0,#24296e"];
+const MOV = ["O Último Farol", "Cidade de Vidro", "Rota 47", "Verão em Lisboa", "Constelação", "Maré Alta", "Noite Azul", "Horizonte"];
+const CH = ["Canal Notícias", "Esporte Total", "Cine Max", "Kids Mundo", "Música Hits", "Documentários", "Novelas", "Viagem & Cia"];
+const poster = (i, t, sel) => `<div class="mp${sel ? " sel" : ""}" style="background:linear-gradient(160deg,${G[i % G.length]})"><span class="mpc"></span><b>${t}</b></div>`;
+const mockTop = (active) => `<div class="mtop"><span class="mlogo">▶</span>${["Início", "Ao vivo", "Filmes", "Séries", "Minha lista"].map((t, i) => `<span class="${i === active ? "on" : ""}">${t}</span>`).join("")}</div>`;
+const MOCKS = {
+  inicio: () => `${mockTop(0)}<div class="mhero"><div><small>DESTAQUE</small><h4>Maré Alta</h4></div><span class="msun"></span></div>
+<div class="mrow-t">Continuar assistindo</div><div class="mrow">${[0, 1, 2, 3, 4].map((i) => poster(i, MOV[i], i === 0)).join("")}</div>`,
+  canais: () => `${mockTop(1)}<div class="mch"><div class="mcats">${["Favoritos", "Todos os canais", "Notícias", "Esportes", "Filmes", "Infantil"].map((t, i) => `<span class="${i === 1 ? "on" : ""}">${t}</span>`).join("")}</div>
+<div class="mlist">${[0, 1, 2, 3, 4].map((i) => `<div class="mli${i === 1 ? " on" : ""}"><span class="mn">${101 + i}</span><span class="mlg" style="background:linear-gradient(160deg,${G[i]})"></span><div><b>${CH[i]}</b><small>Programa ao vivo</small><i><em style="width:${30 + i * 12}%"></em></i></div></div>`).join("")}</div>
+<div class="mprev"><div class="mvid" style="background:linear-gradient(160deg,${G[1]})"><span class="mplay">▶</span></div><b>102 · ${CH[1]}</b><small>Agora · A seguir</small></div></div>`,
+  filmes: () => `${mockTop(2)}<div class="mhero sm"><div><small>FILME</small><h4>Cidade de Vidro</h4></div><span class="msun v"></span></div>
+<div class="mrow-t">Lançamentos</div><div class="mrow">${[1, 4, 2, 6, 3].map((i, k) => poster(i, MOV[i], k === 0)).join("")}</div>`,
+};
+const shot = (src, alt) => `<div class="tvf mock" role="img" aria-label="${esc(alt)}">${MOCKS[src]()}</div>`;
 
 export function landing(env, { formHtml, plansHtml, logged, host }) {
   const name = esc(env.SITE_NAME);
@@ -44,7 +59,7 @@ ${logged ? `<a class="btn sm" href="/aparelho">Minhas listas</a>` : `<a class="b
  <div class="row wrapf" style="gap:12px;margin-top:26px"><a class="btn lg" href="#entrar">Ativar meu aparelho</a><a class="btn g lg" href="#como">Como funciona</a></div>
  <div class="note">${li("info", 18)}<div><b>O ${name} não inclui nenhum conteúdo.</b> Não fornece, não vende e não hospeda vídeos: só reproduz o que vem da lista que você mesmo adiciona.</div></div>
 </div>
-<div class="hshot">${shot("inicio", "Tela inicial do app")}<div class="cap">Imagem ilustrativa · tela inicial do aplicativo</div></div>
+<div class="hshot">${shot("inicio", "Tela inicial do app")}<div class="cap">Imagem ilustrativa · títulos fictícios</div></div>
 </div></section>
 <section class="strip"><div class="wrap sgrid">
 ${[["tv", "Feito para TV", "Navegação rápida com o controle remoto."], ["shield", "Sem conteúdo próprio", "Você usa só a sua própria lista."], ["phone", "Configure pelo celular", "Leia o QR code e pronto."]]
@@ -67,7 +82,7 @@ ${[["Instale na sua TV", `Instale o ${name} no aparelho e abra o app. Na tela ap
   const gallery = `<section id="telas" class="sec"><div class="wrap">
 <div class="eyebrow">TELAS DO APP</div><h2 class="h2">Fácil de usar, direto do sofá</h2>
 <div class="g2s">${screens.map(([s, t, d]) => `<div class="scard">${shot(s, t)}<h3>${t}</h3><p class="mut">${d}</p></div>`).join("")}</div>
-<p class="dim" style="font-size:12px;margin-top:14px">Imagens ilustrativas · títulos de demonstração.</p>
+<p class="dim" style="font-size:12px;margin-top:14px">Imagens ilustrativas · títulos e telas fictícios.</p>
 </div></section>`;
 
   const features = `<section id="recursos" class="sec"><div class="wrap">
@@ -159,6 +174,26 @@ html{scroll-behavior:smooth}html,body{overflow-x:clip;max-width:100%}
 .act{align-items:center;grid-template-columns:1fr 520px}.g3m{display:grid;gap:12px;margin-top:22px}
 .imp{display:flex;gap:22px;padding:34px}.imp ul{margin:14px 0 0 18px;color:var(--text);line-height:2}
 .foot{margin-top:80px;padding:34px 0 40px;border-top:1px solid #16121f;color:var(--mut)}.foot a:hover{color:#fff}
+.tvf.mock{aspect-ratio:16/9;background:#0b0914;padding:14px;display:flex;flex-direction:column;gap:10px;overflow:hidden;font-family:Inter,sans-serif;container-type:inline-size}
+.mock .mtop{display:flex;align-items:center;gap:4cqw;font-size:2.1cqw;color:#a59fc0;font-weight:600}.mock .mtop .on{background:#fff;color:#0b0914;padding:.6cqw 1.8cqw;border-radius:2cqw}
+.mock .mlogo{width:4cqw;height:4cqw;border-radius:1cqw;background:linear-gradient(135deg,#9b84ff,#5a36e0);color:#ffc56b;display:inline-flex;align-items:center;justify-content:center;font-size:2cqw}
+.mock .mhero{position:relative;flex:none;height:21%;border-radius:2.4cqw;overflow:hidden;background:linear-gradient(90deg,#1a1240,#4a1fa0 40%,#c46a2a 75%,#e8a33a);display:flex;align-items:center;padding:0 4cqw}
+.mock .mhero.sm{background:linear-gradient(90deg,#0f1b3a,#1f4aa0 45%,#20a0b0 80%,#7ee2d8)}
+.mock .mhero small{color:#ffc56b;font-weight:700;font-size:1.6cqw;letter-spacing:.3cqw}.mock .mhero h4{color:#fff;font-size:4.2cqw;font-weight:700;margin-top:.4cqw}
+.mock .msun{position:absolute;right:12%;bottom:-40%;width:16cqw;height:16cqw;border-radius:50%;background:radial-gradient(circle,#ffe39a,#f2a33a 55%,transparent 72%);filter:blur(.6cqw)}.mock .msun.v{background:radial-gradient(circle,#c9fff6,#3fd0c0 55%,transparent 72%)}
+.mock .mrow-t{color:#fff;font-weight:700;font-size:2.4cqw}
+.mock .mrow{flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:1.6cqw;min-height:0}
+.mock .mp{position:relative;border-radius:1.6cqw;overflow:hidden;display:flex;align-items:flex-end;padding:1.4cqw}.mock .mp.sel{box-shadow:0 0 0 .4cqw #ffc56b}
+.mock .mp b{position:relative;color:#fff;font-size:1.7cqw;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.mock .mpc{position:absolute;left:50%;top:38%;width:9cqw;height:9cqw;transform:translate(-50%,-50%);border-radius:50%;background:rgba(255,255,255,.18)}
+.mock .mp:after{content:"";position:absolute;inset:40% 0 0;background:linear-gradient(transparent,rgba(0,0,0,.55))}.mock .mp b{z-index:1}
+.mock .mch{flex:1;display:grid;grid-template-columns:22% 1fr 32%;gap:1.6cqw;min-height:0}
+.mock .mcats{display:flex;flex-direction:column;gap:1cqw}.mock .mcats span{font-size:1.7cqw;color:#cfc8ea;padding:1.2cqw 1.4cqw;border-radius:1.2cqw;background:rgba(255,255,255,.05)}.mock .mcats .on{background:#2a1d5e;color:#fff;box-shadow:inset .5cqw 0 #7c5cff}
+.mock .mlist{display:flex;flex-direction:column;gap:1cqw}.mock .mli{display:flex;align-items:center;gap:1.4cqw;padding:1cqw 1.4cqw;border-radius:1.2cqw;background:rgba(255,255,255,.05)}.mock .mli.on{background:#2a1d5e;box-shadow:0 0 0 .3cqw #7c5cff}
+.mock .mn{color:#6e6b8c;font-size:1.6cqw;width:3.6cqw}.mock .mlg{width:6cqw;height:4cqw;border-radius:.8cqw;flex:none}
+.mock .mli div{flex:1;min-width:0}.mock .mli b,.mock .mprev b{display:block;color:#fff;font-size:1.7cqw}.mock .mli small,.mock .mprev small{display:block;color:#9d9abb;font-size:1.3cqw}
+.mock .mli i{display:block;height:.5cqw;background:rgba(255,255,255,.15);border-radius:1cqw;margin-top:.6cqw}.mock .mli em{display:block;height:100%;background:#22d3ee;border-radius:1cqw}
+.mock .mprev{display:flex;flex-direction:column;gap:.8cqw}.mock .mvid{flex:none;height:58%;border-radius:1.6cqw;display:flex;align-items:center;justify-content:center}.mock .mplay{width:6cqw;height:6cqw;border-radius:50%;background:rgba(255,255,255,.9);color:#0b0914;display:flex;align-items:center;justify-content:center;font-size:2.4cqw}
 @media (max-width:1000px){
  .lnav .lnk{display:none}.mmenu{display:block}
  .hgrid,.g3,.g2,.g2s,.sgrid,.act{grid-template-columns:1fr !important}
