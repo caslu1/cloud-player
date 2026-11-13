@@ -8,12 +8,12 @@
     <rect x="-10608.0" y="-2994" width="31824.0" height="7485" fill="#fff"/>
     <circle cx="748.5" cy="748.5" r="805.9" fill="#000"/>
   </mask>
-  <clipPath id="hole"><circle cx="748.5" cy="748.5" r="427.1"/></clipPath>
+  <clipPath id="hole"><circle cx="748.5" cy="748.5" r="438.5"/></clipPath>
 </defs>
 <g fill="#fff">
   <circle cx="748.5" cy="748.5" r="619.4" fill="none" stroke="#fff" stroke-width="258.3" mask="url(#cutFront)"/>
   <g mask="url(#outside)"><path transform="translate(748.5 748.5) rotate(-43)" d="M-1182.6 0 A1182.6 142.2 0 0 1 1182.6 0" fill="none" stroke="#fff" stroke-width="86.1"/></g>
-  <line transform="translate(748.5 748.5) rotate(-43)" x1="-401.0" y1="-149.3" x2="401.0" y2="-149.3" stroke="#fff" stroke-width="132.0" stroke-linecap="butt"/>
+  <g clip-path="url(#hole)"><path transform="translate(748.5 748.5) rotate(-43)" d="M-1182.6 0 A1182.6 142.2 0 0 1 1182.6 0" fill="none" stroke="#fff" stroke-width="99.0"/></g>
   <g transform="translate(748.5 748.5) rotate(-43)">
     <path d="M-1182.6 0 A1182.6 142.2 0 0 0 1182.6 0" fill="none" stroke="#fff" stroke-width="86.1"/>
     <circle cx="1096.5" cy="53.3" r="107.6"/>
