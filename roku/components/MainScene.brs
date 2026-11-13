@@ -21,6 +21,51 @@ sub init()
     else
         pushScreen("LoginScreen", {})
     end if
+    startSplash()
+end sub
+
+' Vídeo de abertura (igual ao Android). OK/voltar pula; terminou, deu erro ou demorou: segue para o app.
+sub startSplash()
+    v = CreateObject("roSGNode", "Video")
+    v.width = 1920
+    v.height = 1080
+    v.enableUI = false
+    c = CreateObject("roSGNode", "ContentNode")
+    c.url = "pkg:/images/splash.mp4"
+    c.streamFormat = "mp4"
+    v.content = c
+    v.observeField("state", "onSplashState")
+    m.top.appendChild(v)
+    m.splash = v
+    m.screens.visible = false
+    t = CreateObject("roSGNode", "Timer")
+    t.duration = 8
+    t.observeField("fire", "endSplash")
+    m.top.appendChild(t)
+    m.splashTimer = t
+    t.control = "start"
+    v.control = "play"
+    v.setFocus(true)
+end sub
+
+sub onSplashState(event as object)
+    st = event.getData()
+    if st = "finished" or st = "error" then endSplash()
+end sub
+
+sub endSplash()
+    if m.splash = invalid then return
+    m.splash.unobserveField("state")
+    m.splash.control = "stop"
+    m.top.removeChild(m.splash)
+    m.splash = invalid
+    if m.splashTimer <> invalid
+        m.splashTimer.control = "stop"
+        m.top.removeChild(m.splashTimer)
+        m.splashTimer = invalid
+    end if
+    m.screens.visible = true
+    if m.stack.Count() > 0 then m.stack.Peek().setFocus(true)
 end sub
 
 function pushScreen(name as string, params as object) as object
@@ -268,6 +313,10 @@ end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
+    if m.splash <> invalid
+        endSplash()
+        return true
+    end if
     if m.video.visible and m.playing <> invalid and m.playing.live = true and m.live.mode = "hidden"
         d = m.live.data
         hasList = (d <> invalid and d.list <> invalid and d.list.Count() > 0)

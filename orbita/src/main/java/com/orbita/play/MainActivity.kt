@@ -159,8 +159,11 @@ class MainActivity : ComponentActivity() {
         vm.checkActivation()
         setContent {
             var lastCrash by remember { mutableStateOf(crash) }
+            // vídeo de abertura só quando o app é aberto do zero (não nos testes)
+            var splash by remember { mutableStateOf(savedInstanceState == null && android.os.Build.FINGERPRINT != "robolectric") }
             val c = lastCrash
-            if (c != null) Scaled { CrashScreen(c) { crashFile.delete(); lastCrash = null } }
+            if (splash) VideoSplash { splash = false }
+            else if (c != null) Scaled { CrashScreen(c) { crashFile.delete(); lastCrash = null } }
             else App(vm, pb, ui) { finish() }
         }
     }
