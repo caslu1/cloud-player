@@ -86,3 +86,12 @@ Gerar de novo: `python3 source/sound5.py bruto.wav` e `ffmpeg -i bruto.wav -af l
 Visual: igual à abertura 2 (cometa girando em volta do "O", fundo de espaço). O "O" começa centralizado; "orbita" se revela e fica centralizado; depois de uma pausa curta, "play" entra deslizando da direita com um brilho roxo enquanto o logo inteiro se ajusta ao centro; no final, aproximação leve e fade para preto (transição para o app).
 Som (original, baixo, -26 LUFS): sopro de ar suave que acompanha o cometa em volta do "O" (estéreo); quando "play" aparece, duas batidas graves ("tum-TUM", em 2,95 s e 3,12 s) que abrem um acorde quente (Fá maior) sumindo devagar.
 Gerar de novo: `python3 source/sound7.py bruto.wav`, `ffmpeg -i bruto.wav -af loudnorm=I=-26:TP=-8 som.wav`, `python3 source/anim3.py anim3.html`, `node source/rec3.js` e o mesmo comando `ffmpeg`. Para 4K60: `node source/rec4k.js saida.mp4 60 5.5` (gera e codifica direto, com leve granulação para evitar faixas no degradê escuro).
+
+### Abertura 4: "Hiperespaço"
+
+- `motion/orbitaplay-splash-hiperespaco-4k60.mp4` (3840×2160, 60 fps) e `motion/orbitaplay-splash-hiperespaco-1080p60.mp4` (1920×1080, 60 fps), 5,5 s, H.264 + AAC
+- `motion/orbitaplay-splash-hiperespaco-sound.wav` e `motion/orbitaplay-splash-hiperespaco-preview.gif`
+
+Visual: as estrelas aceleram em linhas de luz como num salto para a velocidade da luz; um clarão no centro revela o "O"; o cometa dá uma volta rápida desenhando a órbita; as letras de "orbita" sobem uma a uma; "play" entra com brilho roxo no "TUM"; aproximação leve e fade para preto no final.
+Som (original, baixo, -26 LUFS): ar e tom grave subindo durante o salto, um "whoom" grave no clarão, sopro bem baixo acompanhando o cometa e "tum-TUM" com acorde quente quando "play" aparece.
+Gerar de novo: `python3 source/sound8.py bruto.wav`, `ffmpeg -i bruto.wav -af loudnorm=I=-26:TP=-8 sting8.wav`, `python3 source/anim4.py anim4.html` e `node source/rec4k4.js saida-4k60.mp4 60 5.5`.
