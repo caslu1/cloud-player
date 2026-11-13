@@ -13,7 +13,7 @@ lettersMask=''.join(''.join(e) for e in B.LETTERS)
 l,tp,rr,bt=B.ICON[0],B.ICON[1],B.TEXT_W,1.37*H; w=rr-l; hh=bt-tp
 NT=34
 tail=''.join(f'<circle class="tl" r="0" fill="{"#FFFFFF" if k<2 else "#B49CFF"}"/>' for k in range(NT))
-svg=f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="{l:.1f} {tp:.1f} {w:.1f} {hh:.1f}" style="width:1075px;overflow:visible">
+svg=f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="{l:.1f} {tp:.1f} {w:.1f} {hh:.1f}" style="width:860px;overflow:visible">
 {B.defs(u,'').replace('<path transform=', '<path id="cutP" stroke-dasharray="'+format(ELL/2+5,'.1f')+' '+format(ELL,'.1f')+'" stroke-dashoffset="'+format(ELL/2+5,'.1f')+'" transform=',1)}
 <defs>
  <mask id="revR" maskUnits="userSpaceOnUse" {B.BIG}><path id="revRp" transform="{B.RT}" d="{ell}" fill="none" stroke="#fff" stroke-width="{B.Ro*0.3:.1f}" stroke-dasharray="{ELL:.1f} {ELL:.1f}" stroke-dashoffset="{ELL:.1f}"/></mask>
