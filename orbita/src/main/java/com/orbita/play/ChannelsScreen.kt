@@ -128,7 +128,7 @@ fun ChannelsScreen(vm: Vm, pb: Playback, ui: Ui) {
                 PanelHeader("Categorias", "${visibleCats.size}")
                 SearchField(catQuery, { catQuery = it }, "Buscar categoria", Modifier.padding(horizontal = 10.dp))
                 Spacer(Modifier.height(8.dp))
-                LazyColumn(state = ui.catList, modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                LazyColumn(state = ui.catList, modifier = Modifier.weight(1f).padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     if (catQuery.isBlank()) {
                         item(key = FAV) { CatRow("Favoritos", favCount, ui.liveCat == FAV, "cat:$FAV", {}, catReq, Ic.Star, ::toFirst) { choose(FAV) } }
                         item(key = RECENT) { CatRow("Recentes", recentCount, ui.liveCat == RECENT, "cat:$RECENT", {}, icon = Ic.History, onRight = ::toFirst) { choose(RECENT) } }
