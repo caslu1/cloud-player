@@ -53,3 +53,11 @@ Fundo do ícone do app: `#241356 → #140B36 → #0B0716`
 - Deixe em volta do logo um espaço livre igual à altura do "b".
 - Tamanho mínimo: logo com 120 px de largura, ícone com 24 px.
 - Não distorça, não gire, não use cores fora da paleta e não aplique sombra.
+
+## Animação de abertura (splash TV)
+
+- `motion/orbitaplay-splash-1080p.mp4`: 1920×1080, 30 fps, 4 s, H.264
+- `motion/orbitaplay-splash-preview.gif`: prévia leve
+
+Sequência: o "O" se desenha → a órbita gira em volta → o planeta aparece → as letras entram e o logo desliza para o centro → um brilho passa pelo texto → aparece a frase "CANAIS · FILMES · SÉRIES · FUTEBOL".
+Para gerar de novo: `python3 source/anim.py anim.html` e `node source/rec.js` (frames), depois `ffmpeg -framerate 30 -i frames/f%04d.png -c:v libx264 -pix_fmt yuv420p splash.mp4`.
