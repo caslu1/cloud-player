@@ -462,7 +462,7 @@ fun Loading(text: String, modifier: Modifier = Modifier, progress: Float? = null
 }
 
 @Composable
-fun Spinner(diameter: Dp = 22.dp) {
+fun Spinner(diameter: Dp = 22.dp, color: Color = C.accent) {
     val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "spin")
     val a by t.animateFloat(
         0f, 360f,
@@ -470,7 +470,7 @@ fun Spinner(diameter: Dp = 22.dp) {
         label = "a"
     )
     androidx.compose.foundation.Canvas(Modifier.size(diameter)) {
-        drawArc(C.accent, a, 270f, false, style = androidx.compose.ui.graphics.drawscope.Stroke(width = diameter.toPx() / 8f))
+        drawArc(color, a, 270f, false, style = androidx.compose.ui.graphics.drawscope.Stroke(width = diameter.toPx() / 8f))
     }
 }
 

@@ -464,7 +464,7 @@ fun FullPlayer(vm: Vm, pb: Playback) {
 }
 
 @Composable
-fun Spinner(modifier: Modifier, size: androidx.compose.ui.unit.Dp) { Box(modifier) { Spinner(size) } }
+fun Spinner(modifier: Modifier, size: androidx.compose.ui.unit.Dp) { Box(modifier) { Spinner(size, Color.White) } }
 
 fun liveItem(c: Channel) = PlayItem(Kind.LIVE, "live:${c.id}", c.name, "", c.url, c.logo, channel = c)
 
