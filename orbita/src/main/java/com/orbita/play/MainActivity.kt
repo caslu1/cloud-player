@@ -188,7 +188,9 @@ fun Scaled(content: @Composable () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize().background(C.bg)) {
         val w = constraints.maxWidth.toFloat(); val h = constraints.maxHeight.toFloat()
         val scale = minOf(w / 960f, h / 540f).coerceAtLeast(0.5f)
-        CompositionLocalProvider(LocalDensity provides Density(scale, 1f)) { content() }
+        // listas fixas em todo o app: só o quadro do foco anda; rola apenas ao chegar na borda
+        // (sem isso, na Android TV a lista rola a cada seta para manter o item no meio)
+        CompositionLocalProvider(LocalDensity provides Density(scale, 1f)) { TvScroll { content() } }
     }
 }
 
