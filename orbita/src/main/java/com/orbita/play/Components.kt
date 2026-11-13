@@ -526,3 +526,18 @@ fun RatingChip(rating: Float, big: Boolean = false) {
         Txt(String.format(Locale("pt", "BR"), "%.1f", rating), F.s(if (big) 9.5.sp else 7.5.sp, C.star, FontWeight.Bold))
     }
 }
+
+/** Dia relativo a hoje (0 = hoje, 1 = amanhã, -1 = ontem) — usado no guia de programação. */
+internal fun dayIndex(t: Long): Int {
+    val today = java.util.Calendar.getInstance()
+    today.set(java.util.Calendar.HOUR_OF_DAY, 0); today.set(java.util.Calendar.MINUTE, 0); today.set(java.util.Calendar.SECOND, 0); today.set(java.util.Calendar.MILLISECOND, 0)
+    return Math.floorDiv(t - today.timeInMillis, 86_400_000L).toInt()
+}
+
+internal fun dayLabel(i: Int): String = when (i) {
+    -1 -> "Ontem"; 0 -> "Hoje"; 1 -> "Amanhã"
+    else -> {
+        val c = java.util.Calendar.getInstance(); c.add(java.util.Calendar.DAY_OF_YEAR, i)
+        java.text.SimpleDateFormat("EEE d", java.util.Locale("pt", "BR")).format(c.time).replace(".", "").replaceFirstChar { it.uppercase() }
+    }
+}
