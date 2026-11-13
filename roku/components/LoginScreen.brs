@@ -3,7 +3,7 @@ sub init()
     m.site = siteUrl()
     r = m.top.findNode("root")
     ' Login padrão (igual ao Android): "Pelo celular" | ou | "Na TV"
-    addPoster(r, "pkg:/images/logo_full.png", 96, 64, 245, 52)
+    addPoster(r, "pkg:/images/logo_full.png", 96, 64, 260, 52)
     addLabel(r, "Bem-vindo ao Orbita Play", 96, 146, OUTF(), 54, "0xFFFFFFFF")
     sub_ = "Conecte sua lista para começar."
     if m.site <> "" then sub_ = "Ative pelo celular em segundos ou conecte sua lista direto na TV."
