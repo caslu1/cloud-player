@@ -18,12 +18,16 @@ from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.boundsPen import BoundsPen
 FD=os.path.join(os.path.dirname(os.path.abspath(__file__)),'fonts')
 FONT1=os.environ.get('FONT1','Poppins-SemiBold.ttf'); FONT2=os.environ.get('FONT2','Poppins-Light.ttf')
+ASC=float(os.environ.get('ASC','0.98'))
 def font_word(H, parts=(('rbita',FONT1),('play',FONT2)), track=0.015, start=1.035):
     x=H*start; letters=[]
     for pi,(txt,fn) in enumerate(parts):
         if pi: x+=H*0.03
         f=TTFont(os.path.join(FD,fn)); gs=f.getGlyphSet(); cm=f.getBestCmap(); upm=f['head'].unitsPerEm
-        bp=BoundsPen(gs); gs[cm[ord('x')]].draw(bp); k=H*0.65/bp.bounds[3]
+        bp=BoundsPen(gs); gs[cm[ord('x')]].draw(bp); xh=bp.bounds[3]
+        if pi==0:
+            bp2=BoundsPen(gs); gs[cm[ord('b')]].draw(bp2); TXH=H*ASC*xh/bp2.bounds[3]
+        k=TXH/xh
         for ch in txt:
             g=cm[ord(ch)]; sp=SVGPathPen(gs); gs[g].draw(TransformPen(sp,(k,0,0,-k,x,H)))
             letters.append([f'<path d="{sp.getCommands()}"/>']); x+=gs[g].width*k+upm*k*track
@@ -79,7 +83,7 @@ def svg(kind, scheme, bg=None, pad=0.08, square=False, radius=0.22):
     body=mark(u,oC,ringC)
     if kind=='logo':
         body+=text(t1,t2)
-        l,tp,rr,b=ICON[0],ICON[1],TEXT_W,1.25*H
+        l,tp,rr,b=ICON[0],ICON[1],TEXT_W,1.37*H
     else:
         l,tp,rr,b=ICON
     w,h=rr-l,b-tp
