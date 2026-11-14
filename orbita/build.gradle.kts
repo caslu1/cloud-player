@@ -24,22 +24,24 @@ android {
     }
 
     signingConfigs {
-        // Fixed key committed on purpose: every CI build is signed the same way, so updates install over the old version.
-        create("orbita") {
-            storeFile = file("orbita.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+        // Chave de assinatura: vem dos segredos do GitHub (ORBITA_KEYSTORE_B64 / ORBITA_KEYSTORE_PASSWORD),
+        // nunca do repositório. Sem os segredos, o build usa a chave de depuração do Android (só para testes).
+        val ks = System.getenv("ORBITA_KEYSTORE_FILE")?.let { file(it) }?.takeIf { it.exists() }
+        if (ks != null) create("orbita") {
+            storeFile = ks
+            storePassword = System.getenv("ORBITA_KEYSTORE_PASSWORD")
+            keyAlias = "orbita"
+            keyPassword = System.getenv("ORBITA_KEYSTORE_PASSWORD")
         }
     }
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("orbita")
+            signingConfigs.findByName("orbita")?.let { signingConfig = it }
         }
         release {
             // Sem R8: a otimização embaralhava classes das bibliotecas (coroutines/media3) e o app fechava ao abrir.
-            signingConfig = signingConfigs.getByName("orbita")
+            signingConfig = signingConfigs.findByName("orbita") ?: signingConfigs.getByName("debug")
         }
     }
     compileOptions {

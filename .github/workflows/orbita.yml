@@ -29,9 +29,17 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
+      - name: Signing key (GitHub secret)
+        env:
+          KS: ${{ secrets.ORBITA_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS" ]; then echo "$KS" | base64 -d > "$RUNNER_TEMP/orbita-release.jks"; echo "ORBITA_KEYSTORE_FILE=$RUNNER_TEMP/orbita-release.jks" >> "$GITHUB_ENV"; fi
+          # publicar só com a chave oficial
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -z "$KS" ]; then echo "Falta o segredo ORBITA_KEYSTORE_B64"; exit 1; fi
       - name: Build
         env:
           ORBITA_SITE_URL: ${{ vars.ORBITA_SITE_URL }}
+          ORBITA_KEYSTORE_PASSWORD: ${{ secrets.ORBITA_KEYSTORE_PASSWORD }}
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon :orbita:testDebugUnitTest :orbita:assembleRelease || { find orbita/build/test-results -name "*.xml" -exec grep -l "<failure" {} + | xargs -r sed -n "/<failure/,/<\/failure>/p" | head -120; exit 1; }
