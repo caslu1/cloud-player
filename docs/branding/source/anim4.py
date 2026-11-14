@@ -132,8 +132,8 @@ function render(t){{
   const rp=seg(t,T1,T1+0.7); $('ripple').setAttribute('cx',p[0]);$('ripple').setAttribute('cy',p[1]);
   $('ripple').setAttribute('r',G.Ro*(0.12+0.9*eo(rp))); $('ripple').setAttribute('opacity',rp>0&&rp<1?(1-rp)*0.9:0);
   // O centred -> 'orbita' centred -> full logo centred (synced with 'play')
-  const s1=eio(seg(t,2.45,2.95)), s2=eio(seg(t,3.1,3.75));
-  const tx=G.DX+(G.DA-G.DX)*s1+(0-G.DA)*s2;
+  // one continuous glide from O-centred to the final centred logo (no stop before 'play')
+  const gx=seg(t,2.4,3.95); const tx=G.DX*(0.5+0.5*Math.cos(Math.PI*gx));
   const zEnd=eio(seg(t,4.75,5.5)); const zs=1+0.05*zEnd;
   $('all').setAttribute('transform','translate(500 500) scale('+zs.toFixed(4)+') translate(-500 -500) translate('+tx.toFixed(1)+' 0)');
   document.getElementById('fadeout').style.opacity=zEnd.toFixed(3);
