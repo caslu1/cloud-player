@@ -1,5 +1,6 @@
 package com.orbita.play
 
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +61,7 @@ private val groups = listOf(
         Section("layout", "Layout da tela inicial", Ic.Home, "Padrão ou Lite."),
     )),
     Group("SISTEMA", listOf(
+        Section("update", "Atualizações", Ic.New, "Versão do app e novas atualizações."),
         Section("storage", "Armazenamento", Ic.Refresh, "Recarregar listas e limpar dados guardados."),
         Section("logout", "Sair da conta", Ic.Logout, "Remover a lista deste aparelho."),
     )),
@@ -147,6 +149,7 @@ fun SettingsScreen(vm: Vm, pb: Playback, ui: Ui) {
                             "hide" -> HideCategories(vm)
                             "play" -> PlaybackPrefs(vm)
                             "storage" -> Storage(vm, ui, confirm) { msg = it }
+                            "update" -> UpdatesCard()
                             "wall" -> Card { WallpaperPicker(vm) }
                             "layout" -> HomeLayoutPicker(vm)
                             else -> Logout(vm, pb, ui, confirm)
@@ -402,4 +405,28 @@ private fun HomeLayoutPicker(vm: Vm) {
         Option("Redondo", "Ícones grandes em círculos de vidro, o escolhido em degradê", radio = cur == "round", memKey = "layout:round") { vm.store.setHomeLayout("round") }
         Option("Quadrado", "Ícones grandes em quadrados arredondados de vidro", radio = cur == "square", memKey = "layout:square") { vm.store.setHomeLayout("square") }
     } }
+}
+
+/** Configurações → Atualizações: versão instalada, verificar e atualizar. */
+@Composable
+private fun UpdatesCard() {
+    val ctx = LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val up = Updater.available
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Card("ESTE APARELHO") {
+            Line("Versão", "Orbita Play ${Updater.currentName(ctx)}")
+            Line("Situação", Updater.lastResult ?: "Ainda não verificado")
+        }
+        Card("ATUALIZAÇÕES") { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Option(if (Updater.checking) "Verificando…" else "Verificar atualizações", "Procura uma versão nova no site", memKey = "up:check") {
+                scope.launch { Updater.check(ctx) }
+            }
+            if (up != null) Option(if (Updater.progress >= 0f) "Baixando… ${(Updater.progress * 100).toInt()}%" else "Atualizar para ${up.name}", "Baixa e instala a versão nova", memKey = "up:install") {
+                scope.launch { Updater.install(ctx) }
+            }
+        } }
+        Updater.error?.let { Txt(it, F.s(8.5.sp, C.live, FontWeight.Medium), maxLines = 3) }
+        Txt("O app também confere sozinho ao abrir e avisa na tela inicial quando houver versão nova.", F.s(8.sp, C.faint), maxLines = 2)
+    }
 }

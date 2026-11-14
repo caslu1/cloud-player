@@ -279,6 +279,9 @@ private fun Shell(vm: Vm, pb: Playback, ui: Ui, exit: () -> Unit) {
         }
         ui.pinPrompt?.let { p -> PinDialog(p) { if (ui.pinPrompt === p) ui.pinPrompt = null } }
         ReloadDialog(vm, ui)
+        // aviso de atualização: só na tela inicial
+        UpdateCheckOnStart()
+        if (ui.home && ui.stack.isEmpty()) UpdateDialog()
         if (exitAsk) ConfirmDialog("Sair do Orbita Play?", "O que estiver tocando será fechado.", "Sair", onConfirm = { pb.stop(); exit() }, onCancel = { exitAsk = false })
         toast?.let {
             Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 36.dp).background(Color(0xEE15121F), androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).padding(horizontal = 14.dp, vertical = 8.dp)) {

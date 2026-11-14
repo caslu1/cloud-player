@@ -19,6 +19,12 @@ export default {
       // API dos apps
       if (p === "/api/app/register" && m === "POST") return app.register(env, req);
       if (p === "/api/app/status") return app.status(env, req);
+      // versão mais nova do app Android (arquivo version.json no R2, publicado junto com o APK)
+      if (p === "/api/app/version") {
+        const o = env.FILES && (await env.FILES.get("version.json"));
+        const body = o ? await o.text() : JSON.stringify({ code: 0, name: "", url: "/download/Orbita-Play.apk", notes: "" });
+        return new Response(body, { headers: { "content-type": "application/json", "cache-control": "no-store", "access-control-allow-origin": "*" } });
+      }
       if (p === "/api/qr") return app.qr(req);
       if (p === "/webhook/mercadopago") return pub.webhook(env, req);
       let r;
