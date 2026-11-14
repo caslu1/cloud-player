@@ -58,7 +58,7 @@ private val groups = listOf(
     )),
     Group("APARÊNCIA", listOf(
         Section("wall", "Papel de parede", Ic.Grid, "Fundo das telas do app."),
-        Section("layout", "Layout da tela inicial", Ic.Home, "Padrão ou Lite."),
+        Section("layout", "Layout da tela inicial", Ic.Home, "Escolha o visual da tela inicial."),
     )),
     Group("SISTEMA", listOf(
         Section("update", "Atualizações", Ic.New, "Versão do app e novas atualizações."),
