@@ -95,26 +95,26 @@ fun SettingsScreen(vm: Vm, pb: Playback, ui: Ui) {
             Row(Modifier.weight(1f)) {
                 // menu por grupos
                 Column(
-                    Modifier.width(220.dp).fillMaxHeight().clip(RoundedCornerShape(14.dp)).background(C.panel)
+                    Modifier.width(250.dp).fillMaxHeight().clip(RoundedCornerShape(14.dp)).background(C.panel)
                         .border(1.dp, C.panelBorder, RoundedCornerShape(14.dp)).padding(horizontal = 8.dp, vertical = 6.dp)
                 ) {
                     groups.forEach { g ->
-                        Txt(g.title, F.s(7.sp, C.faint, FontWeight.SemiBold, spacing = 1.2.sp), Modifier.padding(start = 10.dp, top = 7.dp, bottom = 3.dp))
+                        Txt(g.title, F.s(7.5.sp, C.faint, FontWeight.Bold, spacing = 1.4.sp), Modifier.padding(start = 12.dp, top = 6.dp, bottom = 2.dp))
                         g.items.forEach { s ->
                             Focus(Modifier.fillMaxWidth(), onClick = { key = s.key }, requester = if (s.key == "info") first else null, memKey = "set:${s.key}") { f ->
                                 val sel = key == s.key
                                 val danger = s.key == "logout"
                                 Row(
-                                    Modifier.fillMaxWidth().height(29.dp).clip(RoundedCornerShape(8.dp))
+                                    Modifier.fillMaxWidth().height(33.dp).clip(RoundedCornerShape(9.dp))
                                         .background(if (f) C.accent else if (sel) C.accentSoft else Color.Transparent)
                                         .padding(horizontal = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Box(Modifier.width(2.5.dp).height(14.dp).background(if (sel && !f) C.accent else Color.Transparent))
+                                    Box(Modifier.width(3.dp).height(16.dp).clip(RoundedCornerShape(2.dp)).background(if (sel && !f) C.accent else Color.Transparent))
                                     Spacer(Modifier.width(7.dp))
-                                    Icon(s.icon, 13.dp, if (f) C.white else if (danger) C.live else if (sel) C.white else C.dim)
-                                    Spacer(Modifier.width(9.dp))
-                                    Txt(s.title, F.s(9.5.sp, if (f) C.white else if (danger) C.live else if (sel) C.white else C.text, FontWeight.SemiBold))
+                                    Icon(s.icon, 15.dp, if (f) C.white else if (danger) C.live else if (sel) C.white else C.dim)
+                                    Spacer(Modifier.width(10.dp))
+                                    Txt(s.title, F.s(11.sp, if (f) C.white else if (danger) C.live else if (sel) C.white else C.text, FontWeight.SemiBold))
                                 }
                             }
                         }
@@ -177,21 +177,33 @@ private fun Card(title: String? = null, modifier: Modifier = Modifier.fillMaxWid
 }
 
 @Composable
-private fun Option(label: String, value: String? = null, checked: Boolean? = null, radio: Boolean? = null, danger: Boolean = false, memKey: String, onClick: () -> Unit) {
+private fun Option(
+    label: String, value: String? = null, checked: Boolean? = null, radio: Boolean? = null, danger: Boolean = false, memKey: String,
+    sub: String? = null, icon: androidx.compose.ui.graphics.vector.ImageVector? = null, onClick: () -> Unit,
+) {
     Focus(Modifier.fillMaxWidth(), onClick = onClick, memKey = memKey) { f ->
         Row(
-            Modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(9.dp)).background(if (f) C.focusBg else C.item)
-                .border(if (f) 1.5.dp else 1.dp, if (f) C.accent else C.panelBorder, RoundedCornerShape(9.dp)).padding(horizontal = 14.dp),
+            Modifier.fillMaxWidth().height(if (sub != null) 50.dp else 42.dp).clip(RoundedCornerShape(10.dp)).background(if (f) C.focusBg else C.item)
+                .border(if (f) 1.5.dp else 1.dp, if (f) C.accent else C.panelBorder, RoundedCornerShape(10.dp)).padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (radio != null) {
-                Box(Modifier.size(16.dp).clip(CircleShape).border(2.dp, if (radio) C.accent else C.dim, CircleShape), contentAlignment = Alignment.Center) {
-                    if (radio) Box(Modifier.size(8.dp).clip(CircleShape).background(C.accent))
+                Box(Modifier.size(17.dp).clip(CircleShape).border(2.dp, if (radio) C.accent else C.dim, CircleShape), contentAlignment = Alignment.Center) {
+                    if (radio) Box(Modifier.size(9.dp).clip(CircleShape).background(C.accent))
                 }
-                Spacer(Modifier.width(10.dp))
+                Spacer(Modifier.width(12.dp))
             }
-            Txt(label, F.s(10.5.sp, if (danger) C.live else C.white, FontWeight.SemiBold), Modifier.weight(1f))
-            value?.let { Txt(it, F.s(8.5.sp, C.dim, FontWeight.Medium), Modifier.padding(end = if (checked != null) 10.dp else 0.dp)) }
+            if (icon != null) {
+                Box(Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(if (danger) C.live.copy(alpha = 0.15f) else C.accentSoft), contentAlignment = Alignment.Center) {
+                    Icon(icon, 14.dp, if (danger) C.live else C.accentText)
+                }
+                Spacer(Modifier.width(12.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Txt(label, F.s(11.sp, if (danger) C.live else C.white, FontWeight.SemiBold))
+                sub?.let { Spacer(Modifier.height(2.dp)); Txt(it, F.s(8.5.sp, C.dim)) }
+            }
+            value?.let { Txt(it, F.s(9.sp, C.dim, FontWeight.Medium), Modifier.padding(end = if (checked != null) 12.dp else 0.dp)) }
             checked?.let { Switch(it) }
         }
     }
@@ -280,8 +292,8 @@ private fun StreamFormat(vm: Vm, confirm: (Ask) -> Unit, msg: (String) -> Unit) 
     }
     Card("CANAIS AO VIVO", hint = "Use HLS se algum canal não abrir ou ficar travando no formato TS.") {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Option("MPEG-TS (.ts)", "Padrão, mais rápido", radio = f != "m3u8", memKey = "fmt:ts") { set("ts") }
-            Option("HLS (.m3u8)", "Mais compatível", radio = f == "m3u8", memKey = "fmt:hls") { set("m3u8") }
+            Option("MPEG-TS (.ts)", sub = "Padrão, mais rápido", radio = f != "m3u8", memKey = "fmt:ts") { set("ts") }
+            Option("HLS (.m3u8)", sub = "Mais compatível", radio = f == "m3u8", memKey = "fmt:hls") { set("m3u8") }
         }
     }
 }
@@ -312,7 +324,7 @@ private fun Parental(vm: Vm, ui: Ui, msg: (String) -> Unit) {
 @Composable
 private fun ChangePin(vm: Vm, ui: Ui, msg: (String) -> Unit) {
     Card("SENHA DO CONTROLE PARENTAL", hint = "A senha protege o conteúdo adulto e as mudanças no controle parental.") {
-    Option("Alterar senha", "4 números", memKey = "pin:change") {
+    Option("Alterar senha", icon = Ic.Key, sub = "4 números", memKey = "pin:change") {
         ui.pinPrompt = PinPrompt("Senha atual", "Digite a senha atual (padrão 0000).") { cur ->
             if (cur != vm.store.pin()) "Senha incorreta" else {
                 ui.pinPrompt = PinPrompt("Nova senha", "Digite a nova senha de 4 números.") { new ->
@@ -362,16 +374,16 @@ private fun Storage(vm: Vm, ui: Ui, confirm: (Ask) -> Unit, msg: (String) -> Uni
     val ctx = LocalContext.current
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Card("LISTAS") {
-            Option("Recarregar listas", "Canais, filmes e séries", memKey = "st:reload") {
+            Option("Recarregar listas", icon = Ic.Refresh, sub = "Canais, filmes e séries", memKey = "st:reload") {
                 confirm(Ask("Recarregar as listas?", "Canais, filmes e séries são baixados de novo do seu provedor.", "Recarregar", Ic.Refresh) { vm.reloadAll(); ui.reloading = 1 })
             }
         }
         Card("DADOS GUARDADOS NESTE APARELHO") {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Option("Limpar histórico", "Recentes e continuar assistindo", memKey = "st:history") {
+                Option("Limpar histórico", icon = Ic.History, sub = "Recentes e continuar assistindo", memKey = "st:history") {
                     confirm(Ask("Limpar o histórico?", "Os canais recentes e o \"Continuar assistindo\" serão apagados.", "Limpar", Ic.Refresh, danger = true) { vm.store.clearHistory(); msg("Histórico apagado") })
                 }
-                Option("Limpar imagens guardadas", "Capas e logos", memKey = "st:images") {
+                Option("Limpar imagens guardadas", icon = Ic.Grid, sub = "Capas e logos", memKey = "st:images") {
                     confirm(Ask("Limpar as imagens?", "Capas e logos serão baixadas de novo quando aparecerem.", "Limpar", Ic.Refresh, danger = true) {
                         runCatching { coil.Coil.imageLoader(ctx).let { it.memoryCache?.clear(); it.diskCache?.clear() } }
                         msg("Imagens apagadas")
@@ -387,7 +399,7 @@ private fun Logout(vm: Vm, pb: Playback, ui: Ui, confirm: (Ask) -> Unit) {
     Card("SAIR DA CONTA", hint = "Favoritos, histórico e preferências deste aparelho também serão apagados. O MAC e a chave continuam os mesmos.") {
         Txt("Remove a lista deste aparelho e volta para a tela de login.", F.s(9.5.sp, C.text), maxLines = 2)
         Spacer(Modifier.height(10.dp))
-        Option("Sair da conta", danger = true, memKey = "logout") {
+        Option("Sair da conta", sub = "Remove a lista deste aparelho", icon = Ic.Logout, danger = true, memKey = "logout") {
             confirm(Ask("Sair da conta?", "Você vai precisar entrar de novo com os dados do seu provedor.", "Sair", Ic.Logout, danger = true) {
                 pb.stop(); ui.stack.clear(); ui.tab = Tab.CANAIS; ui.home = true; vm.logout()
             })
@@ -399,34 +411,56 @@ private fun Logout(vm: Vm, pb: Playback, ui: Ui, confirm: (Ask) -> Unit) {
 private fun HomeLayoutPicker(vm: Vm) {
     val cur = vm.store.homeLayout.value
     Card("TELA INICIAL") { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Option("Padrão", "Blocos grandes e Continuar assistindo", radio = cur !in listOf("lite", "cards", "round", "square"), memKey = "layout:default") { vm.store.setHomeLayout("default") }
-        Option("Lite", "Blocos quadrados com ícones de linha", radio = cur == "lite", memKey = "layout:lite") { vm.store.setHomeLayout("lite") }
-        Option("Vitrine", "Cartões de vidro grandes, relógio e dados do aparelho", radio = cur == "cards", memKey = "layout:cards") { vm.store.setHomeLayout("cards") }
-        Option("Redondo", "Ícones grandes em círculos de vidro, o escolhido em degradê", radio = cur == "round", memKey = "layout:round") { vm.store.setHomeLayout("round") }
-        Option("Quadrado", "Ícones grandes em quadrados arredondados de vidro", radio = cur == "square", memKey = "layout:square") { vm.store.setHomeLayout("square") }
+        Option("Padrão", sub = "Blocos grandes e Continuar assistindo", radio = cur !in listOf("lite", "cards", "round", "square"), memKey = "layout:default") { vm.store.setHomeLayout("default") }
+        Option("Lite", sub = "Blocos quadrados com ícones de linha", radio = cur == "lite", memKey = "layout:lite") { vm.store.setHomeLayout("lite") }
+        Option("Vitrine", sub = "Cartões de vidro grandes, relógio e dados do aparelho", radio = cur == "cards", memKey = "layout:cards") { vm.store.setHomeLayout("cards") }
+        Option("Redondo", sub = "Ícones grandes em círculos de vidro, o escolhido em degradê", radio = cur == "round", memKey = "layout:round") { vm.store.setHomeLayout("round") }
+        Option("Quadrado", sub = "Ícones grandes em quadrados arredondados de vidro", radio = cur == "square", memKey = "layout:square") { vm.store.setHomeLayout("square") }
     } }
 }
 
-/** Configurações → Atualizações: versão instalada, verificar e atualizar. */
+/** Configurações → Atualizações: versão instalada, situação e o botão de verificar/atualizar. */
 @Composable
 private fun UpdatesCard() {
     val ctx = LocalContext.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val up = Updater.available
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Card("ESTE APARELHO") {
-            Line("Versão", "Orbita Play ${Updater.currentName(ctx)}")
-            Line("Situação", Updater.lastResult ?: "Ainda não verificado")
+    val p = Updater.progress
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(C.panel).border(1.dp, C.panelBorder, RoundedCornerShape(14.dp)).padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.mipmap.ic_launcher), null, Modifier.size(54.dp).clip(RoundedCornerShape(14.dp)))
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Txt("Orbita Play", F.s(16.sp, C.white, FontWeight.Bold, F.outfit))
+                Txt("Versão ${Updater.currentName(ctx)}", F.s(10.sp, C.dim))
+            }
+            val (t, c) = when {
+                Updater.checking -> "Verificando…" to C.accentText
+                up != null -> "Nova versão ${up.name}" to Color(0xFFFFC56B)
+                Updater.lastResult != null -> "Atualizado" to Color(0xFF7EE2A8)
+                else -> "Não verificado" to C.dim
+            }
+            Row(Modifier.clip(RoundedCornerShape(14.dp)).background(c.copy(alpha = 0.15f)).padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(6.dp).clip(CircleShape).background(c)); Spacer(Modifier.width(7.dp))
+                Txt(t, F.s(9.5.sp, c, FontWeight.SemiBold))
+            }
         }
-        Card("ATUALIZAÇÕES") { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Option(if (Updater.checking) "Verificando…" else "Verificar atualizações", "Procura uma versão nova no site", memKey = "up:check") {
-                scope.launch { Updater.check(ctx) }
+        if (up != null) {
+            Card("NOVIDADES") { Txt(up.notes.ifBlank { "Melhorias e correções." }, F.s(10.sp, C.text), maxLines = 4) }
+        }
+        if (p >= 0f) {
+            Column {
+                ProgressBar(p, Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)), C.accent)
+                Spacer(Modifier.height(6.dp)); Txt("Baixando… ${(p * 100).toInt()}%", F.s(9.sp, C.dim))
             }
-            if (up != null) Option(if (Updater.progress >= 0f) "Baixando… ${(Updater.progress * 100).toInt()}%" else "Atualizar para ${up.name}", "Baixa e instala a versão nova", memKey = "up:install") {
-                scope.launch { Updater.install(ctx) }
-            }
-        } }
-        Updater.error?.let { Txt(it, F.s(8.5.sp, C.live, FontWeight.Medium), maxLines = 3) }
-        Txt("O app também confere sozinho ao abrir e avisa na tela inicial quando houver versão nova.", F.s(8.sp, C.faint), maxLines = 2)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (up != null) ActionButton("Atualizar agora", primary = true, icon = Ic.Refresh) { scope.launch { Updater.install(ctx) } }
+            ActionButton(if (Updater.checking) "Verificando…" else "Verificar atualizações", primary = up == null, icon = Ic.New) { scope.launch { Updater.check(ctx) } }
+        }
+        Updater.error?.let { Txt(it, F.s(9.sp, C.live, FontWeight.Medium), maxLines = 3) }
     }
 }
