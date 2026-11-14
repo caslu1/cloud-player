@@ -71,7 +71,13 @@ object Activation {
     fun key(ctx: Context): String {
         val p = ctx.getSharedPreferences("orbita", Context.MODE_PRIVATE)
         p.getString("dkey", null)?.let { return it }
-        val k = (100000 + java.security.SecureRandom().nextInt(900000)).toString()
+        // chave fixa do aparelho: sai igual mesmo reinstalando o app (o site não aceita trocar a chave de um MAC já cadastrado)
+        val id = Settings.Secure.getString(ctx.contentResolver, Settings.Secure.ANDROID_ID)
+        val k = if (id.isNullOrBlank()) (100000 + java.security.SecureRandom().nextInt(900000)).toString() else {
+            val h = MessageDigest.getInstance("SHA-256").digest("orbita-key:$id".toByteArray())
+            val n = ((h[0].toInt() and 0xFF) shl 16) or ((h[1].toInt() and 0xFF) shl 8) or (h[2].toInt() and 0xFF)
+            (100000 + n % 900000).toString()
+        }
         p.edit().putString("dkey", k).apply()
         return k
     }

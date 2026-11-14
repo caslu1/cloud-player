@@ -48,7 +48,7 @@ export default {
           "content-disposition": `attachment; filename="${r[1]}"`, "cache-control": "public, max-age=300" } });
       }
       if (p === "/entrar" && m === "POST") return pub.login(env, req);
-      if (p === "/ativar") return pub.doLogin(env, url.searchParams.get("mac"), url.searchParams.get("key"));
+      if (p === "/ativar") return pub.doLogin(env, url.searchParams.get("mac"), url.searchParams.get("key"), req);
       if (p === "/sair") return pub.logout();
       if (p === "/ajuda") return pub.help(env, req);
       if (p === "/aparelho") return pub.device(env, req, url.searchParams.get("ok") ? { ok: true, text: "Lista salva. A TV atualiza em alguns segundos." } : url.searchParams.get("pago") ? { ok: true, text: "Pagamento confirmado! Seu aparelho está ativo." } : null);

@@ -22,7 +22,14 @@ end function
 function deviceKey() as string
     reg = CreateObject("roRegistrySection", "orbita")
     if reg.Exists("dkey") then return reg.Read("dkey")
-    k = (100000 + Rnd(899999)).ToStr()
+    ' chave fixa: sai igual mesmo reinstalando o canal (o site não aceita trocar a chave de um MAC já cadastrado)
+    ba = CreateObject("roByteArray")
+    ba.FromAsciiString("orbita-key:" + CreateObject("roDeviceInfo").GetChannelClientId())
+    d = CreateObject("roEVPDigest")
+    d.Setup("sha256")
+    hex = d.Process(ba)
+    n = Val(Left(hex, 6), 16)
+    k = (100000 + (n mod 900000)).ToStr()
     reg.Write("dkey", k)
     reg.Flush()
     return k

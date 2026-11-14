@@ -1,5 +1,5 @@
 // Painel admin: visão geral, aparelhos, pagamentos e configurações.
-import { esc, html, redirect, now, DAY, normMac, fmtDate, fmtDateTime, money, makeCookie, clearCookie, readCookie, settings, deviceStatus, STATUS_LABEL, PLAN_LABEL, DEFAULTS } from "./util.js";
+import { safeEq, tooMany, failed, clientIp, esc, html, redirect, now, DAY, normMac, fmtDate, fmtDateTime, money, makeCookie, clearCookie, readCookie, settings, deviceStatus, STATUS_LABEL, PLAN_LABEL, DEFAULTS } from "./util.js";
 import { page, adminLayout, ic, logo } from "./ui.js";
 import { applyPayment } from "./public.js";
 
@@ -19,7 +19,9 @@ ${msg ? `<div class="alert err" style="margin-top:14px">${esc(msg)}</div>` : ""}
 export async function doLogin(env, req) {
   const f = await req.formData();
   if (!env.ADMIN_PASSWORD) return loginPage(env, "Defina a senha do painel (ADMIN_PASSWORD) antes de entrar.");
-  if (String(f.get("senha")) !== env.ADMIN_PASSWORD) return loginPage(env, "Senha incorreta.");
+  const who = "adm:" + clientIp(req);
+  if (await tooMany(env, who)) return loginPage(env, "Muitas tentativas. Aguarde 15 minutos.");
+  if (!safeEq(String(f.get("senha")), env.ADMIN_PASSWORD)) { await failed(env, who); return loginPage(env, "Senha incorreta."); }
   return redirect("/admin", { "set-cookie": await makeCookie(env, "adm", "1", 60 * 60 * 12) });
 }
 export const logout = () => redirect("/admin", { "set-cookie": clearCookie("adm") });

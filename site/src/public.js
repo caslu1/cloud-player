@@ -1,5 +1,5 @@
 // Páginas do cliente: início (MAC + chave), meu aparelho (listas) e pagamento Pix.
-import { esc, html, redirect, json, now, DAY, normMac, normKey, fmtDate, money, makeCookie, clearCookie, readCookie, settings, deviceStatus, STATUS_LABEL } from "./util.js";
+import { safeEq, tooMany, failed, clientIp, esc, html, redirect, json, now, DAY, normMac, normKey, fmtDate, money, makeCookie, clearCookie, readCookie, settings, deviceStatus, STATUS_LABEL } from "./util.js";
 import { page, publicNav, ic } from "./ui.js";
 import { createPix, getPayment } from "./mp.js";
 import { landing, LANDING_CSS, APK_URL, downloadsPage, siteNav, siteFooter } from "./landing.js";
@@ -44,14 +44,15 @@ export async function home(env, req, msg = "", prefill = {}) {
 
 export async function login(env, req) {
   const f = await req.formData();
-  return doLogin(env, f.get("mac"), f.get("key"));
+  return doLogin(env, f.get("mac"), f.get("key"), req);
 }
 
-export async function doLogin(env, macIn, keyIn) {
+export async function doLogin(env, macIn, keyIn, req = new Request("https://x")) {
   const mac = normMac(macIn), key = normKey(keyIn);
   if (!mac || !key) return home(env, new Request("https://x"), "Confira o MAC e a chave do aparelho.", { mac: macIn, key: keyIn });
   const d = await env.DB.prepare("SELECT * FROM devices WHERE mac = ?").bind(mac).first();
-  if (!d || d.dkey !== key) return home(env, new Request("https://x"), "Aparelho não encontrado. Abra o app na TV uma vez e confira os dados.", { mac: macIn, key: keyIn });
+  if (await tooMany(env, "ip:" + clientIp(req))) return home(env, new Request("https://x"), "Muitas tentativas. Aguarde 15 minutos e tente de novo.", { mac: macIn, key: keyIn });
+  if (!d || !safeEq(d.dkey, key)) { await failed(env, "ip:" + clientIp(req)); return home(env, new Request("https://x"), "Aparelho não encontrado. Abra o app na TV uma vez e confira os dados.", { mac: macIn, key: keyIn }); }
   return redirect("/aparelho", { "set-cookie": await makeCookie(env, "dev", mac) });
 }
 

@@ -1,5 +1,5 @@
 // API usada pelos apps (Android e Roku).
-import { json, now, DAY, normMac, normKey, settings, deviceStatus } from "./util.js";
+import { json, now, DAY, normMac, normKey, settings, deviceStatus, safeEq, tooMany, failed, clientIp } from "./util.js";
 import qrcode from "qrcode-generator";
 
 async function body(req) {
@@ -29,7 +29,14 @@ export async function register(env, req) {
     await env.DB.prepare("INSERT INTO devices (mac, dkey, platform, model, created_at, trial_until, plan, last_seen) VALUES (?,?,?,?,?,?, 'trial', ?)")
       .bind(mac, key, String(b.platform || "").slice(0, 30), String(b.model || "").slice(0, 60), now(), now() + Number(s.trial_days) * DAY, now()).run();
   } else {
-    await env.DB.prepare("UPDATE devices SET dkey=?, platform=?, model=?, last_seen=? WHERE mac=?").bind(key, String(b.platform || d.platform).slice(0, 30), String(b.model || d.model).slice(0, 60), now(), mac).run();
+    // segurança: a chave de um aparelho já cadastrado não é trocada por quem só sabe o MAC
+    // (para trocar, o admin edita a chave no painel)
+    if (!safeEq(d.dkey, key)) {
+      if (await tooMany(env, "dev:" + mac)) return json({ error: "muitas tentativas" }, 429);
+      await failed(env, "dev:" + mac);
+      return json({ error: "chave diferente", code: "key_mismatch" }, 409);
+    }
+    await env.DB.prepare("UPDATE devices SET platform=?, model=?, last_seen=? WHERE mac=?").bind(String(b.platform || d.platform).slice(0, 30), String(b.model || d.model).slice(0, 60), now(), mac).run();
   }
   return status(env, req, mac, key);
 }
@@ -39,7 +46,8 @@ export async function status(env, req, macIn, keyIn) {
   const u = new URL(req.url);
   const mac = normMac(macIn ?? u.searchParams.get("mac")), key = normKey(keyIn ?? u.searchParams.get("key"));
   const d = mac && (await env.DB.prepare("SELECT * FROM devices WHERE mac=?").bind(mac).first());
-  if (!d || d.dkey !== key) return json({ error: "aparelho não encontrado" }, 404);
+  if (await tooMany(env, "ip:" + clientIp(req))) return json({ error: "muitas tentativas" }, 429);
+  if (!d || !safeEq(d.dkey, key)) { await failed(env, "ip:" + clientIp(req)); return json({ error: "aparelho não encontrado" }, 404); }
   if (!macIn) await env.DB.prepare("UPDATE devices SET last_seen=? WHERE mac=?").bind(now(), mac).run();
   const { results } = await env.DB.prepare("SELECT * FROM playlists WHERE mac=? ORDER BY position, id").bind(mac).all();
   return json(out(d, results, await settings(env), u.origin));
