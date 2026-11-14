@@ -16,6 +16,11 @@ binding = "DB"
 database_name = "orbita"
 database_id = "b354929a-f5f0-423f-8d7a-0dc318797e07"
 
+# arquivos do app (APK) guardados no Cloudflare R2
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "orbita-downloads"
+
 [vars]
 SITE_NAME = "Orbita Play"
 ROLE = "site"

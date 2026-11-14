@@ -33,7 +33,14 @@ export default {
       }
       // atalho para o app Downloader (Fire TV / TV Box)
       if (p === "/download" || p === "/downloads") return pub.downloads(env, req);
-      if (p === "/android" || p === "/apk") return Response.redirect(pub.APK_URL, 302);
+      // APK servido do Cloudflare R2 (orbitaplay.app/download/Orbita-Play.apk); /android é o atalho do Downloader
+      if (p === "/android" || p === "/apk") return Response.redirect(`${url.origin}/download/Orbita-Play.apk`, 302);
+      if ((r = p.match(/^\/download\/(Orbita-Play[\w.-]*\.apk)$/)) && env.FILES) {
+        const obj = await env.FILES.get(r[1]);
+        if (!obj) return new Response("Arquivo não encontrado", { status: 404 });
+        return new Response(obj.body, { headers: { "content-type": "application/vnd.android.package-archive", "content-length": String(obj.size),
+          "content-disposition": `attachment; filename="${r[1]}"`, "cache-control": "public, max-age=300" } });
+      }
       if (p === "/entrar" && m === "POST") return pub.login(env, req);
       if (p === "/ativar") return pub.doLogin(env, url.searchParams.get("mac"), url.searchParams.get("key"));
       if (p === "/sair") return pub.logout();

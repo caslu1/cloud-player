@@ -2,7 +2,7 @@
 import { esc } from "./util.js";
 import { WORDMARK } from "./brand.js";
 
-export const APK_URL = "https://github.com/caslu1/cloud-player/releases/download/orbita-play/Orbita-Play.apk";
+export const APK_URL = "/download/Orbita-Play.apk";
 
 const L = {
   tv: '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>',
