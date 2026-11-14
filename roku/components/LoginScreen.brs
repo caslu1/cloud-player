@@ -2,41 +2,38 @@
 sub init()
     m.site = siteUrl()
     r = m.top.findNode("root")
-    ' Login padrão (igual ao Android): "Pelo celular" | ou | "Na TV"
-    addPoster(r, "pkg:/images/logo_full.png", 96, 64, 260, 52)
-    m.title = addLabel(r, "Bem-vindo ao Orbita Play", 96, 146, OUTF(), 54, "0xFFFFFFFF")
+    ' Login simples (igual ao Android): formulário no centro | ou | cartão "Pelo celular"
+    addPoster(r, "pkg:/images/logo_full.png", 830, 44, 260, 52)
+    m.title = addLabel(r, "Bem-vindo ao Orbita Play", 0, 118, OUTF(), 46, "0xFFFFFFFF", 1920, "center")
     m.adding = false
     c0 = m.global.creds
     m.prevCreds = { server: asText(c0.server), user: asText(c0.user), pass: asText(c0.pass) }
     m.top.observeField("params", "onParams")
-    sub_ = "Conecte sua lista para começar."
-    if m.site <> "" then sub_ = "Ative pelo celular em segundos ou conecte sua lista direto na TV."
-    addLabel(r, sub_, 96, 222, IREG(), 22, "0x9D9ABBFF")
-    cx = 508
+    sub_ = "Use os dados enviados pelo seu provedor."
+    if m.site <> "" then sub_ = "Use os dados enviados pelo seu provedor ou ative pelo celular."
+    addLabel(r, sub_, 0, 184, IREG(), 21, "0x9D9ABBFF", 1920, "center")
+    cx = 480
     if m.site <> ""
+        cx = 200
+        addPoster(r, "pkg:/images/ou_circle.png", 1190, 600, 60, 60)
+        addLabel(r, "ou", 1190, 617, ISEM(), 18, "0x9D9ABBFF", 60, "center")
         buildActCard(r)
-        addPoster(r, "pkg:/images/ou_circle.png", 828, 610, 60, 60)
-        addLabel(r, "ou", 828, 627, ISEM(), 18, "0x9D9ABBFF", 60, "center")
-        cx = 920
     end if
-    addPoster(r, "pkg:/images/panel_card_r.png", cx, 290, 904, 700)
-    addLabel(r, "NA TV", cx + 40, 330, ISEM(), 16, "0x9B84FFFF")
-    addLabel(r, "Conectar lista", cx + 40, 352, OUTF(), 38, "0xFFFFFFFF")
-    addLabel(r, "Use os dados enviados pelo seu provedor.", cx + 40, 410, IREG(), 20, "0x9D9ABBFF")
+    addPoster(r, "pkg:/images/panel_card_r.png", cx, 250, 960, 740)
     ' abas
-    addPoster(r, "pkg:/images/tabs_bg.png", cx + 40, 456, 824, 64)
+    addPoster(r, "pkg:/images/tabs_bg.png", cx + 40, 290, 880, 64)
     m.tabs = []
     names = ["Conta XC", "Lista de reprodução"]
     for i = 0 to 1
-        bg = addPoster(r, "", cx + 46 + i * 406, 462, 406, 52)
-        lb = addLabel(r, names[i], cx + 46 + i * 406, 476, ISEM(), 20, "0xFFFFFFFF", 406, "center")
+        bg = addPoster(r, "", cx + 46 + i * 434, 296, 434, 52)
+        lb = addLabel(r, names[i], cx + 46 + i * 434, 310, ISEM(), 20, "0xFFFFFFFF", 434, "center")
         m.tabs.Push({ bg: bg, label: lb })
     end for
     m.cx = cx
     m.formBox = r.createChild("Group")
     m.values = { name: "", server: "", user: "", pass: "", url: "" }
     m.xtream = true
-    m.msg = addLabel(r, "", cx + 40, 906, IMED(), 19, "0xF43F5EFF", 824)
+    m.msg = addLabel(r, "", cx + 40, 906, IMED(), 19, "0xF43F5EFF", 880)
     m.msg.wrap = true
     m.msg.maxLines = 2
     m.foot = addLabel(r, "Sem lista? Fale com o seu provedor.", cx + 40, 940, IREG(), 17, "0x6E6B8CFF")
@@ -61,26 +58,26 @@ sub buildForm()
     m.fields = []
     if m.xtream
         m.order = ["tabs", "name", "server", "user", "pass", "btn"]
-        addField("name", "NOME DA LISTA", cx + 40, 560, 320)
-        addField("server", "PROVEDOR", cx + 380, 560, 484)
-        addField("user", "USUÁRIO", cx + 40, 690, 402)
-        addField("pass", "SENHA", cx + 462, 690, 402)
-        by = 820
+        addField("name", "NOME DA LISTA", cx + 40, 378, 880)
+        addField("server", "PROVEDOR", cx + 40, 498, 880)
+        addField("user", "USUÁRIO", cx + 40, 618, 430)
+        addField("pass", "SENHA", cx + 490, 618, 430)
+        by = 756
     else
         m.order = ["tabs", "name", "url", "btn"]
-        addField("name", "NOME DA LISTA", cx + 40, 548, 824)
-        addField("url", "LISTA DE REPRODUÇÃO (LINK)", cx + 40, 664, 824)
-        addLabel(m.formBox, "Na Roku, use o link get.php do seu provedor (vira login Xtream).", cx + 40, 778, IREG(), 17, "0x6E6B8CFF", 824)
-        by = 812
+        addField("name", "NOME DA LISTA", cx + 40, 378, 880)
+        addField("url", "LISTA DE REPRODUÇÃO (LINK)", cx + 40, 498, 880)
+        addLabel(m.formBox, "Use o link get.php do seu provedor.", cx + 40, 616, IREG(), 17, "0x6E6B8CFF", 880)
+        by = 664
     end if
     m.btn = addButton(m.formBox, "Entrar", "ic_play", true, cx + 40, by)
-    m.btn.bg.width = 824
+    m.btn.bg.width = 880
     m.btn.bg.height = 76
-    m.btn.group.scaleRotateCenter = [412, 38]
-    m.btn.label.translation = [382, 25]
-    m.btn.icon.translation = [344, 25]
-    m.foot.translation = [cx + 40, by + 120]
-    m.msg.translation = [cx + 40, by + 86]
+    m.btn.group.scaleRotateCenter = [440, 38]
+    m.btn.label.translation = [410, 25]
+    m.btn.icon.translation = [372, 25]
+    m.foot.translation = [cx + 40, by + 126]
+    m.msg.translation = [cx + 40, by + 90]
     if m.idx >= m.order.Count() then m.idx = m.order.Count() - 1
     refresh()
 end sub
@@ -132,43 +129,70 @@ end sub
 
 sub edit(key as string)
     m.editing = key
-    d = CreateObject("roSGNode", "StandardKeyboardDialog")
+    d = CreateObject("roSGNode", "TvKeyboard")
+    lab = key
     for each f in m.fields
-        if f.key = key then d.title = f.label
+        if f.key = key then lab = f.label
     end for
-    d.text = m.values[key]
-    if key = "server" then d.message = ["Ex.: http://provedor.com:8080"]
-    if key = "url" then d.message = ["Ex.: http://servidor.com/get.php?username=...&password=..."]
-    d.buttons = ["OK", "Cancelar"]
-    d.observeField("buttonSelected", "onDialog")
+    m.before = m.values[key]
+    d.setup = { label: lab, text: m.values[key], password: (key = "pass") }
+    d.observeField("text", "onKbText")
+    d.observeField("result", "onKbDone")
+    m.top.appendChild(d)
     m.dialog = d
-    m.top.getScene().dialog = d
+    d.setFocus(true)
+end sub
+
+' o campo mostra o que está sendo digitado (igual ao Android)
+sub onKbText()
+    m.values[m.editing] = m.dialog.text
+    refresh()
+end sub
+
+sub onKbDone()
+    r = m.dialog.result
+    if r = "cancel" then m.values[m.editing] = m.before else m.values[m.editing] = m.dialog.text.Trim()
+    m.top.removeChild(m.dialog)
+    m.dialog = invalid
+    ' Pronto passa para o próximo campo
+    if r = "done" and m.idx < m.order.Count() - 1
+        cur = m.order[m.idx]
+        nxt = { name: "server", server: "user", user: "pass", pass: "btn", url: "btn" }
+        if not m.xtream and cur = "name" then nxt.name = "url"
+        dest = nxt[cur]
+        if dest <> invalid
+            for i = 0 to m.order.Count() - 1
+                if m.order[i] = dest then m.idx = i
+            end for
+        end if
+    end if
+    refresh()
+    m.top.setFocus(true)
 end sub
 
 ' Cartão "Pelo celular": QR code, MAC, chave e situação (vem do site).
 sub buildActCard(r as object)
     g = r.createChild("Group")
-    g.translation = [96, 290]
-    addPoster(g, "pkg:/images/panel_card_l.png", 0, 0, 700, 700)
-    addLabel(g, "PELO CELULAR", 40, 40, ISEM(), 16, "0x9B84FFFF")
-    addLabel(g, "Ative com o QR code", 40, 62, OUTF(), 38, "0xFFFFFFFF")
-    addLabel(g, "Aponte a câmera do celular ou acesse", 40, 120, IREG(), 20, "0x9D9ABBFF")
-    host = m.site.Replace("https://", "").Replace("http://", "")
-    addLabel(g, host, 40, 148, ISEM(), 20, "0x9B84FFFF", 620)
-    addPoster(g, "pkg:/images/qr_bg.png", 40, 196, 300, 300)
+    g.translation = [1280, 250]
+    addPoster(g, "pkg:/images/panel_card_l.png", 0, 0, 440, 740)
+    addLabel(g, "PELO CELULAR", 0, 34, ISEM(), 16, "0x9B84FFFF", 440, "center")
+    addPoster(g, "pkg:/images/qr_bg.png", 90, 72, 260, 260)
     m.qrBox = g.createChild("Group")
-    m.qrBox.translation = [56, 212]
-    m.qrWait = addLabel(g, "Gerando QR code…", 40, 336, IMED(), 18, "0x6E6B8CFF", 300, "center")
-    addPoster(g, "pkg:/images/info_box.png", 370, 216, 290, 86)
-    addLabel(g, "MAC", 392, 230, ISEM(), 15, "0x6E6B8CFF")
-    m.macLbl = addLabel(g, "…", 392, 252, OUTF(), 26, "0xFFFFFFFF", 260)
-    addPoster(g, "pkg:/images/info_box.png", 370, 320, 290, 86)
-    addLabel(g, "CHAVE", 392, 334, ISEM(), 15, "0x6E6B8CFF")
-    m.keyLbl = addLabel(g, "…", 392, 356, OUTF(), 30, "0xFFFFFFFF", 260)
-    m.pill = addPoster(g, "pkg:/images/pill_w.9.png", 370, 426, 250, 44)
+    m.qrBox.translation = [106, 88]
+    m.qrSize = 228
+    m.qrWait = addLabel(g, "Gerando QR code…", 90, 190, IMED(), 17, "0x6E6B8CFF", 260, "center")
+    host = m.site.Replace("https://", "").Replace("http://", "")
+    hl = addLabel(g, host, 20, 348, ISEM(), 16, "0x9B84FFFF", 400, "center")
+    hl.maxLines = 1
+    addPoster(g, "pkg:/images/info_box.png", 30, 390, 380, 86)
+    addLabel(g, "ENDEREÇO MAC", 52, 404, ISEM(), 14, "0x6E6B8CFF")
+    m.macLbl = addLabel(g, "…", 52, 426, OUTF(), 26, "0xFFFFFFFF", 340)
+    addPoster(g, "pkg:/images/info_box.png", 30, 492, 380, 86)
+    addLabel(g, "CHAVE DO DISPOSITIVO", 52, 506, ISEM(), 14, "0x6E6B8CFF")
+    m.keyLbl = addLabel(g, "…", 52, 528, OUTF(), 30, "0xFFFFFFFF", 340)
+    m.pill = addPoster(g, "pkg:/images/pill_w.9.png", 70, 608, 300, 44)
     m.pill.blendColor = "0x22203AFF"
-    m.actStatus = addLabel(g, "Conectando ao site…", 390, 436, ISEM(), 19, "0x9D9ABBFF", 230)
-    addLabel(g, "Cadastre sua lista no site e a TV entra sozinha.", 40, 540, IREG(), 19, "0x9D9ABBFF", 620)
+    m.actStatus = addLabel(g, "Conectando ao site…", 70, 618, ISEM(), 18, "0x9D9ABBFF", 300, "center")
 end sub
 
 sub pollSite()
@@ -178,8 +202,10 @@ end sub
 sub drawQr(q as object)
     m.qrBox.removeChildrenIndex(m.qrBox.getChildCount(), 0)
     n = q.size
-    cell = Int(268 / n)
-    off = Int((268 - cell * n) / 2)
+    sz = 268
+    if m.qrSize <> invalid then sz = m.qrSize
+    cell = Int(sz / n)
+    off = Int((sz - cell * n) / 2)
     for y = 0 to n - 1
         row = q.rows[y]
         x = 0
@@ -253,13 +279,6 @@ sub onAct(event as object)
 end sub
 
 
-
-sub onDialog()
-    if m.dialog.buttonSelected = 0 then m.values[m.editing] = m.dialog.text.Trim()
-    m.dialog.close = true
-    refresh()
-    m.top.setFocus(true)
-end sub
 
 sub login()
     if not m.xtream
@@ -339,7 +358,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
     cur = m.order[m.idx]
     ' mapa de setas: nome e servidor na mesma linha; usuário e senha na mesma linha
     if m.xtream
-        nav = { tabs: { down: "name" }, name: { right: "server", down: "user", up: "tabs" }, server: { left: "name", down: "user", up: "tabs" }, user: { right: "pass", up: "name", down: "btn" }, pass: { left: "user", up: "server", down: "btn" }, btn: { up: "user" } }
+        nav = { tabs: { down: "name" }, name: { down: "server", up: "tabs" }, server: { down: "user", up: "name" }, user: { right: "pass", up: "server", down: "btn" }, pass: { left: "user", up: "server", down: "btn" }, btn: { up: "user" } }
     else
         nav = { tabs: { down: "name" }, name: { down: "url", up: "tabs" }, url: { up: "name", down: "btn" }, btn: { up: "url" } }
     end if

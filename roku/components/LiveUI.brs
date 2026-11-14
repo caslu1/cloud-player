@@ -47,18 +47,25 @@ sub buildOverlay()
     m.oBar = addRect(o, 64, 830, 0, 6, "0x3D6BFFFF")
     m.oLeft = addLabel(o, "", 1724, 818, ISEM(), 19, "0xFFFFFFFF", 132, "right")
     m.oNext = addLabel(o, "", 64, 856, IMED(), 19, "0xE7E5F7FF", 1600)
-    addLabel(o, "Qualidade", 64, 936, IREG(), 17, "0x9D9ABBFF")
+    ' botão Canais (grade): abre categorias e canais dentro do player; ◀ também abre
+    m.chBtn = o.createChild("Group")
+    m.chBtn.translation = [64, 916]
+    m.chBg = addPoster(m.chBtn, "pkg:/images/qpill.9.png", 0, 0, 190, 72)
+    m.chIc = addPoster(m.chBtn, "pkg:/images/ic_grid.png", 26, 22, 28, 28)
+    m.chLb = addLabel(m.chBtn, "Canais", 66, 22, ISEM(), 21, "0xFFFFFFFF")
+    addRect(o, 282, 930, 2, 44, "0xFFFFFF33")
+    addLabel(o, "Qualidade", 306, 936, IREG(), 17, "0x9D9ABBFF")
     m.qBtns = []
     names = ["UHD", "FHD", "HD", "SD"]
     for i = 0 to 3
         g = o.createChild("Group")
-        g.translation = [168 + i * 118, 916]
+        g.translation = [410 + i * 118, 916]
         bg = addPoster(g, "", 0, 0, 104, 72)
         lb = addLabel(g, names[i], 0, 14, ISEM(), 20, "0xFFFFFFFF", 104, "center")
         dot = addRect(g, 48, 50, 8, 8, "0x3D6BFFFF")
         m.qBtns.Push({ q: names[i], bg: bg, label: lb, dot: dot })
     end for
-    m.oWatch = addLabel(o, "", 650, 941, ISEM(), 19, "0xFFFFFFFF", 800)
+    m.oWatch = addLabel(o, "", 892, 941, ISEM(), 19, "0xFFFFFFFF", 800)
 end sub
 
 function curCh() as object
@@ -134,6 +141,10 @@ sub paintQ()
     c = curCh()
     q = ""
     if c <> invalid then q = asText(c.q)
+    cf = (m.top.mode = "overlay" and m.qIdx = -1)
+    if cf then m.chBg.uri = "pkg:/images/qpill_sel.9.png" else m.chBg.uri = "pkg:/images/qpill.9.png"
+    if cf then m.chLb.color = "0x14172BFF" else m.chLb.color = "0xFFFFFFFF"
+    if cf then m.chIc.blendColor = "0x14172BFF" else m.chIc.blendColor = "0xFFFFFFFF"
     for i = 0 to 3
         b = m.qBtns[i]
         sel = (b.q = q)
@@ -365,13 +376,16 @@ function onKeyEvent(key as string, press as boolean) as boolean
         t = m.top.findNode("ovTimer")
         t.control = "stop"
         t.control = "start"
-        if key = "left" and m.qIdx > 0
+        if key = "left" and m.qIdx > -1
             m.qIdx = m.qIdx - 1
             paintQ()
             return true
         else if key = "right" and m.qIdx < 3
             m.qIdx = m.qIdx + 1
             paintQ()
+            return true
+        else if key = "OK" and m.qIdx = -1
+            m.top.mode = "panel"
             return true
         else if key = "OK"
             b = m.qBtns[m.qIdx]

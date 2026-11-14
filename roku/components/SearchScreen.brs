@@ -3,9 +3,14 @@ sub init()
     r = m.top.findNode("root")
     addLabel(r, "Buscar", 60, 60, OUTF(), 48, "0xFFFFFFFF")
     addLabel(r, "Canais, filmes e séries da sua lista", 60, 124, IREG(), 20, "0x9D9ABBFF")
-    m.status = addLabel(r, "Carregando o catálogo…", 652, 120, ISEM(), 20, "0x9D9ABBFF", 1240)
-    m.kb = m.top.findNode("kb")
-    m.kb.observeField("text", "onText")
+    ' campo de busca: OK abre o teclado do app (igual ao Android); resultados aparecem enquanto digita
+    m.field = addPoster(r, "pkg:/images/field_f.9.png", 60, 166, 1800, 76)
+    addPoster(r, "pkg:/images/ic_search.png", 86, 190, 28, 28)
+    m.fieldLbl = addLabel(r, "Canal, filme ou série", 130, 188, IMED(), 24, "0x6E6B8CFF", 1700)
+    m.status = addLabel(r, "Carregando o catálogo…", 60, 262, ISEM(), 19, "0x9D9ABBFF", 1800)
+    m.q = ""
+    m.kb = invalid
+    m.zone = "field"
     m.grid = m.top.findNode("grid")
     m.grid.observeField("itemSelected", "onPick")
     m.task = CreateObject("roSGNode", "SearchTask")
@@ -18,7 +23,42 @@ sub init()
 end sub
 
 sub onFocus()
-    if m.top.hasFocus() then m.kb.setFocus(true)
+    if not m.top.hasFocus() then return
+    if m.kb <> invalid
+        m.kb.setFocus(true)
+    else if m.zone = "field" and m.q = ""
+        openKb()
+    end if
+end sub
+
+sub openKb()
+    k = CreateObject("roSGNode", "TvKeyboard")
+    k.setup = { label: "Buscar", text: m.q, password: false }
+    k.observeField("text", "onKbText")
+    k.observeField("result", "onKbDone")
+    m.top.appendChild(k)
+    m.kb = k
+    k.setFocus(true)
+end sub
+
+sub onKbText()
+    m.q = m.q
+    if m.q = "" then m.fieldLbl.text = "Canal, filme ou série" else m.fieldLbl.text = m.q
+    if m.q = "" then m.fieldLbl.color = "0x6E6B8CFF" else m.fieldLbl.color = "0xFFFFFFFF"
+    onText()
+end sub
+
+sub onKbDone()
+    m.top.removeChild(m.kb)
+    m.kb = invalid
+    if m.results.Count() > 0
+        m.zone = "grid"
+        m.field.uri = "pkg:/images/field_n.9.png"
+        m.grid.setFocus(true)
+    else
+        m.zone = "field"
+        m.top.setFocus(true)
+    end if
 end sub
 
 sub onState()
@@ -26,7 +66,7 @@ sub onState()
 end sub
 
 sub onText()
-    q = m.kb.text
+    q = m.q
     if m.task.phase <> "ready"
         m.status.text = "Carregando o catálogo… (" + q + ")"
         return
@@ -56,8 +96,10 @@ sub onResults()
     for each it in m.results
         cnt[it.k] = cnt[it.k] + 1
     end for
-    if m.results.Count() = 0
-        m.status.text = "Nada encontrado para " + Chr(34) + m.kb.text + Chr(34)
+    if Len(m.q.Trim()) < 2
+        m.status.text = "Digite pelo menos 2 letras"
+    else if m.results.Count() = 0
+        m.status.text = "Nada encontrado para " + Chr(34) + m.q + Chr(34)
     else
         m.status.text = "Canais (" + cnt.live.ToStr() + ")   ·   Filmes (" + cnt.movie.ToStr() + ")   ·   Séries (" + cnt.series.ToStr() + ")"
     end if
@@ -77,11 +119,20 @@ end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
-    if key = "right" and m.kb.isInFocusChain() and m.results.Count() > 0
-        m.grid.setFocus(true)
-        return true
-    else if key = "left" and m.grid.hasFocus() and (m.grid.itemFocused mod 4) = 0
-        m.kb.setFocus(true)
+    if m.zone = "field"
+        if key = "OK"
+            openKb()
+            return true
+        else if key = "down" and m.results.Count() > 0
+            m.zone = "grid"
+            m.field.uri = "pkg:/images/field_n.9.png"
+            m.grid.setFocus(true)
+            return true
+        end if
+    else if m.zone = "grid" and key = "up"
+        m.zone = "field"
+        m.field.uri = "pkg:/images/field_f.9.png"
+        m.top.setFocus(true)
         return true
     end if
     return false

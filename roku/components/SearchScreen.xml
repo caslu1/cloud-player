@@ -7,9 +7,8 @@
     <children>
         <Rectangle width="1920" height="1080" color="0x050409B3" />
         <Group id="root" />
-        <MiniKeyboard id="kb" translation="[60,200]" />
-        <MarkupGrid id="grid" translation="[652,170]" itemComponentName="PosterItem" itemSize="[304,510]" itemSpacing="[16,20]"
-            numColumns="4" numRows="2" drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
+        <MarkupGrid id="grid" translation="[60,300]" scale="[0.74,0.74]" itemComponentName="PosterItem" itemSize="[304,510]" itemSpacing="[28,24]"
+            numColumns="7" numRows="2" drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
     </children>
     <script type="text/brightscript" uri="pkg:/components/common.brs" />
     <script type="text/brightscript" uri="pkg:/components/SearchScreen.brs" />

@@ -5,7 +5,8 @@
         <field id="action" type="assocarray" />
     </interface>
     <children>
-        <Poster id="backdrop" width="1920" height="1080" loadDisplayMode="scaleToZoom" />
+        <Poster id="backdrop" width="1920" height="1080" loadDisplayMode="scaleToZoom" opacity="0.45" />
+        <Rectangle width="1920" height="1080" color="0x05040966" />
         <Poster uri="pkg:/images/backdrop_shade.png" width="1920" height="1080" />
         <Poster uri="pkg:/images/panel_vod.png" translation="[48,38]" width="410" height="1012" />
         <Group id="labels" />

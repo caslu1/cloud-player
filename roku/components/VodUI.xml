@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="VodUI" extends="Group">
+    <interface>
+        <field id="video" type="node" />
+        <field id="item" type="assocarray" onChange="onItem" />
+        <field id="action" type="assocarray" />
+    </interface>
+    <children>
+        <Group id="ov" />
+        <Group id="pan" visible="false" />
+        <Timer id="tick" repeat="true" duration="0.5" />
+        <Timer id="hide" duration="4.5" />
+    </children>
+    <script type="text/brightscript" uri="pkg:/components/common.brs" />
+    <script type="text/brightscript" uri="pkg:/components/VodUI.brs" />
+</component>

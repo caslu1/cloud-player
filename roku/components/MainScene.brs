@@ -10,6 +10,10 @@ sub init()
     ' tela cheia ao vivo: informações do canal e lista lateral (igual ao Android)
     m.live = m.top.findNode("liveUI")
     m.live.observeField("action", "onLiveAction")
+    ' filmes e séries: controles do app (igual ao Android)
+    m.vod = m.top.findNode("vodUI")
+    m.vod.video = m.video
+    m.vod.observeField("action", "onVodAction")
     m.playing = invalid
     m.global.addFields({ creds: {}, adultUnlocked: false })
     m.top.findNode("bg").uri = "pkg:/images/wall_" + prefGet("wall", "3") + ".png"
@@ -67,6 +71,21 @@ sub endSplash()
         m.splashTimer = invalid
     end if
     m.screens.visible = true
+    if m.stack.Count() > 0 then m.stack.Peek().setFocus(true)
+    ' aviso importante: só no primeiro acesso
+    if prefGet("disclaimer", "0") <> "1"
+        d = CreateObject("roSGNode", "Disclaimer")
+        d.observeField("done", "onDisclaimer")
+        m.top.appendChild(d)
+        m.disc = d
+        d.setFocus(true)
+    end if
+end sub
+
+sub onDisclaimer()
+    prefSet("disclaimer", "1")
+    m.top.removeChild(m.disc)
+    m.disc = invalid
     if m.stack.Count() > 0 then m.stack.Peek().setFocus(true)
 end sub
 
@@ -178,13 +197,21 @@ sub startVideo()
     c = mkVideo(a.url, a.format, a.live = true)
     c.title = a.title
     ' ao vivo: o próprio app cuida das teclas (troca de canal, informações e lista)
-    m.video.enableUI = (a.live <> true)
+    m.video.enableUI = false
+    m.video.scale = [1.0, 1.0]
     if a.start <> invalid and a.start > 0 then c.PlayStart = a.start
     m.video.content = c
     m.video.visible = true
     m.screens.visible = false
     m.video.control = "play"
     m.video.setFocus(true)
+    if a.live <> true
+        m.vod.visible = true
+        m.vod.item = a
+        m.vod.setFocus(true)
+    else
+        m.vod.visible = false
+    end if
     if a.live = true
         d = m.live.data
         if d = invalid then d = {}
@@ -257,6 +284,21 @@ sub onLiveAction(event as object)
     end if
 end sub
 
+sub onVodAction(event as object)
+    a = event.getData()
+    p = m.playing
+    if a.type = "next" and p <> invalid and p.queue <> invalid and p.queue.Count() > 0
+        saveProgress()
+        nxt = p.queue[0]
+        rest = []
+        for i = 1 to p.queue.Count() - 1
+            rest.Push(p.queue[i])
+        end for
+        nxt.queue = rest
+        play(nxt)
+    end if
+end sub
+
 ' Guarda onde parou (filmes e episódios) para o "Continuar assistindo".
 sub saveProgress()
     a = m.playing
@@ -273,6 +315,8 @@ end sub
 sub stopVideo()
     saveProgress()
     m.live.mode = "hidden"
+    m.vod.visible = false
+    m.video.scale = [1.0, 1.0]
     m.video.control = "stop"
     m.video.visible = false
     m.screens.visible = true
@@ -349,7 +393,7 @@ end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
-    if m.splash <> invalid then return true
+    if m.splash <> invalid or m.disc <> invalid then return true
     if m.video.visible and m.playing <> invalid and m.playing.live = true and m.live.mode = "hidden"
         d = m.live.data
         hasList = (d <> invalid and d.list <> invalid and d.list.Count() > 0)
