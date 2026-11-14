@@ -10,11 +10,10 @@ export default {
     const url = new URL(req.url);
     const p = url.pathname.replace(/\/+$/, "") || "/";
     const m = req.method;
-    // painel admin separado do site: só em painel.orbitaplay.app
-    const PANEL = "painel.orbitaplay.app";
-    const isPanel = url.hostname === PANEL;
-    if (isPanel && !p.startsWith("/admin") && !p.startsWith("/api/")) return Response.redirect(`https://${PANEL}/admin`, 302);
-    if (!isPanel && p.startsWith("/admin")) return Response.redirect(`https://${PANEL}${p}`, 302);
+    // painel admin separado do site: roda em outro Worker/endereço (ROLE=panel); o site não tem /admin
+    const isPanel = env.ROLE === "panel";
+    if (isPanel && !p.startsWith("/admin")) return Response.redirect(`${url.origin}/admin`, 302);
+    if (!isPanel && p.startsWith("/admin")) return new Response("Não encontrado", { status: 404 });
     try {
       if (m === "OPTIONS") return new Response(null, { headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type", "access-control-allow-methods": "GET,POST" } });
       // API dos apps

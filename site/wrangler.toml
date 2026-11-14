@@ -9,7 +9,6 @@ workers_dev = true
 routes = [
   { pattern = "orbitaplay.app", custom_domain = true },
   { pattern = "www.orbitaplay.app", custom_domain = true },
-  { pattern = "painel.orbitaplay.app", custom_domain = true },
 ]
 
 [[d1_databases]]
@@ -19,6 +18,7 @@ database_id = "b354929a-f5f0-423f-8d7a-0dc318797e07"
 
 [vars]
 SITE_NAME = "Orbita Play"
+ROLE = "site"
 # Segredos (não ficam no código), configure com:
 #   npx wrangler secret put ADMIN_PASSWORD     (senha do painel admin)
 #   npx wrangler secret put SESSION_SECRET     (texto aleatório longo)
